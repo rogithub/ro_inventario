@@ -1,0 +1,1 @@
+# Inventario en rust
