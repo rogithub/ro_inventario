@@ -21,16 +21,27 @@ pub struct Hosting {
 
 pub fn load() -> Result<Settings, Box<dyn Error>>
 {   
-   let current_dir = env::current_dir()?;
-   let settings_file = Path::new("settings/dev.json");
+   let settings_dir = env::current_dir()?.join(Path::new("settings"));   
+   
+   let key = "INVENTARIO_ENV";
+   let default_env = "development";
+   let file_name: String;
+   let settings_file = match env::var(key) {
+      Ok(val) => {
+         file_name = format!("{}.json", val);
+         Path::new(&file_name)
+      },
+      Err(_) => {         
+         file_name = format!("{}.json", default_env);
+         env::set_var(key, default_env);
+         Path::new(&file_name)
+      },
+   };
 
-   let settings_path = current_dir.join(settings_file);
+   let settings_path = settings_dir.join(settings_file);   
    
    let file = File::open(settings_path).expect("Unable to open settings file");
    let settings: Settings = serde_json::from_reader(file).expect("settings JSON was not well-formatted");   
-
-   let key = "INVENTARIO_ENV";
-   env::set_var(key, settings.environment.clone());
 
    Ok(settings)
 }
