@@ -23,7 +23,6 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::new("%a %{User-Agent}i"))
             .service(controllers::index)
             .service(Files::new("/", "./wwwroot").prefer_utf8(true))
-            //.service(Files::new("/static", "./wwwroot").prefer_utf8(true).show_files_listing())
     })
     .bind((settings.hosting.ip, settings.hosting.port))?
     .run()
