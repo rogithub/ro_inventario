@@ -2,14 +2,14 @@ use askama::Template;
 use actix_web::{ get, HttpResponse, Responder };
 
 #[derive(Template)]
-#[template(path = "_layout.html")]
-struct LayoutTemplate<'a> {
+#[template(path = "public.html")]
+struct PublicTemplate<'a> {
     name: &'a str,
 }
 
 #[get("/")]
 pub async fn index() -> impl Responder {
-    let hello = LayoutTemplate { name: "Contenido" };    
+    let model = PublicTemplate { name: "Papelería" };    
     HttpResponse::Ok()
-    .body(hello.render().unwrap())
+    .body(model.render().unwrap())
 }
