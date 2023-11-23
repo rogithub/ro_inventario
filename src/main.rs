@@ -22,7 +22,7 @@ async fn index() -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     
-    let settings = settings::load().expect("could not load settings file");
+    let settings = settings::load().expect("Could not load settings file");
     println!("server running at");
     println!("http://{}:{}", settings.hosting.ip, settings.hosting.port);
 
