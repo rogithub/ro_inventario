@@ -1,5 +1,5 @@
 use actix_web::{
-    App, HttpServer
+    App, HttpServer, web
 };
 use actix_web::middleware::Logger;
 use env_logger::Env;
@@ -23,6 +23,11 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::new("%a %{User-Agent}i"))
             .service(controllers::index)
             .service(Files::new("/", "./wwwroot").prefer_utf8(true))
+            
+            .service(
+                web::scope("/account")
+                .route("/login", web::get().to(controllers::account::login))
+            )
     })
     .bind((settings.hosting.ip, settings.hosting.port))?
     .run()
