@@ -4,6 +4,7 @@ use actix_web::{
 use actix_web::middleware::Logger;
 use env_logger::Env;
 use log::{info};
+use actix_files::Files;
 
 mod settings;
 mod controllers;
@@ -21,6 +22,8 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
             .service(controllers::index)
+            .service(Files::new("/static", "./wwwroot").prefer_utf8(true))
+            //.service(Files::new("/static", "./wwwroot").prefer_utf8(true).show_files_listing())
     })
     .bind((settings.hosting.ip, settings.hosting.port))?
     .run()
