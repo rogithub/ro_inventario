@@ -1,5 +1,5 @@
-use askama::Template;
-use actix_web::{ HttpResponse, Responder };
+use askama_actix::{ Template, TemplateToResponse };
+use actix_web::{ get, Responder };
 
 #[derive(Template)]
 #[template(path = "public.html")]
@@ -7,8 +7,9 @@ struct PublicTemplate<'a> {
     name: &'a str,
 }
 
-pub async fn login() -> impl Responder {
-    let model = PublicTemplate { name: "Login" };    
-    HttpResponse::Ok()
-    .body(model.render().unwrap())
+
+#[get("/login")]
+pub async fn login() -> impl Responder {    
+    let model = PublicTemplate { name: "Login" };
+    model.to_response()
 }

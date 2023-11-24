@@ -270,6 +270,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "askama_actix"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4b0dd17cfe203b00ba3853a89fba459ecf24c759b738b244133330607c78e55"
+dependencies = [
+ "actix-web",
+ "askama",
+]
+
+[[package]]
 name = "askama_derive"
 version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1025,6 +1035,7 @@ dependencies = [
  "actix-files",
  "actix-web",
  "askama",
+ "askama_actix",
  "env_logger",
  "log",
  "serde",

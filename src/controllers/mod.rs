@@ -1,5 +1,5 @@
-use askama::Template;
-use actix_web::{ get, HttpResponse, Responder };
+use actix_web::{ get, Responder };
+use askama_actix::{ Template, TemplateToResponse };
 pub mod account;
 
 #[derive(Template)]
@@ -10,7 +10,6 @@ struct PublicTemplate<'a> {
 
 #[get("/")]
 pub async fn index() -> impl Responder {
-    let model = PublicTemplate { name: "Papelería" };    
-    HttpResponse::Ok()
-    .body(model.render().unwrap())
+    let model = PublicTemplate { name: "Papelería" };
+    model.to_response()
 }

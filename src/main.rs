@@ -18,16 +18,18 @@ async fn main() -> std::io::Result<()> {
     info!("http://{}:{}", settings.hosting.ip, settings.hosting.port);
 
     HttpServer::new(|| {
-        App::new()
+
+        let account = web::scope("/account").service(controllers::account::login);
+
+        App::new()            
+            // routes starting by
+            .service(controllers::index)            
+            .service(account)
+
             .wrap(Logger::default())
-            .wrap(Logger::new("%a %{User-Agent}i"))
-            .service(controllers::index)
+            .wrap(Logger::new("%a %{User-Agent}i"))            
             .service(Files::new("/", "./wwwroot").prefer_utf8(true))
             
-            .service(
-                web::scope("/account")
-                .route("/login", web::get().to(controllers::account::login))
-            )
     })
     .bind((settings.hosting.ip, settings.hosting.port))?
     .run()
