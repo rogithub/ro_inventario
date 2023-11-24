@@ -4,12 +4,10 @@ pub mod account;
 
 #[derive(Template)]
 #[template(path = "public.html")]
-struct PublicTemplate<'a> {
-    name: &'a str,
-}
+struct PublicTemplate;
 
 #[get("/")]
 pub async fn index() -> impl Responder {
-    let model = PublicTemplate { name: "Papelería" };
+    let model = PublicTemplate;
     model.to_response()
 }

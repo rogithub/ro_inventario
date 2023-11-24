@@ -1,163 +1,98 @@
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Papelería y Mercería "El Gordo"</title>
-    <meta name="description" content="En Villas del Sol, a un costado de Palmas Turquesa. Playa del Carmen." />
-    
-    <link rel="stylesheet" href="/lib/bootstrap-5.3.2-dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="/css/public.css" />    
-    <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
-    <base href="/" />
-    
+{% extends "_layout.html" %}
 
-    <!-- Meta Tags Generated via https://www.opengraph.xyz -->
-  
-    <!-- Facebook Meta Tags -->
-    <meta property="og:url" content="https://papeleria.xplaya.com" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content='Papelería y Mercería "El Gordo"' />
-    <meta property="og:description" content="Cosas que no sabía que necesitaba" />
-    <meta property="og:image" content="https://papeleria.xplaya.com/img/gordo.jpeg" />
+{% block title %}Papelería y Mercería "El Gordo"{% endblock %}
 
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta property="twitter:domain" content="papeleria.xplaya.com" />
-    <meta property="twitter:url" content="https://papeleria.xplaya.com" />
-    <meta name="twitter:title" content='Papelería y Mercería "El Gordo"' />
-    <meta name="twitter:description" content="Cosas que no sabía que necesitaba" />
-    <meta name="twitter:image" content="https://papeleria.xplaya.com/img/gordo.jpeg" />
+{% block head %}
+{% endblock %}
 
-</head>
+{% block scripts %}
+{% endblock %}
 
-<body>
-    <header class="d-print-none">
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="/">{{ name }}</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
-                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="/">Inicio</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="/home/buscar">Buscar Productos</a>
-                        </li>                                                 
-                    </ul>
-                    <ul class="navbar-nav d-flex">
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" href="/account/login?returnUrl=%2FHome%2FLanding">Iniciar sesión</a>
-                            </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">            
-          <div class="container py-3">
-            <header>
-              <div class="d-flex flex-column flex-md-row align-items-center pb-3 mb-4 border-bottom">    
-              <div class="pricing-header p-3 pb-md-4 mx-auto text-center">
-                <h1 class="display-4 fw-normal">Papelería y Mercería "El Gordo"</h1>
-                <p class="fs-5 text-body-secondary">
-                  En Villas del Sol, a un costado de Palmas Turquesa. Playa del Carmen.
-                </p>      
-              </div>
-            </header>
-            
-            <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">  
-                <div class="col">
-                  <div class="card mb-4 rounded-3 shadow-sm">
-                    <div class="card-header py-3">
-                      <h4 class="my-0 fw-normal">Lun a Vie | 8:00 am - 6:00 pm</h4>
-                    </div>
-                    <div class="card-body">
 
-                      <p class="pt-4">
-                          <a class="btn btn-primary btn-lg" role="button" href="/home/buscar">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search-heart" viewBox="0 0 16 16">
-                              <path d="M6.5 4.482c1.664-1.673 5.825 1.254 0 5.018-5.825-3.764-1.664-6.69 0-5.018Z"/>
-                              <path d="M13 6.5a6.471 6.471 0 0 1-1.258 3.844c.04.03.078.062.115.098l3.85 3.85a1 1 0 0 1-1.414 1.415l-3.85-3.85a1.007 1.007 0 0 1-.1-.115h.002A6.5 6.5 0 1 1 13 6.5ZM6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Z"/>
-                              </svg>
-                              Buscar productos 🤩
-                          </a>                
-                      </p>                    
-                      <p class="pt-4">                
-                          <a class="btn btn-warning btn-lg" alt="pdfs" href="https://xplaya.com/descargas/didactico" target="_blank" role="button">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-pdf" viewBox="0 0 16 16">
-                                <path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4zm0 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/>
-                                <path d="M4.603 12.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.701 19.701 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.187-.012.395-.047.614-.084.51-.27 1.134-.52 1.794a10.954 10.954 0 0 0 .98 1.686 5.753 5.753 0 0 1 1.334.05c.364.065.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.856.856 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.716 5.716 0 0 1-.911-.95 11.642 11.642 0 0 0-1.997.406 11.311 11.311 0 0 1-1.021 1.51c-.29.35-.608.655-.926.787a.793.793 0 0 1-.58.029zm1.379-1.901c-.166.076-.32.156-.459.238-.328.194-.541.383-.647.547-.094.145-.096.25-.04.361.01.022.02.036.026.044a.27.27 0 0 0 .035-.012c.137-.056.355-.235.635-.572a8.18 8.18 0 0 0 .45-.606zm1.64-1.33a12.647 12.647 0 0 1 1.01-.193 11.666 11.666 0 0 1-.51-.858 20.741 20.741 0 0 1-.5 1.05zm2.446.45c.15.162.296.3.435.41.24.19.407.253.498.256a.107.107 0 0 0 .07-.015.307.307 0 0 0 .094-.125.436.436 0 0 0 .059-.2.095.095 0 0 0-.026-.063c-.052-.062-.2-.152-.518-.209a3.881 3.881 0 0 0-.612-.053zM8.078 5.8a6.7 6.7 0 0 0 .2-.828c.031-.188.043-.343.038-.465a.613.613 0 0 0-.032-.198.517.517 0 0 0-.145.04c-.087.035-.158.106-.196.283-.04.192-.03.469.046.822.024.111.054.227.09.346z"/>
-                              </svg>
-                              Material didáctico
-                          </a>
-                      </p>
-                      <p class="pt-4">
-                        <a class="btn btn-info btn-lg" alt="mapa" href="https://www.google.com/maps/dir/20.6773166,-87.1119113/Papeleria/@@20.6769778,-87.1133865,18z/data=!4m8!4m7!1m0!1m5!1m1!1s0x8f4e437c16230f57:0x1c5de84713a15d9c!2m2!1d-87.1119174!2d20.6772444?entry=ttu" target="_blank" role="button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16">
-                            <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z"/>
-                            <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-                          </svg>
-                            Cómo llegar
-                        </a>                
-                      </p>         
-                    </div>
-                  </div>
-                </div>    
-                <div class="col">
-                  <div class="card mb-4 rounded-3 shadow-sm">
-                    <div class="card-header py-3">
-                      <h4 class="my-0 fw-normal">Copias / Impresiones</h4>
-                    </div>
-                    <div class="card-body">            
-                      <h2 class="card-title pricing-card-title">Blanco y negro</h2>
-                      <h1 class="card-title pricing-card-title">¡$1 peso!</h1>
-                      <p class="card-text mt-4">
-                        ¿No tienes internet en tu teléfono? ¡No te preocupes!
-                        Contamos con <strong>internet gratis</strong>, para que 
-                        nos envíes tus documentos.
-                      </p>            
-                    </div>
-                  </div>
-              </div>
-              <div class="col">
-                <div class="card mb-4 rounded-3 shadow-sm border-danger">          
-                    <div class="card-header py-3">
-                      <h4 class="my-0 fw-normal">Copias / Impresiones</h4>
-                    </div>
-                    <div class="card-body">
-                      <h2 class="card-title pricing-card-title">A color</h2>
-                      <ul class="list-unstyled mt-3 mb-4">
-                        <li class="text-success">$3 Trabajo escolar a color sin imagen</li>
-                        <li class="text-warning">$6 Media página</li>
-                        <li class="text-info">$12 Página entera</li>  
-                      </ul>
-                      <p class="card-text">
-                        Puedes enviar documentos por WhatsApp, email, traer tu memoria,
-                        etc. <strong>No cobramos el envío</strong>.
-                      </p>                        
-                    </div>
-                </div>
-              </div>    
-            </div>    
-            
-        </main>
-    </div>
+{% block content %}
+<header>
+  <div class="d-flex flex-column flex-md-row align-items-center pb-3 mb-4 border-bottom">    
+  <div class="pricing-header p-3 pb-md-4 mx-auto text-center">
+    <h1 class="display-4 fw-normal">Papelería y Mercería "El Gordo"</h1>
+    <p class="fs-5 text-body-secondary">
+      En Villas del Sol, a un costado de Palmas Turquesa. Playa del Carmen.
+    </p>      
+  </div>
+</header>
 
-    <footer class="border-top footer text-body-secondary d-print-none">
-        <div class="container">
-            &copy; 2022 - Inventario
+<div class="row row-cols-1 row-cols-md-3 mb-3 text-center">  
+    <div class="col">
+      <div class="card mb-4 rounded-3 shadow-sm">
+        <div class="card-header py-3">
+          <h4 class="my-0 fw-normal">Lun a Vie | 8:00 am - 6:00 pm</h4>
         </div>
-    </footer>
-    <script src="/lib/bootstrap-5.3.2-dist/js/bootstrap.bundle.min.js"></script>
-    
+        <div class="card-body">
 
-    <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "08e59250422d4d348be7e807b442ccd8"}'></script><!-- End Cloudflare Web Analytics -->
-    
-    
-</body>
+          <p class="pt-4">
+              <a class="btn btn-primary btn-lg" role="button" href="/home/buscar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search-heart" viewBox="0 0 16 16">
+                  <path d="M6.5 4.482c1.664-1.673 5.825 1.254 0 5.018-5.825-3.764-1.664-6.69 0-5.018Z"/>
+                  <path d="M13 6.5a6.471 6.471 0 0 1-1.258 3.844c.04.03.078.062.115.098l3.85 3.85a1 1 0 0 1-1.414 1.415l-3.85-3.85a1.007 1.007 0 0 1-.1-.115h.002A6.5 6.5 0 1 1 13 6.5ZM6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Z"/>
+                  </svg>
+                  Buscar productos 🤩
+              </a>                
+          </p>                    
+          <p class="pt-4">                
+              <a class="btn btn-warning btn-lg" alt="pdfs" href="https://xplaya.com/descargas/didactico" target="_blank" role="button">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-pdf" viewBox="0 0 16 16">
+                    <path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4zm0 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/>
+                    <path d="M4.603 12.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.701 19.701 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.187-.012.395-.047.614-.084.51-.27 1.134-.52 1.794a10.954 10.954 0 0 0 .98 1.686 5.753 5.753 0 0 1 1.334.05c.364.065.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.856.856 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.716 5.716 0 0 1-.911-.95 11.642 11.642 0 0 0-1.997.406 11.311 11.311 0 0 1-1.021 1.51c-.29.35-.608.655-.926.787a.793.793 0 0 1-.58.029zm1.379-1.901c-.166.076-.32.156-.459.238-.328.194-.541.383-.647.547-.094.145-.096.25-.04.361.01.022.02.036.026.044a.27.27 0 0 0 .035-.012c.137-.056.355-.235.635-.572a8.18 8.18 0 0 0 .45-.606zm1.64-1.33a12.647 12.647 0 0 1 1.01-.193 11.666 11.666 0 0 1-.51-.858 20.741 20.741 0 0 1-.5 1.05zm2.446.45c.15.162.296.3.435.41.24.19.407.253.498.256a.107.107 0 0 0 .07-.015.307.307 0 0 0 .094-.125.436.436 0 0 0 .059-.2.095.095 0 0 0-.026-.063c-.052-.062-.2-.152-.518-.209a3.881 3.881 0 0 0-.612-.053zM8.078 5.8a6.7 6.7 0 0 0 .2-.828c.031-.188.043-.343.038-.465a.613.613 0 0 0-.032-.198.517.517 0 0 0-.145.04c-.087.035-.158.106-.196.283-.04.192-.03.469.046.822.024.111.054.227.09.346z"/>
+                  </svg>
+                  Material didáctico
+              </a>
+          </p>
+          <p class="pt-4">
+            <a class="btn btn-info btn-lg" alt="mapa" href="https://www.google.com/maps/dir/20.6773166,-87.1119113/Papeleria/@@20.6769778,-87.1133865,18z/data=!4m8!4m7!1m0!1m5!1m1!1s0x8f4e437c16230f57:0x1c5de84713a15d9c!2m2!1d-87.1119174!2d20.6772444?entry=ttu" target="_blank" role="button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16">
+                <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z"/>
+                <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+              </svg>
+                Cómo llegar
+            </a>                
+          </p>         
+        </div>
+      </div>
+    </div>    
+    <div class="col">
+      <div class="card mb-4 rounded-3 shadow-sm">
+        <div class="card-header py-3">
+          <h4 class="my-0 fw-normal">Copias / Impresiones</h4>
+        </div>
+        <div class="card-body">            
+          <h2 class="card-title pricing-card-title">Blanco y negro</h2>
+          <h1 class="card-title pricing-card-title">¡$1 peso!</h1>
+          <p class="card-text mt-4">
+            ¿No tienes internet en tu teléfono? ¡No te preocupes!
+            Contamos con <strong>internet gratis</strong>, para que 
+            nos envíes tus documentos.
+          </p>            
+        </div>
+      </div>
+  </div>
+  <div class="col">
+    <div class="card mb-4 rounded-3 shadow-sm border-danger">          
+        <div class="card-header py-3">
+          <h4 class="my-0 fw-normal">Copias / Impresiones</h4>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title pricing-card-title">A color</h2>
+          <ul class="list-unstyled mt-3 mb-4">
+            <li class="text-success">$3 Trabajo escolar a color sin imagen</li>
+            <li class="text-warning">$6 Media página</li>
+            <li class="text-info">$12 Página entera</li>  
+          </ul>
+          <p class="card-text">
+            Puedes enviar documentos por WhatsApp, email, traer tu memoria,
+            etc. <strong>No cobramos el envío</strong>.
+          </p>                        
+        </div>
+    </div>
+  </div>    
+</div> 
+{% endblock %}
 
-</html>

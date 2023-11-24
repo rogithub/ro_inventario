@@ -1,0 +1,77 @@
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{{ title }} {% endblock %}</title>
+    <meta name="description" content="En Villas del Sol, a un costado de Palmas Turquesa. Playa del Carmen." />
+    
+    <link rel="stylesheet" href="/lib/bootstrap-5.3.2-dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/css/public.css" />    
+    <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
+    <base href="/" />
+    
+
+    <!-- Meta Tags Generated via https://www.opengraph.xyz -->
+  
+    <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="https://papeleria.xplaya.com" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content='Papelería y Mercería "El Gordo"' />
+    <meta property="og:description" content="Cosas que no sabía que necesitaba" />
+    <meta property="og:image" content="https://papeleria.xplaya.com/img/gordo.jpeg" />
+
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:domain" content="papeleria.xplaya.com" />
+    <meta property="twitter:url" content="https://papeleria.xplaya.com" />
+    <meta name="twitter:title" content='Papelería y Mercería "El Gordo"' />
+    <meta name="twitter:description" content="Cosas que no sabía que necesitaba" />
+    <meta name="twitter:image" content="https://papeleria.xplaya.com/img/gordo.jpeg" />
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    <header class="d-print-none">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">Papelería</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="/">Inicio</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="/home/buscar">Buscar Productos</a>
+                        </li>                                                 
+                    </ul>
+                    <ul class="navbar-nav d-flex">
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" href="/account/login?returnUrl=%2FHome%2FLanding">Iniciar sesión</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3 py-3">            
+          {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <footer class="border-top footer text-body-secondary d-print-none">
+        <div class="container">
+            &copy; 2022 - Inventario
+        </div>
+    </footer>
+    <script src="/lib/bootstrap-5.3.2-dist/js/bootstrap.bundle.min.js"></script>
+    
+
+    {% block scripts %}{% endblock %}
+    
+</body>
+
+</html>
