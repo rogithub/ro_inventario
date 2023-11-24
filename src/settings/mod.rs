@@ -14,6 +14,7 @@ pub struct Settings {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct Hosting {
+   pub protocol: String,
    pub ip: String,
    pub port: u16
 }
