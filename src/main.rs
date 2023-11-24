@@ -8,6 +8,7 @@ use actix_files::Files;
 
 mod settings;
 mod controllers;
+mod models;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -19,7 +20,9 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
 
-        let account = web::scope("/account").service(controllers::account::login);
+        let account = web::scope("/account")
+                        .service(controllers::account_controller::login)
+                        .service(controllers::account_controller::submit);
 
         App::new()            
             // routes starting by

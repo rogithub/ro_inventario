@@ -11,14 +11,14 @@
 
 {% block content %}
 <h1>Login</h1>
-<form method="post" action="/account/login?returnUrl=/home/landing">
+<form method="post" action="/account/submit?returnUrl=/home/landing">
     <div class="mb-3">
         <label class="form-label">Email</label>
-        <input type="email" class="form-control">
+        <input type="email" name="email" class="form-control">
     </div>
     <div class="mb-3">
         <label class="form-label">Password</label>
-        <input type="password" class="form-control">
+        <input type="password" name="password" class="form-control">
     </div>
     <a class="btn btn-secondary">Registro</a>
     <button type="submit" class="btn btn-primary">Entrar</button>
