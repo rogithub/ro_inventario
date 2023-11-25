@@ -9,6 +9,7 @@ use actix_files::Files;
 mod settings;
 mod controllers;
 mod models;
+mod validators;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

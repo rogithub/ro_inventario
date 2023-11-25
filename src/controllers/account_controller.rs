@@ -1,7 +1,7 @@
 use askama_actix::{ TemplateToResponse };
 use actix_web::{ web, get, post, Responder };
 use log::{info};
-use crate::models::account_models::{ LoginModel, Validate };
+use crate::models::account_models::{ LoginModel, Validator };
 
 
 #[get("/login")]
@@ -11,13 +11,8 @@ pub async fn login() -> impl Responder {
 }
 
 #[post("/submit")]
-pub async fn submit(form: web::Form<LoginModel>) -> impl Responder { 
-    let model = LoginModel { 
-        email: form.email.clone(), 
-        password : form.password.clone()
-    };
-    let errors = model.run();   
+pub async fn submit(mut form: web::Form<LoginModel>) -> impl Responder {    
+    form.validate();  
     info!("{:?}", form);
-    info!("{:?}", errors);
     form.to_response()
 }
