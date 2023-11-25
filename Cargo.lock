@@ -1038,6 +1038,7 @@ dependencies = [
  "askama_actix",
  "env_logger",
  "log",
+ "regex",
  "serde",
  "serde_json",
 ]
