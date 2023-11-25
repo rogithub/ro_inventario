@@ -27,22 +27,28 @@ fn validate_password(pwd: &str) -> bool {
     is_valid
 }
 
+fn is_empty_string(val: &str) -> bool {
+    let empty_str_regex = Regex::new(r"^\s*$").unwrap();
+    let is_valid = empty_str_regex.is_match(val);
+    is_valid
+}
+
  
 impl Validate for LoginModel {
     fn run(&self) -> HashMap<String, String> {
         let mut errors: HashMap<String, String> = HashMap::new();
-        if !validate_email(&self.email) {
+        if is_empty_string(&self.email) {
             errors.insert
             (
                 "email".to_string(),
-                "El correo electrónico no es válido".to_string()
+                "El correo electrónico no puede estar vacío".to_string()
             );
         }
-        if !validate_password(&self.password) {
+        if is_empty_string(&self.password) {
             errors.insert
             (
                 "password".to_string(),
-                "El password dete tener mínimo 8 carácteres de longitud".to_string()
+                "El password no puede estar vacío".to_string()
             );
         }
 
@@ -80,5 +86,30 @@ mod tests {
 
         let is_valid = validate_password("Tres0!78");
         assert_eq!(is_valid, true);
+    }
+
+    #[test]
+    fn not_empty() {
+        let it_is = is_empty_string("");
+        assert_eq!(it_is, true);
+
+        let it_is = is_empty_string("  ");
+        assert_eq!(it_is, true);
+
+        let it_is = is_empty_string("   ");
+        assert_eq!(it_is, true);
+
+        let it_is = is_empty_string("
+        ");
+        assert_eq!(it_is, true);
+
+        let it_is = is_empty_string("no");
+        assert_eq!(it_is, false);
+
+        let it_is = is_empty_string(" casi pero ... no ");
+        assert_eq!(it_is, false);
+
+        let it_is = is_empty_string(".");
+        assert_eq!(it_is, false);
     }
 }
