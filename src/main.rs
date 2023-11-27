@@ -48,12 +48,17 @@ async fn main() -> std::io::Result<()> {
 
         let account = web::scope("/account")
                         .service(controllers::account_controller::login)
-                        .service(controllers::account_controller::submit);
+                        .service(controllers::account_controller::submit)
+                        .service(controllers::account_controller::logout);
+
+        let home = web::scope("/home")
+                        .service(controllers::home_controller::index);
 
         App::new()            
             // routes starting by
             .service(controllers::index)            
-            .service(account)            
+            .service(account)
+            .service(home)
             .service(Files::new("/", "./wwwroot").prefer_utf8(true))
 
             // cookie auth & identity
