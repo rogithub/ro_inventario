@@ -1,11 +1,9 @@
 use askama_actix::{ TemplateToResponse };
-use actix_web::{ web, get, post, Responder, HttpRequest };
+use actix_web::{ web, get, post, Responder, HttpRequest,HttpMessage as _,
+    http::StatusCode };
 use log::{info};
+use actix_web::web::Redirect;
 use crate::models::account_models::{ LoginModel, Validator };
-use actix_web::{
-    HttpMessage as _,
-    http::StatusCode
-};
 
 
 use actix_identity::{Identity};
@@ -19,15 +17,16 @@ pub async fn login() -> impl Responder {
 
 #[post("/submit")]
 pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest) -> impl Responder {    
-    form.validate();  
+    let is_valid = form.validate();  
     info!("{:?}", form);
 
-    //if validation error
-    //form.to_response()
-
-    Identity::login(&req.extensions(), "user1".to_owned()).unwrap();
-
-    web::Redirect::to("/home/index").using_status_code(StatusCode::FOUND)
+    if is_valid {
+        Identity::login(&req.extensions(), "user1".to_owned()).unwrap();
+        return Redirect::to("/home/index").using_status_code(StatusCode::FOUND)    
+    }
+    
+    //if validation esrror
+    form.to_response()    
 }
 
 
@@ -35,5 +34,5 @@ pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest) -> impl R
 async fn logout(id: Identity) -> impl Responder {
     id.logout();
 
-    web::Redirect::to("/").using_status_code(StatusCode::FOUND)
+    Redirect::to("/").using_status_code(StatusCode::FOUND)
 }

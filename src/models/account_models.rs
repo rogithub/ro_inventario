@@ -12,11 +12,11 @@ pub struct LoginModel {
 }
 
 pub trait Validator {
-    fn validate(&mut self) -> ();
+    fn validate(&mut self) -> bool;
 }
  
 impl Validator for LoginModel {
-    fn validate(&mut self) -> () {
+    fn validate(&mut self) -> bool {
         if is_empty_string(&self.email) {
             self.email_err = Some(String::from("El correo electrónico no puede estar vacío"))        
         } else {
@@ -28,5 +28,7 @@ impl Validator for LoginModel {
         } else {
             self.password_err = None
         }
-    }    
+
+        self.email_err == None && self.password_err == None
+    }
 }
