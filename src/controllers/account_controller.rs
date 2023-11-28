@@ -26,7 +26,7 @@ pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest) -> Either
         return Either::Right(Redirect::to("/home/index").using_status_code(StatusCode::FOUND))
     }
     
-    //if validation esrror
+    //if validation error
     Either::Left(form.to_response())    
 }
 
