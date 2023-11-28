@@ -22,7 +22,7 @@ pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest) -> Either
     info!("{:?}", form);
 
     if is_valid {
-        Identity::login(&req.extensions(), "user1".to_owned()).unwrap();
+        Identity::login(&req.extensions(), form.email.clone()).unwrap();
         return Either::Right(Redirect::to("/home/index").using_status_code(StatusCode::FOUND))
     }
     
