@@ -1,10 +1,11 @@
 use askama_actix::{ TemplateToResponse };
-use actix_web::{ web, get, post, Responder, HttpRequest,HttpMessage as _,
+use actix_web::{ 
+    web, get, post, Either,
+    Responder, HttpRequest, HttpMessage as _,
     http::StatusCode };
 use log::{info};
 use actix_web::web::Redirect;
 use crate::models::account_models::{ LoginModel, Validator };
-
 
 use actix_identity::{Identity};
 
@@ -16,17 +17,17 @@ pub async fn login() -> impl Responder {
 }
 
 #[post("/submit")]
-pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest) -> impl Responder {    
+pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest) -> Either<impl Responder, Redirect> {    
     let is_valid = form.validate();  
     info!("{:?}", form);
 
     if is_valid {
         Identity::login(&req.extensions(), "user1".to_owned()).unwrap();
-        return Redirect::to("/home/index").using_status_code(StatusCode::FOUND)    
+        return Either::Right(Redirect::to("/home/index").using_status_code(StatusCode::FOUND))
     }
     
     //if validation esrror
-    form.to_response()    
+    Either::Left(form.to_response())    
 }
 
 
