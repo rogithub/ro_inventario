@@ -17,3 +17,4 @@ askama_actix = "0.14.0"
 regex = "1.10.2"
 actix-session = { version = "0.8.0", features = ["cookie-session"] }
 actix-identity = "0.6.0"
+sqlx = { version = "0.7", features = ["sqlite"] }
