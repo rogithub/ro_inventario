@@ -30,6 +30,15 @@ pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest, data: web
     for (idx, row) in result.iter().enumerate() {
         info!("[{}]: {:?}", idx, row.get::<String, &str>("Email"));
     }
+    &data.db_pool.close().await;
+    let result = sqlx::query("SELECT Email FROM Users;")
+       .fetch_all(&data.db_pool)
+       .await
+       .unwrap();
+    for (idx, row) in result.iter().enumerate() {
+        info!("[{}]: {:?}", idx, row.get::<String, &str>("Email"));
+    }
+    &data.db_pool.close().await;
 
     if is_valid {
         Identity::login(&req.extensions(), form.email.clone()).unwrap();
