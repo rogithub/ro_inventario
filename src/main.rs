@@ -44,8 +44,8 @@ async fn main() -> std::io::Result<()> {
     let settings = settings::load().expect("Could not load settings file");
     info!("server running at");
     info!("{:?}", settings.hosting);
-    let db_conn = app_state::connect(settings.cnn_str()).await.unwrap();
-
+    let cnn_str = settings.cnn_str();
+    let con_pool = app_state::connect(cnn_str).await;    
 
     HttpServer::new(move || {
 
@@ -58,7 +58,7 @@ async fn main() -> std::io::Result<()> {
                         .service(controllers::home_controller::index);
 
         App::new()
-            .app_data(web::Data::new(db_conn.unwrap().clone()))
+            .app_data(web::Data::new(con_pool.clone()))
 
             // routes starting by
             .service(controllers::index)            

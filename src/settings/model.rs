@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::env;
 use std::fmt;
-
+use log::{info};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "PascalCase")]
@@ -29,8 +29,8 @@ impl fmt::Debug for Hosting {
 impl Settings {
     pub fn cnn_str(&self) -> PathBuf
     {
-        let settings_dir = env::current_dir().unwrap().join(Path::new("settings"));
-        let settings_path = settings_dir.join(self.db.clone());
+        let settings_path = env::current_dir().unwrap().join(Path::new(&self.db.clone()));        
+        info!("Database {:?}", settings_path);
         settings_path
     }
 }
