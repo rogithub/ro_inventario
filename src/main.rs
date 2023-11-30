@@ -45,7 +45,8 @@ async fn main() -> std::io::Result<()> {
     info!("server running at");
     info!("{:?}", settings.hosting);
     let cnn_str = settings.cnn_str();
-    let con_pool = app_state::connect(cnn_str).await;    
+    let con_pool = app_state::connect(cnn_str).await;
+    let app_state = app_state::AppState { db_pool: con_pool };    
 
     HttpServer::new(move || {
 
@@ -58,7 +59,7 @@ async fn main() -> std::io::Result<()> {
                         .service(controllers::home_controller::index);
 
         App::new()
-            .app_data(web::Data::new(con_pool.clone()))
+            .app_data(web::Data::new(app_state.clone()))
 
             // routes starting by
             .service(controllers::index)            
