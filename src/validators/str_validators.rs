@@ -1,5 +1,6 @@
 use regex::Regex;
 
+/*
 pub fn validate_email(email_address: &str) -> bool {
     let email_regex = Regex::new(r"^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$").unwrap();
     let is_valid = email_regex.is_match(email_address);
@@ -12,7 +13,7 @@ pub fn validate_password(pwd: &str) -> bool {
     let is_valid = pwd_regex.is_match(pwd);
     is_valid
 }
-
+*/
 pub fn is_empty_string(val: &str) -> bool {
     let empty_str_regex = Regex::new(r"^\s*$").unwrap();
     let is_valid = empty_str_regex.is_match(val);
@@ -23,13 +24,13 @@ pub fn is_empty_string(val: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+/*
     #[test]
     fn empty_string_is_invalid_email() {
         let is_valid = validate_email("");
         assert_eq!(is_valid, false);
     }
-
+    
     #[test]
     fn email_can_contain_dots() {
         let is_valid = validate_email("s.o.s@sos.org");
@@ -50,7 +51,7 @@ mod tests {
         let is_valid = validate_password("Tres0!78");
         assert_eq!(is_valid, true);
     }
-
+*/
     #[test]
     fn not_empty() {
         let it_is = is_empty_string("");
