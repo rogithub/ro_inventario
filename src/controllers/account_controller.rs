@@ -6,6 +6,8 @@ use actix_web::{
 use log::{info};
 use actix_web::web::Redirect;
 use crate::models::account_models::{ LoginModel, Validator };
+use crate::app_state::AppState;
+use sqlx::Row;
 
 use actix_identity::{Identity};
 
@@ -17,9 +19,17 @@ pub async fn login() -> impl Responder {
 }
 
 #[post("/submit")]
-pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest) -> Either<impl Responder, Redirect> {    
+pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest, data: web::Data<AppState>) -> Either<impl Responder, Redirect> {    
     let is_valid = form.validate();  
     info!("{:?}", form);
+
+    let result = sqlx::query("SELECT Email FROM Users;")
+       .fetch_all(&data.db_pool)
+       .await
+       .unwrap();
+    for (idx, row) in result.iter().enumerate() {
+        info!("[{}]: {:?}", idx, row.get::<String, &str>("Email"));
+    }
 
     if is_valid {
         Identity::login(&req.extensions(), form.email.clone()).unwrap();
