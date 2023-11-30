@@ -3,7 +3,6 @@ use actix_web::middleware::Logger;
 use env_logger::Env;
 use log::{info};
 use actix_files::Files;
-use std::cell::Cell;
 
 mod settings;
 mod controllers;
@@ -45,10 +44,8 @@ async fn main() -> std::io::Result<()> {
     let settings = settings::load().expect("Could not load settings file");
     info!("server running at");
     info!("{:?}", settings.hosting);
+    let db_conn = app_state::connect(settings.cnn_str()).await.unwrap();
 
-    let data = app_state::extractor::AppState {
-        settings: Cell::new(settings),
-    };
 
     HttpServer::new(move || {
 
@@ -61,7 +58,7 @@ async fn main() -> std::io::Result<()> {
                         .service(controllers::home_controller::index);
 
         App::new()
-            .app_data(web::Data::new(data.clone()))
+            .app_data(web::Data::new(db_conn.unwrap().clone()))
 
             // routes starting by
             .service(controllers::index)            
