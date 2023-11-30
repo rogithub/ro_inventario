@@ -3,11 +3,13 @@ use actix_web::middleware::Logger;
 use env_logger::Env;
 use log::{info};
 use actix_files::Files;
+use std::cell::Cell;
 
 mod settings;
 mod controllers;
 mod models;
 mod validators;
+mod app_state;
 
 use actix_identity::IdentityMiddleware;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
@@ -44,6 +46,10 @@ async fn main() -> std::io::Result<()> {
     info!("server running at");
     info!("{:?}", settings.hosting);
 
+    let data = app_state::extractor::AppState {
+        settings: Cell::new(settings),
+    };
+
     HttpServer::new(move || {
 
         let account = web::scope("/account")
@@ -54,7 +60,9 @@ async fn main() -> std::io::Result<()> {
         let home = web::scope("/home")
                         .service(controllers::home_controller::index);
 
-        App::new()            
+        App::new()
+            .app_data(web::Data::new(data.clone()))
+
             // routes starting by
             .service(controllers::index)            
             .service(account)
