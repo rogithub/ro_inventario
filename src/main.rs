@@ -42,7 +42,7 @@ async fn main() -> std::io::Result<()> {
 
     let settings = settings::load().expect("Could not load settings file");
     info!("server running at");
-    info!("{}://{}:{}", settings.hosting.protocol, settings.hosting.ip, settings.hosting.port);
+    info!("{:?}", settings.hosting);
 
     HttpServer::new(move || {
 
