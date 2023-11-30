@@ -1,5 +1,5 @@
 {
-    "Environment":"development",
+    "Db":"db_dev/inventario.db",
     "Hosting": {
         "Protocol": "http",
         "Ip": "127.0.0.1",
