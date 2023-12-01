@@ -42,9 +42,10 @@ async fn main() -> std::io::Result<()> {
 
 
     let settings = settings::load().expect("Could not load settings file");
-    //info!("server running at");
-    //info!("{:?}", settings.hosting);    
+    let s = settings::load().expect("Could not load settings file");    
     let app_state = app_state::AppState { settings: settings };    
+    info!("server running at");
+    info!("{:?}", s.hosting);
 
     HttpServer::new(move || {
 
@@ -82,8 +83,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::new("%a %{User-Agent}i"))            
             
     })
-    //.bind((settings.hosting.ip, settings.hosting.port))?
-    .bind(("127.0.0.1", 8080))?
+    // In general, use 127.0.0.1:<port> when testing locally and 0.0.0.0:<port> when deploying 
+    // (with or without a reverse proxy or load balancer) so that the server is accessible.
+    .bind((s.hosting.ip, s.hosting.port))?
     .run()
     .await
 }
