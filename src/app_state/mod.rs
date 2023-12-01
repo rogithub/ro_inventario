@@ -1,15 +1,18 @@
 
 use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
-use std::{path:: Path};
+use crate::settings::model::{Settings};
+
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db_pool: SqlitePool,
+    pub settings: Settings,
 }
 
-pub async fn connect(filename: impl AsRef<Path>) -> SqlitePool {
-    let options = SqliteConnectOptions::new()
-        .filename(filename);
+impl AppState {
+    pub async fn connect(&self) -> SqlitePool {    
+        let options = SqliteConnectOptions::new()
+            .filename(self.settings.cnn_str());
 
-    SqlitePool::connect_with(options).await.unwrap()
+        SqlitePool::connect_with(options).await.unwrap()
+    }
 }

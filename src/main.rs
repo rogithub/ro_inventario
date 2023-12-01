@@ -42,11 +42,9 @@ async fn main() -> std::io::Result<()> {
 
 
     let settings = settings::load().expect("Could not load settings file");
-    info!("server running at");
-    info!("{:?}", settings.hosting);
-    let cnn_str = settings.cnn_str();
-    let con_pool = app_state::connect(cnn_str).await;
-    let app_state = app_state::AppState { db_pool: con_pool };    
+    //info!("server running at");
+    //info!("{:?}", settings.hosting);    
+    let app_state = app_state::AppState { settings: settings };    
 
     HttpServer::new(move || {
 
@@ -84,7 +82,8 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::new("%a %{User-Agent}i"))            
             
     })
-    .bind((settings.hosting.ip, settings.hosting.port))?
+    //.bind((settings.hosting.ip, settings.hosting.port))?
+    .bind(("127.0.0.1", 8080))?
     .run()
     .await
 }
