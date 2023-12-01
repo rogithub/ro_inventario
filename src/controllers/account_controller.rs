@@ -7,7 +7,8 @@ use log::{info};
 use actix_web::web::Redirect;
 use crate::models::account_models::{ LoginModel, Validator };
 use crate::app_state::AppState;
-use sqlx::Row;
+use crate::repos::users_repo::{UserEntity};
+
 
 use actix_identity::{Identity};
 
@@ -24,28 +25,11 @@ pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest, data: web
     info!("{:?}", form);
 
     let db_pool = data.connect().await;
-
-    let result = sqlx::query("SELECT Email FROM Users;")
-       .fetch_all(&db_pool)
-       .await
-       .unwrap();
-    for (idx, row) in result.iter().enumerate() {
-        info!("[{}]: {:?}", idx, row.get::<String, &str>("Email"));
-    }
-    db_pool.close().await;
-
-    let db_pool = data.connect().await;
-
-    let result = sqlx::query("SELECT Email FROM Users;")
-       .fetch_all(&db_pool)
-       .await
-       .unwrap();
-    for (idx, row) in result.iter().enumerate() {
-        info!("[{}]: {:?}", idx, row.get::<String, &str>("Email"));
-    }
-    db_pool.close().await;
-
-    if is_valid {
+    let maybe_entity = UserEntity::get_one(db_pool, form.email.clone().as_str()).await;    
+    
+    if is_valid && !maybe_entity.is_none() {
+        let entity = maybe_entity.unwrap();
+        info!("ENTITY {:?}", entity);
         Identity::login(&req.extensions(), form.email.clone()).unwrap();
         return Either::Right(Redirect::to("/home/index").using_status_code(StatusCode::FOUND))
     }

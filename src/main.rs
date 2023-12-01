@@ -9,6 +9,7 @@ mod controllers;
 mod models;
 mod validators;
 mod app_state;
+mod repos;
 
 use actix_identity::IdentityMiddleware;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
