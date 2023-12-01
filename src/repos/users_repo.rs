@@ -5,8 +5,8 @@ use sqlx::{SqlitePool, Row};
 pub struct UserEntity {
     pub id:  String,
     pub email:  String,
-    pub date_created: Option<String>,
-    pub is_active: Option<String>     
+    pub date_created: String,
+    pub is_active: bool
 }
 
 
