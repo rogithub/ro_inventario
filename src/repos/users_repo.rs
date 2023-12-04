@@ -35,9 +35,19 @@ impl UserEntity {
         e
     }
 
-    pub async fn has_access(maybe_entity: &Option<UserEntity>, password: &str) -> bool {
+    pub async fn has_access(db_pool: SqlitePool, maybe_entity: &Option<UserEntity>, password: &str) -> bool {
         let access = match maybe_entity {
             Some(entity) => {
+                if !entity.is_active {
+                    return false;
+                }
+
+                let row = sqlx::query("SELECT PasswordHash, PasswordSalt FROM Users WHERE Id=$1;")
+                .bind(entity.id.clone())
+                .fetch_one(&db_pool)
+                .await.ok();
+                db_pool.close().await;
+
                 true
             },
             None => false
