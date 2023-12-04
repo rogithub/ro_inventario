@@ -34,4 +34,15 @@ impl UserEntity {
         
         e
     }
+
+    pub async fn has_access(maybe_entity: &Option<UserEntity>, password: &str) -> bool {
+        let access = match maybe_entity {
+            Some(entity) => {
+                true
+            },
+            None => false
+        };
+        
+        access
+    }
 }

@@ -27,7 +27,7 @@ pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest, data: web
     let db_pool = data.connect().await;
     let maybe_entity = UserEntity::get_one(db_pool, form.email.clone().as_str()).await;    
     
-    if is_valid && !maybe_entity.is_none() {
+    if is_valid && UserEntity::has_access(&maybe_entity, &form.password).await {
         let entity = maybe_entity.unwrap();
         info!("ENTITY {:?}", entity);
         Identity::login(&req.extensions(), form.email.clone()).unwrap();
