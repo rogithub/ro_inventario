@@ -33,7 +33,7 @@ pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest, data: web
         Identity::login(&req.extensions(), form.email.clone()).unwrap();
         return Either::Right(Redirect::to("/home/index").using_status_code(StatusCode::FOUND))
     }
-    
+    form.server_err = Some("Su contraseña es incorrecta".to_string());
     //if validation error
     Either::Left(form.to_response())    
 }

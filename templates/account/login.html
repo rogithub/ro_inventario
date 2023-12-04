@@ -32,6 +32,11 @@
     </div>
     <a class="btn btn-secondary">Registro</a>
     <button type="submit" class="btn btn-primary">Entrar</button>
+    {% if let Some(value) = server_err %}
+        <div class="invalid-feedback" style="display: inline-block;">
+            {{value}}
+        </div>
+    {% endif %}
 </form>
 {% endblock %}
 

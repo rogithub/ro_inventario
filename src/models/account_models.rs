@@ -8,7 +8,8 @@ pub struct LoginModel {
     pub email:  String,
     pub password:  String,
     pub email_err: Option<String>,
-    pub password_err: Option<String> 
+    pub password_err: Option<String>,
+    pub server_err: Option<String>
 }
 
 pub trait Validator {
