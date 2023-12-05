@@ -1,4 +1,6 @@
 use sqlx::{SqlitePool, Row};
+use pbkdf2::pbkdf2_hmac;
+use sha2::Sha512;
 
 #[derive(Debug)]
 pub struct UserEntity {
@@ -33,6 +35,13 @@ impl UserEntity {
         e
     }
 
+    pub fn verify_password_hash(password: &str, password_hash: &[u8], password_salt: &[u8]) -> bool {
+        let password_bytes = password.as_bytes();
+        let mut output = [0u8; 64]; // SHA512 produces a 64-byte hash
+        pbkdf2_hmac::<Sha512>(password_bytes, password_salt, 10000, &mut output);
+        output == password_hash
+    }
+
     pub async fn has_access(db_pool: SqlitePool, maybe_entity: &Option<UserEntity>, password: &str) -> bool {
         let access = match maybe_entity {
             Some(entity) => {
@@ -48,10 +57,10 @@ impl UserEntity {
 
                 let result = match maybe_row {
                     Some(row) => {
-                        let hash: Vec<u8> = row.get("PasswordHash");
-                        let salt: Vec<u8> = row.get("PasswordSalt");
+                        let hash: &[u8] = row.get("PasswordHash");
+                        let salt: &[u8] = row.get("PasswordSalt");
                     
-                        true
+                        Self::verify_password_hash(password, hash, salt)
                     },
                     None => false
                 };
