@@ -24,11 +24,11 @@ pub fn load() -> Result<model::Settings, Box<dyn Error>>
          Path::new(&file_name)
       },
    };
-
+   
    let settings_path = settings_dir.join(settings_file);
    
    let file = File::open(settings_path.clone()).expect(&format!("Unable to open settings file {:?}", settings_path));
-   let settings: model::Settings = serde_json::from_reader(file).expect(&format!("Settings JSON was not well-formatted {:?}", settings_path));
-
+   let settings: model::Settings = serde_json::from_reader(file).expect(&format!("Settings JSON was not well-formatted {:?}", settings_path));   
+   
    Ok(settings)
 }

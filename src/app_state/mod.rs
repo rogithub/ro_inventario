@@ -1,7 +1,6 @@
 
-use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
+use sqlx::{SqlitePool};
 use crate::settings::model::{Settings};
-
 
 #[derive(Clone)]
 pub struct AppState {
@@ -9,10 +8,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn connect(&self) -> SqlitePool {    
-        let options = SqliteConnectOptions::new()
-            .filename(self.settings.cnn_str());
-
-        SqlitePool::connect_with(options).await.unwrap()
+    pub async fn connect(&self) -> SqlitePool {
+        SqlitePool::connect(&self.settings.db_url()).await.unwrap()
     }
 }
