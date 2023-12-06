@@ -49,7 +49,7 @@ impl UserEntity {
         let access = match maybe_entity {
             Some(entity) => {
                 if !entity.is_active {
-                    info!("user is not active")
+                    info!("user is not active");
                     return false;
                 }
 
