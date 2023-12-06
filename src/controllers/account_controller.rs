@@ -22,7 +22,7 @@ pub async fn login() -> impl Responder {
 #[post("/submit")]
 pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest, data: web::Data<AppState>) -> Either<impl Responder, Redirect> {    
     let is_valid = form.validate();  
-    info!("{:?}", form);
+    info!("attempt to login for {}", form.email.clone());
 
     let db_pool = data.connect().await;
     let maybe_entity = UserEntity::get_one(db_pool, form.email.clone().as_str()).await;    
@@ -30,12 +30,13 @@ pub async fn submit(mut form: web::Form<LoginModel>, req: HttpRequest, data: web
     let db_pool = data.connect().await;
     if is_valid && UserEntity::has_access(db_pool, &maybe_entity, &form.password).await {
         let entity = maybe_entity.unwrap();
-        info!("ENTITY {:?}", entity);
+        info!("Access granted {:?}", entity);
         Identity::login(&req.extensions(), form.email.clone()).unwrap();
         return Either::Right(Redirect::to("/home/index").using_status_code(StatusCode::FOUND))
     }
     form.server_err = Some("Su contraseña es incorrecta".to_string());
     //if validation error
+    info!("login failed");
     Either::Left(form.to_response())    
 }
 

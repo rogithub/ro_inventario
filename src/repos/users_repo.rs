@@ -1,6 +1,7 @@
 use sqlx::{SqlitePool, Row};
 use hmac::{Hmac, Mac};
 use sha2::Sha512;
+use log::{info};
 
 
 #[derive(Debug)]
@@ -48,6 +49,7 @@ impl UserEntity {
         let access = match maybe_entity {
             Some(entity) => {
                 if !entity.is_active {
+                    info!("user is not active")
                     return false;
                 }
 
