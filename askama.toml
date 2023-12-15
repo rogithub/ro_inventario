@@ -1,5 +1,6 @@
 [general]
 dirs = [
     "templates",
-    "templates/account"
+    "templates/account",
+    "templates/home"
 ]

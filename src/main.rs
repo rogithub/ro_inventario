@@ -55,7 +55,7 @@ async fn main() -> std::io::Result<()> {
                         .service(controllers::account_controller::logout);
 
         let home = web::scope("/home")
-                        .service(controllers::home_controller::index);
+                        .service(controllers::home_controller::landing);
 
         App::new()
             .app_data(web::Data::new(app_state.clone()))

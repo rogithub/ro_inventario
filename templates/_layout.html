@@ -1,33 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}{{ title }} {% endblock %}</title>
-    <meta name="description" content="En Villas del Sol, a un costado de Palmas Turquesa. Playa del Carmen." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />    
+    <title>Papelería y Mercería "El Gordo"</title>    
+    <meta name="description" content="Playa del Carmen" />
     
-    <link rel="stylesheet" href="/lib/bootstrap-5.3.2-dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="/css/public.css" />    
-    <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
-    <base href="/" />
-    
-
-    <!-- Meta Tags Generated via https://www.opengraph.xyz -->
-  
-    <!-- Facebook Meta Tags -->
-    <meta property="og:url" content="https://papeleria.xplaya.com" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content='Papelería y Mercería "El Gordo"' />
-    <meta property="og:description" content="Cosas que no sabía que necesitaba" />
-    <meta property="og:image" content="https://papeleria.xplaya.com/img/gordo.jpeg" />
-
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta property="twitter:domain" content="papeleria.xplaya.com" />
-    <meta property="twitter:url" content="https://papeleria.xplaya.com" />
-    <meta name="twitter:title" content='Papelería y Mercería "El Gordo"' />
-    <meta name="twitter:description" content="Cosas que no sabía que necesitaba" />
-    <meta name="twitter:image" content="https://papeleria.xplaya.com/img/gordo.jpeg" />
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/private.css" asp-append-version="true" />    
+    <link rel="shortcut icon" href="~/img/favicon.ico" type=image/x-icon>
+    <base href="@Url.Content("~/")" />    
     {% block head %}{% endblock %}
 </head>
 
@@ -35,7 +18,7 @@
     <header class="d-print-none">
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" href="/">Papelería</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Landing">Inventario</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                     aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -43,24 +26,203 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="/">Inicio</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home"
+                                asp-action="Landing">Inicio</a>
+                        </li>                       
+                        @if (
+                            User != null && User.Identity != null && User.Identity.IsAuthenticated && 
+                            (User.IsInRole("Gerente") || User.IsInRole("Admin"))
+                        )
+                        {
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="ddVentas" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                Ventas
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="ddVentas">
+                                <li>
+                                    <a target="_blank" class="dropdown-item" asp-controller="Ventas" asp-action="PistolaQR">Barcode / QR</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Ventas" asp-action="Index">Por día</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Ventas" asp-action="Mes">Por mes</a>
+                                </li>                                
+                                <li>
+                                    <a class="dropdown-item" asp-action="Nuevo" asp-controller="Ventas">Vender</a>
+                                </li>
+                            </ul>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="/home/buscar">Buscar Productos</a>
-                        </li>                                                 
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="ddProductos" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                Productos
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="ddProductos">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Productos"
+                                        asp-action="Index">Inventario</a>
+                                </li>                                
+                                <li>
+                                    <a class="dropdown-item" asp-action="Resurtir" asp-route-maxStock="0"
+                                        asp-controller="Productos">Resurtir</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-action="Etiquetas"
+                                        asp-controller="Productos">Etiquetas</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="ddCompras" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                Compras
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="ddCompras">                                
+                                <li>
+                                    <a class="dropdown-item" asp-action="Nuevo" asp-controller="Compras">Nuevo</a>
+                                </li> 
+                                <li>
+                                    <a class="dropdown-item" asp-action="Mes" asp-controller="Compras">Por mes</a>
+                                </li>                               
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="ddPedidos" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                Pedidos
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="ddPedidos">                                
+                                <li>
+                                    <a class="dropdown-item" asp-action="Pedidos" asp-controller="Pedidos">Pedidos</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-action="Mes" asp-controller="Pedidos">Por mes</a>
+                                </li>                                                             
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="ddContactos" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                Contactos
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="ddContactos">                                
+                                <li>
+                                    <a class="dropdown-item" asp-action="Clientes" asp-controller="Contactos">Clientes</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-action="Proveedores" asp-controller="Contactos">Proveedores</a>
+                                </li>
+                            </ul>
+                        </li>                       
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="ddGraficas" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                Estadísticas
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="ddGraficas">                                
+                                <li>
+                                    <a class="dropdown-item" asp-action="RetornoInversion" asp-route-fecha='@DateTime.Now.ToString("yyyy-MM-dd")' asp-controller="Graficas">Retorno de Inversión</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-action="TendenciaVentas" asp-controller="Graficas">Tendencia de Ventas</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-action="CrecimientoMensual" asp-controller="Graficas">Crecimiento Mensual</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-action="PromediosMensual" asp-controller="Graficas">Promedios por día</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-action="Balance" asp-controller="Graficas">Balance General</a>
+                                </li>
+                            </ul>
+                        </li>                                                
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="ddPlantillas" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                Descargas
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="ddPlantillas">
+                                <li>
+                                    <a class="dropdown-item" href="/templates/compraTemplate.csv">Plantilla Compras</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-action="BaseDeDatos" asp-controller="Descargas">
+                                        Base de datos
+                                    </a>
+                                </li>                                
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="ddBancos" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">                                
+                                Bancos
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="ddBancos">                                
+                                <li>
+                                    <a class="dropdown-item" asp-route-end='@DateTime.Now.ToString("yyy-MM-dd")' asp-action="Index" asp-controller="Bancos">
+                                        Estado de cuenta
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-action="NuevoMovimiento" asp-controller="Bancos">
+                                        Movimiento Bancario
+                                    </a>
+                                </li>                                
+                            </ul>
+                        </li>
+                        }
+                        @if(User != null && User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Admin"))
+                        {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="ddlUsuarios" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                Usuarios
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="ddlUsuarios">
+                                <li>
+                                    <a class="dropdown-item" asp-action="Index" asp-controller="Users">Usuarios</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-action="AddUser" asp-controller="Users">
+                                        Nuevo
+                                    </a>
+                                </li>                                
+                            </ul>
+                        </li>
+                        }
                     </ul>
                     <ul class="navbar-nav d-flex">
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" href="/account/login?returnUrl=%2FHome%2FLanding">Iniciar sesión</a>
+                        @if(User != null && User.Identity !=null && User.Identity.IsAuthenticated) 
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="ddAuthenticatedUser" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    @User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="ddAuthenticatedUser">
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Account" asp-action="Logout">Salir</a>
+                                    </li>
+                                </ul>
                             </li>
+                        
+                        }else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-route-returnUrl='@Url.Action("Landing","Home")' asp-controller="Account" asp-action="Login">Iniciar sesión</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
     <div class="container">
-        <main role="main" class="pb-3 py-3">            
-          {% block content %}{% endblock %}
+        <main role="main" class="pb-3">
+            {% block content %}{% endblock %}
         </main>
     </div>
 
@@ -69,11 +231,11 @@
             &copy; 2022 - Inventario
         </div>
     </footer>
-    <script src="/lib/bootstrap-5.3.2-dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/knockout-3.5.1.js"></script>
     
-
     {% block scripts %}{% endblock %}
-    
 </body>
 
 </html>
