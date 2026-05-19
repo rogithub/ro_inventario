@@ -1,12 +1,5 @@
-use askama::Template;
-use axum::response::Response;
+pub mod models;
+pub mod queries;
+pub mod routes;
 
-use crate::templates;
-
-#[derive(Template)]
-#[template(path = "ventas/index.html")]
-struct VentasTemplate;
-
-pub async fn index() -> Response {
-    templates::render(VentasTemplate)
-}
+pub use routes::index;

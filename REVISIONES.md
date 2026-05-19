@@ -2,6 +2,32 @@
 
 ---
 
+## Fase 2a — Ventas: landing + listado por fecha
+
+**Archivos a mirar:**
+- `src/modules/ventas/models.rs` — `Venta`, `VentaLinea`, `ResumenDia`; métodos `total()` y `hora()`
+- `src/modules/ventas/queries.rs` — `ventas_del_dia()`: JOIN único que evita N+1
+- `src/modules/ventas/routes.rs` — `GET /ventas?fecha=YYYY-MM-DD`
+- `templates/ventas/index.html` — listado con selector de fecha y resumen del día
+- `templates/index.html` — landing interno post-login con tiles de módulos
+- `src/modules/home/mod.rs` — handler del landing
+- `src/filters.rs` — módulo vacío requerido por Askama al usar filtros built-in
+
+**Qué hace:**
+`GET /ventas` carga todas las ventas del día (o la fecha seleccionada) en una sola query JOIN, las agrupa por venta en Rust, calcula el monedero generado por venta y muestra el resumen del día al pie. Un `<input type="date">` con `onchange="this.form.submit()"` permite navegar entre días sin JS adicional.
+
+**Notas de dominio:**
+- `reportes.sql` documenta la trampa del JOIN en `v_ingresos_mensuales`: nunca `SUM(Pago)` desde un JOIN con `AjustesProductos`. Nuestra query lo respeta: suma de monedero viene de subquery correlated, y los totales del resumen se calculan sobre el array de `Venta` ya agrupado.
+- `AjustesProductos.PrecioUnitarioVenta` (no `PrecioUnitario` como en el .NET) — el schema SQL es la referencia canónica.
+- `v_stock`, `v_inventario`, `v_ingresos_trasladados` son vistas clave para futuros módulos; están definidas en `reportes.sql`.
+
+**Notas de Rust:**
+- `sqlx::query_as::<_, VentaRow>(SQL_STRING).bind(fecha).fetch_all(pool)` — versión sin `!` (sin chequeo en tiempo de compilación), misma que usa xplaya para queries complejas. Las columnas se mapean por nombre al struct `#[derive(sqlx::FromRow)]`.
+- Askama 0.12: `length` y `strftime` no están en `BUILT_IN_FILTERS` del derive macro, por lo que generan `filters::name()` buscando un módulo local. Solución: no usar esos filtros en templates — usar `.len()` como método y pre-formatear fechas en Rust con `chrono::NaiveDate::format()`.
+- `Decimal::is_zero()` es el modo correcto de comparar decimales con cero en templates Askama (no `> 0` que causa error de tipos `Decimal vs integer`).
+
+---
+
 ## Fase 1 — Auth completo
 
 **Archivos a mirar:**

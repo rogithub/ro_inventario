@@ -4,6 +4,139 @@
 {% block active_ventas %}active{% endblock %}
 
 {% block content %}
-<h4>Ventas</h4>
-<p class="text-muted">Módulo en construcción.</p>
+<div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+  <h5 class="mb-0">{{ ventas.len() }} Ventas</h5>
+  <form class="d-flex align-items-center gap-1" method="get" action="/ventas">
+    <input type="date" name="fecha" class="form-control form-control-sm"
+           value="{{ fecha_input }}"
+           onchange="this.form.submit()">
+  </form>
+  <a href="/ventas/nueva" class="btn btn-primary btn-sm ms-auto">
+    <i class="bi bi-cart-plus"></i>
+    <span class="d-none d-md-inline">Nueva venta</span>
+  </a>
+</div>
+
+{% for venta in ventas %}
+<table class="table table-sm mb-3">
+  <thead>
+    <tr class="table-primary">
+      <th scope="col" style="width: 5rem">Cantidad</th>
+      <th scope="col">
+        Venta {{ loop.index }}
+        <i class="bi bi-clock-history ms-1"></i>
+        {{ venta.hora() }}
+        {% if !venta.monedero_generado.is_zero() %}
+        | <span class="text-success" title="Monedero generado">
+            <i class="bi bi-coin"></i>
+            <i class="bi bi-caret-up"></i>
+            ${{ venta.monedero_generado|pesos }}
+          </span>
+        {% endif %}
+      </th>
+      <th scope="col" class="text-end" style="width: 7rem">Precio</th>
+      <th scope="col" class="text-end" style="width: 7rem">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for linea in venta.lineas %}
+    <tr>
+      <td>{{ linea.cantidad }}</td>
+      <td>
+        <a href="/productos/{{ linea.nid }}" target="_blank">{{ linea.nombre }}</a>
+        <small class="text-muted ms-1">[{{ linea.nid }}]</small>
+      </td>
+      <td class="text-end">${{ linea.precio_unitario|pesos }}</td>
+      <td class="text-end">${{ linea.total()|pesos }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td class="text-muted small">Pago</td>
+      <td class="small">
+        {% if !venta.pago.is_zero() %}
+          <span title="Efectivo"><i class="bi bi-cash"></i> ${{ venta.pago|pesos }}</span>
+        {% endif %}
+        {% if !venta.pago_monedero.is_zero() %}
+          | <span class="text-danger" title="Monedero">
+              <i class="bi bi-coin"></i>
+              <i class="bi bi-caret-down"></i>
+              ${{ venta.pago_monedero|pesos }}
+            </span>
+        {% endif %}
+        {% if !venta.pago_tarjeta.is_zero() %}
+          | <span class="text-primary" title="Tarjeta">
+              <i class="bi bi-credit-card"></i> ${{ venta.pago_tarjeta|pesos }}
+            </span>
+        {% endif %}
+        {% if !venta.pago_transferencia.is_zero() %}
+          | <span class="text-primary" title="Transferencia">
+              <i class="bi bi-bank"></i> ${{ venta.pago_transferencia|pesos }}
+            </span>
+        {% endif %}
+        {% if !venta.pago_dolares.is_zero() %}
+          | <span class="text-success" title="Dólares">
+              ${{ venta.pago_dolares|pesos }} USD
+            </span>
+        {% endif %}
+        {% if !venta.cambio.is_zero() %}
+          | Cambio ${{ venta.cambio|pesos }}
+        {% endif %}
+      </td>
+      <td class="text-end"><strong>Total</strong></td>
+      <td class="text-end"><strong>${{ venta.total()|pesos }}</strong></td>
+    </tr>
+  </tfoot>
+</table>
+{% else %}
+<p class="text-muted">Sin ventas para esta fecha.</p>
+{% endfor %}
+
+<div class="card mb-5">
+  <div class="card-header fw-bold">
+    <i class="bi bi-cash-stack"></i> Resumen del día
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <tbody>
+        <tr>
+          <td>Venta productos</td>
+          <td class="text-end fw-bold">${{ resumen.venta_productos|pesos }}</td>
+        </tr>
+        <tr class="table-light">
+          <td><i class="bi bi-cash"></i> Efectivo en caja</td>
+          <td class="text-end fw-bold">${{ resumen.efectivo_en_caja|pesos }}</td>
+        </tr>
+        {% if !resumen.total_monedero.is_zero() %}
+        <tr>
+          <td><i class="bi bi-coin"></i> Monedero</td>
+          <td class="text-end">${{ resumen.total_monedero|pesos }}</td>
+        </tr>
+        {% endif %}
+        {% if !resumen.total_tarjeta.is_zero() %}
+        <tr>
+          <td><i class="bi bi-credit-card"></i> Tarjeta</td>
+          <td class="text-end">${{ resumen.total_tarjeta|pesos }}</td>
+        </tr>
+        {% endif %}
+        {% if !resumen.total_transferencia.is_zero() %}
+        <tr>
+          <td><i class="bi bi-bank"></i> Transferencia</td>
+          <td class="text-end">${{ resumen.total_transferencia|pesos }}</td>
+        </tr>
+        {% endif %}
+        {% if !resumen.total_dolares.is_zero() %}
+        <tr>
+          <td>Dólares</td>
+          <td class="text-end">
+            ${{ resumen.total_dolares|pesos }} USD
+            <span class="text-muted">(${{ resumen.total_dolares_en_pesos|pesos }})</span>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

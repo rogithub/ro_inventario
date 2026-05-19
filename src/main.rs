@@ -8,7 +8,9 @@ use tower_sessions_sqlx_store::PostgresStore;
 
 mod auth;
 mod config;
+mod db;
 mod error;
+mod filters;
 mod modules;
 mod templates;
 
@@ -18,6 +20,7 @@ mod templates;
 pub struct AppState {
     pub pool: PgPool,
     pub config: config::Config,
+    pub settings: db::settings::Settings,
 }
 
 #[tokio::main]
@@ -53,7 +56,11 @@ async fn main() {
     let auth_backend = auth::AuthBackend::new(pool.clone());
     let auth_layer = AuthManagerLayerBuilder::new(auth_backend, session_layer).build();
 
-    let state = AppState { pool, config: cfg };
+    let settings = db::settings::load(&pool)
+        .await
+        .expect("No se pudieron cargar los Settings desde la base de datos");
+
+    let state = AppState { pool, config: cfg, settings };
 
     // Rutas protegidas: login_required! redirige a /login si no hay sesión
     let protected = Router::new()

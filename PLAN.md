@@ -44,6 +44,7 @@ Fase 6 — Cutover a producción
 - [x] `templates/auth/login.html`
 - [x] Middleware de autenticación — `login_required!` protege todas las rutas excepto `/login` y `/static`
 - [x] `src/templates.rs` — helper `render<T: Template>()` usado por todos los handlers
+- [x] `src/filters.rs` — módulo vacío requerido por Askama cuando se usan filtros
 - [ ] `src/db/settings.rs` — leer tabla `Settings`; cargar al arrancar en `AppState`
 - [ ] ArgoCD configurado (deploy a staging)
 
@@ -52,14 +53,14 @@ Fase 6 — Cutover a producción
 El módulo más complejo. Se divide en dos subfases.
 
 **2a — Backend**
-- [ ] `src/modules/ventas/models.rs` — `Venta`, `VentaLinea`, `MetodoPago`
-- [ ] `src/modules/ventas/queries.rs`
-  - [ ] Listado paginado con filtros (fecha, cliente, usuario)
+- [x] `src/modules/ventas/models.rs` — `Venta`, `VentaLinea`, `ResumenDia`
+- [x] `src/modules/ventas/queries.rs`
+  - [x] Listado por fecha con JOIN eficiente (evita N+1 y trampa del JOIN)
   - [ ] Detalle de venta por `Id`
   - [ ] Crear venta (`Ajustes` + `AjustesProductos` + `MonederoGenerados` en transacción)
   - [ ] Tipo de cambio USD vía Banxico (reqwest)
-- [ ] `src/modules/ventas/routes.rs`
-  - [ ] `GET /ventas` — listado htmx
+- [x] `src/modules/ventas/routes.rs`
+  - [x] `GET /ventas` — listado con filtro por fecha
   - [ ] `GET /ventas/nueva` — formulario
   - [ ] `POST /ventas` — crear venta
   - [ ] `GET /ventas/:id` — detalle
