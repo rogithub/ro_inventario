@@ -194,6 +194,37 @@ cargo clippy
 
 ---
 
+## Principio de configurabilidad
+
+**Regla:** Antes de escribir cualquier literal en el código Rust, preguntar: ¿este valor podría ser diferente en otro negocio?
+
+- Si es infraestructura o credencial → **env var**
+- Si es parámetro de negocio (tasa, días, ID especial, dato de contacto, toggle) → **tabla `Settings`**
+- Si es visual (nombre, copy, colores) → **template HTML**
+
+El objetivo es que adaptar el sistema a otro negocio solo requiera cambiar templates + Settings + env vars, sin tocar código Rust.
+
+### Qué va en `Settings` (tabla DB — parámetros de negocio)
+
+| Key | Descripción |
+|---|---|
+| `COMISION_TC_TASA` | Tasa de comisión por tarjeta (ej: `0.036`) |
+| `COMISION_TC_IVA` | IVA sobre la comisión (ej: `0.16`) |
+| `COMISION_TC_SERVICIO_ID` | UUID del producto que representa la línea de comisión en el carrito |
+| `DIAS_VIGENCIA_MONEDERO` | Días antes de que expire el cashback |
+| `TIPO_CAMBIO_MONEDERO` | Tasa de conversión para cashback |
+| `NEGOCIO_NOMBRE` | Nombre del negocio (para recibos, títulos) |
+| `NEGOCIO_TELEFONO` | Teléfono de contacto (para recibos) |
+| `NEGOCIO_DIRECCION` | Dirección (para recibos) |
+
+Estos valores se leen al arrancar (o al inicio de cada request en casos de alta variabilidad) y se pasan a los templates y a la lógica de negocio. No se hardcodean en Rust.
+
+### Qué va en env vars (infraestructura/entorno)
+
+`DATABASE_URL`, `PORT`, `SESSION_SECRET`, `CONTENT_BASE_URL` — cosas que varían entre ambientes (dev/staging/prod) o que son credenciales.
+
+---
+
 ## Reglas críticas de dominio
 
 ### Stock — nunca recalcular manualmente

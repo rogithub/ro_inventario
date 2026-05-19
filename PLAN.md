@@ -56,19 +56,19 @@ graph LR
 
 Prerequisito de todo lo demás.
 
-- [ ] `cargo init`, dependencias: axum, sqlx (features: postgres, uuid, chrono, rust_decimal), tokio, tower-http, askama, axum-login, tower-sessions, tower-sessions-sqlx-store, rust-decimal (feature: db-postgres), tracing, tracing-subscriber, dotenvy, anyhow, thiserror, serde, serde_json, reqwest, aws-sdk-s3
-- [ ] Estructura de directorios: `src/`, `src/auth/`, `src/db/`, `src/modules/`, `templates/`, `static/`
-- [ ] `config.rs` — `DATABASE_URL`, `PORT`, `SESSION_SECRET`, `CONTENT_BASE_URL`
-- [ ] `error.rs` — `AppError` que implementa `IntoResponse`
-- [ ] Pool sqlx: `db/mod.rs`
-- [ ] Template base `templates/base.html` — Bootstrap 5, htmx y Alpine.js desde CDN
+- [x] `cargo init`, dependencias: axum, sqlx (features: postgres, uuid, chrono, rust_decimal), tokio, tower-http, askama, axum-login, tower-sessions, tower-sessions-sqlx-store, rust-decimal, tracing, tracing-subscriber, dotenvy, anyhow, thiserror, serde, serde_json, reqwest
+- [x] Estructura de directorios: `src/`, `templates/`, `static/`
+- [x] `config.rs` — `DATABASE_URL`, `PORT`, `SESSION_SECRET`, `CONTENT_BASE_URL`
+- [x] `error.rs` — `AppError` que implementa `IntoResponse`
+- [x] `main.rs` — servidor mínimo: pool sqlx, TraceLayer, ServeDir, `GET /` → redirect `/ventas`
+- [x] Template base `templates/base.html` — Bootstrap 5, htmx y Alpine.js desde CDN
+- [x] `Containerfile` multi-stage ARM64
+- [x] `.env.example`
+- [x] GitHub Actions: build ARM64 + push a `ghcr.io`
+- [ ] Pool sqlx: extraer a `db/mod.rs` (cuando haya queries reales)
 - [ ] Sesiones: tower-sessions con PostgreSQL store (tabla propia, independiente del .NET)
 - [ ] Auth completo: `auth/backend.rs` (axum-login), `GET /login`, `POST /login`, `GET /logout`
 - [ ] Middleware de autenticación — proteger todas las rutas excepto login
-- [ ] `GET /` → redirect a `/ventas`
-- [ ] `Containerfile` multi-stage ARM64
-- [ ] `.env.example`
-- [ ] GitHub Actions: build ARM64 + push a `ghcr.io`
 - [ ] ArgoCD configurado (deploy a staging, no a producción aún)
 
 ## Fase 1a — Ventas (backend Rust, templates Askama)
