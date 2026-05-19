@@ -1,6 +1,0 @@
-[general]
-dirs = [
-    "templates",
-    "templates/account",
-    "templates/home"
-]
