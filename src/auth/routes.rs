@@ -19,7 +19,7 @@ struct LoginTemplate {
 
 pub async fn login_get(auth: AuthSession) -> Response {
     if auth.user.is_some() {
-        return Redirect::to("/ventas").into_response();
+        return Redirect::to("/").into_response();
     }
     templates::render(LoginTemplate { error: None })
 }
@@ -31,7 +31,7 @@ pub async fn login_post(
     match auth.authenticate(creds).await {
         Ok(Some(user)) => {
             auth.login(&user).await.unwrap();
-            Redirect::to("/ventas").into_response()
+            Redirect::to("/").into_response()
         }
         Ok(None) => templates::render(LoginTemplate {
             error: Some("Correo o contraseña incorrectos.".into()),

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+<h6 class="text-muted text-uppercase small mb-2">Operación</h6>
+<div class="row g-3">
+  <div class="col-sm-6">
+    <div class="card h-100">
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title">Ventas</h5>
+        <p class="card-text text-muted small">Nueva venta, o busca un cliente para comenzar.</p>
+        <a href="/ventas/nueva">
+          <i class="bi bi-cart4" style="font-size: 64px;"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card h-100">
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title">Clientes</h5>
+        <p class="card-text text-muted small">Consultar monedero, historial y datos.</p>
+        <a href="/clientes">
+          <i class="bi bi-person-hearts" style="font-size: 64px;"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card h-100">
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title">Pedidos</h5>
+        <p class="card-text text-muted small">Consultar cotizaciones y pedidos del mes.</p>
+        <a href="/pedidos">
+          <i class="bi bi-box2-heart" style="font-size: 64px;"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h6 class="text-muted text-uppercase small mb-2 mt-4">Gestión</h6>
+<div class="row g-3">
+  <div class="col-sm-6">
+    <div class="card h-100">
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title">Orden de Compra</h5>
+        <p class="card-text text-muted small">Registrar compras a proveedores e ingresar mercancía.</p>
+        <a href="/ordenes-compra">
+          <i class="bi bi-clipboard2-plus" style="font-size: 64px;"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6">
+    <div class="card h-100">
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title">Estadísticas</h5>
+        <p class="card-text text-muted small">Retorno de inversión y gráficas de ventas.</p>
+        <a href="/reportes">
+          <i class="bi bi-graph-up-arrow" style="font-size: 64px;"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h6 class="text-muted text-uppercase small mb-2 mt-4">Información de contacto</h6>
+<div class="row g-3">
+  <div class="col-sm-6">
+    <div class="card h-100">
+      <div class="card-body d-flex flex-column" x-data="{ copied: false }">
+        <h5 class="card-title">Cuenta de depósito</h5>
+        <pre class="small">Beneficiario:
+Rodrigo Damian Jimenez Garcia
+CLABE:
+722969070972068008
+Institución:
+Mercado Pago Wallet
+
+Beneficiario:
+Rodrigo Damian Jimenez Garcia
+Celular Dimo
+4525458438</pre>
+        <div class="mt-auto pt-2 d-flex align-items-center gap-2">
+          <button class="btn btn-outline-success btn-sm"
+                  @click="navigator.clipboard.writeText('Beneficiario:\nRodrigo Damian Jimenez Garcia\nCLABE:\n722969070972068008\nInstitución:\nMercado Pago Wallet\n\nBeneficiario:\nRodrigo Damian Jimenez Garcia\nCelular Dimo\n4525458438').then(() => { copied = true; setTimeout(() => copied = false, 2000) })">
+            <i class="bi bi-clipboard"></i> Copiar
+          </button>
+          <span x-show="copied" class="text-success small">¡Copiado!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6">
+    <div class="card h-100">
+      <div class="card-body d-flex flex-column" x-data="{ copied: false }">
+        <h5 class="card-title">Horarios</h5>
+        <pre class="small">Lunes a viernes
+ 6:30 AM a 06:00 PM
+
+Sábados
+ 8:00 AM a 02:00 PM
+
+Domingos y festivos
+ Cerrado</pre>
+        <div class="mt-auto pt-2 d-flex align-items-center gap-2">
+          <button class="btn btn-outline-success btn-sm"
+                  @click="navigator.clipboard.writeText('Lunes a viernes\n 6:30 AM a 06:00 PM\n\nSábados\n 8:00 AM a 02:00 PM\n\nDomingos y festivos\n Cerrado').then(() => { copied = true; setTimeout(() => copied = false, 2000) })">
+            <i class="bi bi-clock-history"></i> Copiar
+          </button>
+          <span x-show="copied" class="text-success small">¡Copiado!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mt-1">
+  <div class="col-auto" x-data="{ copied: false }">
+    <button class="btn btn-outline-success btn-sm"
+            @click="navigator.clipboard.writeText('https://papeleria.xplaya.com/mapa').then(() => { copied = true; setTimeout(() => copied = false, 2000) })">
+      <i class="bi bi-geo-alt"></i> Copiar mapa
+    </button>
+    <span x-show="copied" class="text-success small ms-1">¡Copiado!</span>
+  </div>
+  <div class="col-auto" x-data="{ copied: false }">
+    <button class="btn btn-outline-success btn-sm"
+            @click="navigator.clipboard.writeText('https://papeleria.xplaya.com/saldo').then(() => { copied = true; setTimeout(() => copied = false, 2000) })">
+      <i class="bi bi-wallet2"></i> Copiar link monedero
+    </button>
+    <span x-show="copied" class="text-success small ms-1">¡Copiado!</span>
+  </div>
+</div>
+{% endblock %}

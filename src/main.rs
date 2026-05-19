@@ -1,4 +1,4 @@
-use axum::{response::Redirect, routing::get, Router};
+use axum::{routing::get, Router};
 use axum_login::AuthManagerLayerBuilder;
 use sqlx::PgPool;
 use tower::ServiceBuilder;
@@ -57,7 +57,7 @@ async fn main() {
 
     // Rutas protegidas: login_required! redirige a /login si no hay sesión
     let protected = Router::new()
-        .route("/", get(|| async { Redirect::permanent("/ventas") }))
+        .route("/", get(modules::home::index))
         .route("/ventas", get(modules::ventas::index))
         .route_layer(axum_login::login_required!(
             auth::AuthBackend,
