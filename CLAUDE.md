@@ -2,6 +2,8 @@
 
 POS interno de papelería para 2 usuarios (propietario y esposa). Desplegado en `papeleria.xplaya.com`. Reescritura en Rust del sistema .NET (`inventario_papeleria`). Ambos proyectos comparten la misma base de datos PostgreSQL; el .NET permanece en producción sin modificaciones hasta el cutover final.
 
+**Alcance — solo POS interno.** Las páginas públicas que hoy viven en `inventario_papeleria` (monedero del cliente, recibos de venta, cotizaciones, catálogo de productos) se migran a `xplaya`, no a este proyecto. Si una feature es "para que el cliente la vea", no pertenece aquí.
+
 ---
 
 ## Repos relacionados
@@ -330,3 +332,4 @@ Solo efectivo y dólares pueden dar cambio; transferencia y tarjeta son monto ex
 - **REVISIONES.md**: actualizar después de cada commit — qué archivos mirar, qué hace el cambio. Entradas más recientes arriba.
 - **El usuario dirige**: proponer opciones ante decisiones de diseño, no tomarlas solo.
 - **Claridad sobre sofisticación**: no abstraer hasta que la repetición lo justifique.
+- **No migrar código muerto**: antes de reescribir un endpoint o feature del .NET, verificar que tenga uso real. Si existe en `inventario_papeleria` pero no tiene callers activos, no se migra. La migración es la oportunidad de limpiar deuda técnica, no de perpetuarla.

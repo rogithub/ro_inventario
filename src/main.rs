@@ -1,13 +1,19 @@
 use axum::{response::Redirect, routing::get, Router};
+use axum_login::AuthManagerLayerBuilder;
 use sqlx::PgPool;
 use tower::ServiceBuilder;
 use tower_http::{services::ServeDir, trace::TraceLayer};
+use tower_sessions::{Expiry, SessionManagerLayer};
+use tower_sessions_sqlx_store::PostgresStore;
 
+mod auth;
 mod config;
 mod error;
+mod modules;
+mod templates;
 
-// AppState se clona en cada request — todos los campos deben ser baratos de clonar.
-// PgPool es un Arc interno, Config son strings. Ambos son Clone sin costo.
+// AppState se clona en cada request — todos los campos son baratos de clonar.
+// PgPool es internamente un Arc (pool compartido, no una conexión por clone).
 #[derive(Clone)]
 pub struct AppState {
     pub pool: PgPool,
@@ -16,11 +22,11 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() {
-    // dotenvy carga el .env solo si existe — en producción las vars vienen del entorno directamente
+    // dotenvy carga el .env solo si existe — en producción las vars vienen del entorno
     dotenvy::dotenv().ok();
-
-    // tracing_subscriber::fmt imprime los logs al stdout en formato legible
-    tracing_subscriber::fmt::init();
+    // JSON estructurado: en producción Loki parsea cada línea con `| json` en LogQL.
+    // En desarrollo se puede leer igual, o poner RUST_LOG=debug para más detalle.
+    tracing_subscriber::fmt().json().init();
 
     let cfg = config::Config::from_env();
     let addr = format!("0.0.0.0:{}", cfg.port);
@@ -29,13 +35,50 @@ async fn main() {
         .await
         .expect("No se pudo conectar a la base de datos");
 
+    // --- Sesiones en PostgreSQL ---
+    // PostgresStore crea/actualiza la tabla `tower_sessions` automáticamente con .migrate()
+    let session_store = PostgresStore::new(pool.clone());
+    session_store
+        .migrate()
+        .await
+        .expect("No se pudo inicializar la tabla de sesiones");
+
+    // OnInactivity: la sesión expira si el usuario no hace requests en 30 días
+    let session_layer = SessionManagerLayer::new(session_store)
+        .with_secure(false) // true solo con HTTPS — en k3s el TLS termina en el proxy
+        .with_expiry(Expiry::OnInactivity(time::Duration::days(30)));
+
+    // --- Auth ---
+    // AuthBackend verifica credenciales y carga el usuario en cada request con sesión activa
+    let auth_backend = auth::AuthBackend::new(pool.clone());
+    let auth_layer = AuthManagerLayerBuilder::new(auth_backend, session_layer).build();
+
     let state = AppState { pool, config: cfg };
 
-    let app = Router::new()
+    // Rutas protegidas: login_required! redirige a /login si no hay sesión
+    let protected = Router::new()
         .route("/", get(|| async { Redirect::permanent("/ventas") }))
-        .nest_service("/static", ServeDir::new("static"))
-        // TraceLayer loguea método, path, status y latencia de cada request via tracing
-        .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
+        .route("/ventas", get(modules::ventas::index))
+        .route_layer(axum_login::login_required!(
+            auth::AuthBackend,
+            login_url = "/login"
+        ));
+
+    // Rutas públicas: login y assets estáticos
+    let public = Router::new()
+        .route("/login", get(auth::routes::login_get).post(auth::routes::login_post))
+        .route("/logout", get(auth::routes::logout))
+        .nest_service("/static", ServeDir::new("static"));
+
+    let app = Router::new()
+        .merge(protected)
+        .merge(public)
+        // ServiceBuilder aplica las capas en el orden escrito (de arriba a abajo)
+        .layer(
+            ServiceBuilder::new()
+                .layer(TraceLayer::new_for_http())
+                .layer(auth_layer),
+        )
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();

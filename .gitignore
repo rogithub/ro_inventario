@@ -1,6 +1,7 @@
 /target
 /db_dev
 .env
+/static/vendor/
 
 
 # Added by cargo
