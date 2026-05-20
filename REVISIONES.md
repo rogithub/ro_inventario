@@ -2,6 +2,24 @@
 
 ---
 
+## Fase 2a — Pulido visual + Settings
+
+**Archivos a mirar:**
+- `src/filters.rs` — filtro `pesos<T: Display>`: dos decimales fijos; genérico porque Askama pasa `&T` para campos de loop y `T` para resultados de métodos
+- `src/db/settings.rs` + `src/db/mod.rs` — carga los 7 parámetros de negocio desde tabla `settings` al arrancar
+- `src/main.rs` — `AppState` ahora incluye `settings: db::settings::Settings`
+- `templates/base.html` — navbar estilo .NET (blanco, border-bottom, shadow, Alpine dropdown usuario), footer © 2022
+- `templates/ventas/index.html` — filtro `|pesos` en todos los montos; anchos fijos en columnas (5rem cantidad, 7rem precio/total); tfoot en una fila con pago en columna ancha
+
+**Qué hace:**
+- `src/filters.rs`: `{{ valor|pesos }}` en cualquier template da exactamente dos decimales. Requiere `use crate::filters;` en el archivo donde se deriva el Template.
+- `src/db/settings.rs`: una sola query con `ANY($1)` trae todos los keys; falla en startup si falta alguno (fail-fast). Los keys reales tienen el typo original del .NET: `TARJETRA` en lugar de `TARJETA`.
+
+**Bugs corregidos:**
+- `monederosgenerados` → `monederogenerados` (tabla real en PostgreSQL)
+
+---
+
 ## Fase 2a — Ventas: landing + listado por fecha
 
 **Archivos a mirar:**
