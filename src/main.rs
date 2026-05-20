@@ -66,6 +66,10 @@ async fn main() {
     let protected = Router::new()
         .route("/", get(modules::home::index))
         .route("/ventas", get(modules::ventas::index))
+        .route("/api/productos/buscar", get(modules::productos::routes::buscar))
+        .route("/api/clientes/buscar", get(modules::clientes::routes::buscar))
+        .route("/api/tipo-cambio", get(modules::ventas::routes::tipo_cambio))
+        .route("/api/monedero/{cliente_id}", get(modules::ventas::routes::monedero))
         .route_layer(axum_login::login_required!(
             auth::AuthBackend,
             login_url = "/login"

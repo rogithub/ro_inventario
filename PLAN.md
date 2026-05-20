@@ -45,7 +45,7 @@ Fase 6 — Cutover a producción
 - [x] Middleware de autenticación — `login_required!` protege todas las rutas excepto `/login` y `/static`
 - [x] `src/templates.rs` — helper `render<T: Template>()` usado por todos los handlers
 - [x] `src/filters.rs` — módulo vacío requerido por Askama cuando se usan filtros
-- [ ] `src/db/settings.rs` — leer tabla `Settings`; cargar al arrancar en `AppState`
+- [x] `src/db/settings.rs` — leer tabla `Settings`; cargar al arrancar en `AppState`
 - [ ] ArgoCD configurado (deploy a staging)
 
 ## Fase 2 — Ventas

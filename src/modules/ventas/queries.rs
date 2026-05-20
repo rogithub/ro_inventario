@@ -6,6 +6,36 @@ use uuid::Uuid;
 use super::models::{ResumenDia, Venta, VentaLinea};
 use crate::error::AppError;
 
+pub async fn balance_monedero(pool: &PgPool, cliente_id: Uuid) -> Result<Decimal, AppError> {
+    // monederogenerados llega al cliente vía ajustesproductos → ajustes.clienteid
+    let row = sqlx::query!(
+        r#"SELECT
+            (
+                SELECT COALESCE(SUM(mg.dinerodigital), 0)
+                FROM monederogenerados mg
+                JOIN ajustesproductos ap ON ap.id = mg.ajusteproductoid
+                JOIN ajustes a ON a.id = ap.ajusteid
+                WHERE a.clienteid = $1
+                  AND mg.devolucionid IS NULL
+                  AND mg.fechaexpiracion > NOW()
+            ) AS "generado!: Decimal",
+            (
+                SELECT COALESCE(SUM(mr.dinerodigital), 0)
+                FROM monederoredimidos mr
+                JOIN monederogenerados mg ON mg.id = mr.monederogeneradosid
+                JOIN ajustesproductos ap ON ap.id = mg.ajusteproductoid
+                JOIN ajustes a ON a.id = ap.ajusteid
+                WHERE a.clienteid = $1
+            ) AS "redimido!: Decimal""#,
+        cliente_id
+    )
+    .fetch_one(pool)
+    .await?;
+
+    let balance = (row.generado - row.redimido).max(Decimal::ZERO);
+    Ok(balance)
+}
+
 #[derive(sqlx::FromRow)]
 struct VentaRow {
     venta_id: Uuid,

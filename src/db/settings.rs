@@ -22,6 +22,8 @@ pub struct Settings {
     pub tipo_cambio_monedero: Decimal,
     /// Días de vigencia del cashback generado
     pub dias_vigencia_monedero: i64,
+    /// Token para la API de Banxico (tipo de cambio USD)
+    pub banxico_api_token: String,
 }
 
 /// Lee todos los parámetros de negocio de la tabla `settings` de una vez.
@@ -40,6 +42,7 @@ pub async fn load(pool: &PgPool) -> Result<Settings, AppError> {
             "ID_CLIENTE_GENERICO",
             "TIPO_CAMBIO_MONEDERO",
             "DIAS_VIGENCIA_MONEDERO",
+            "BANXICO_API_TOKEN",
         ] as &[&str])
         .fetch_all(pool)
         .await?;
@@ -79,5 +82,6 @@ pub async fn load(pool: &PgPool) -> Result<Settings, AppError> {
         id_cliente_generico: parse_uuid("ID_CLIENTE_GENERICO")?,
         tipo_cambio_monedero: parse_decimal("TIPO_CAMBIO_MONEDERO")?,
         dias_vigencia_monedero: parse_i64("DIAS_VIGENCIA_MONEDERO")?,
+        banxico_api_token: get("BANXICO_API_TOKEN")?,
     })
 }
