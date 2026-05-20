@@ -50,6 +50,20 @@
     </div>
   </footer>
 
+  <div x-data="{ atTop: true, atBottom: false }"
+       @scroll.window="atTop = window.scrollY < 80; atBottom = (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 80"
+       class="d-flex flex-column gap-1 d-print-none"
+       style="position: fixed; bottom: 1.5rem; right: 1rem; z-index: 1030;">
+    <button x-show="!atTop" @click="window.scrollTo({ top: 0, behavior: 'smooth' })"
+            class="btn btn-secondary btn-sm opacity-75" title="Ir arriba">
+      <i class="bi bi-arrow-up"></i>
+    </button>
+    <button x-show="!atBottom" @click="window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })"
+            class="btn btn-secondary btn-sm opacity-75" title="Ir abajo">
+      <i class="bi bi-arrow-down"></i>
+    </button>
+  </div>
+
   <script src="/static/vendor/htmx.min.js"></script>
   <script src="/static/vendor/alpine.min.js" defer></script>
   {% block scripts %}{% endblock %}
