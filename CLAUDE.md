@@ -149,6 +149,31 @@ cargo clippy
 
 - **No usar `#![deny(clippy::all)]`** — usa `#[allow(clippy::nombre_del_lint)]` en la línea específica si un lint no aplica.
 
+### sqlx y el caché de queries
+
+Las macros `sqlx::query!` verifican el SQL contra la BD en **tiempo de compilación**. Para que CI y otras máquinas puedan compilar sin Postgres, el proyecto usa el modo offline de sqlx: un directorio `.sqlx/` con un JSON por cada `query!`, commiteado al repo.
+
+**Cada vez que agregues o modifiques un `sqlx::query!`**, regenera el caché antes de commitear:
+
+```bash
+cargo sqlx prepare
+```
+
+Requiere que `DATABASE_URL` esté en el entorno (via `.env`) y que la BD esté accesible. Si no tienes `cargo-sqlx` instalado:
+
+```bash
+cargo install sqlx-cli --no-default-features --features postgres
+```
+
+Para compilar sin BD (verificar que el caché está al día):
+
+```bash
+SQLX_OFFLINE=true cargo build
+```
+
+Si olvidas actualizar `.sqlx/` y hay un `query!` nuevo, CI fallará con:
+> `set DATABASE_URL to use query macros online, or run cargo sqlx prepare`
+
 ---
 
 ## Despliegue

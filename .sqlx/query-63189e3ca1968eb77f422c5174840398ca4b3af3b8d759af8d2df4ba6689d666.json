@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n            (\n                SELECT COALESCE(SUM(mg.dinerodigital), 0)\n                FROM monederogenerados mg\n                JOIN ajustesproductos ap ON ap.id = mg.ajusteproductoid\n                JOIN ajustes a ON a.id = ap.ajusteid\n                WHERE a.clienteid = $1\n                  AND mg.devolucionid IS NULL\n                  AND mg.fechaexpiracion > NOW()\n            ) AS \"generado!: Decimal\",\n            (\n                SELECT COALESCE(SUM(mr.dinerodigital), 0)\n                FROM monederoredimidos mr\n                JOIN monederogenerados mg ON mg.id = mr.monederogeneradosid\n                JOIN ajustesproductos ap ON ap.id = mg.ajusteproductoid\n                JOIN ajustes a ON a.id = ap.ajusteid\n                WHERE a.clienteid = $1\n            ) AS \"redimido!: Decimal\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "generado!: Decimal",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "redimido!: Decimal",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "63189e3ca1968eb77f422c5174840398ca4b3af3b8d759af8d2df4ba6689d666"
+}

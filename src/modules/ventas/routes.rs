@@ -10,7 +10,9 @@ use uuid::Uuid;
 
 use super::models::{ResumenDia, Venta};
 use super::queries;
-use crate::{error::AppError, filters, templates, AppState};
+#[allow(unused_imports)]
+use crate::filters; // requerido por el macro #[derive(Template)] para resolver filtros custom
+use crate::{error::AppError, templates, AppState};
 
 #[derive(serde::Deserialize)]
 pub struct VentasQuery {

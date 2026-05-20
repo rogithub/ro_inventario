@@ -19,8 +19,13 @@ RUN mkdir src && echo "fn main() {}" > src/main.rs && \
     rm -rf src
 
 # Build real
+# templates/ se necesita en compile time (Askama los lee al compilar)
+# .sqlx/ contiene el caché de query! para compilar sin DATABASE_URL
+COPY templates ./templates
+COPY .sqlx ./.sqlx
 COPY src ./src
 RUN touch src/main.rs && \
+    SQLX_OFFLINE=true \
     cargo build --release --target aarch64-unknown-linux-gnu
 
 # ── runtime (arm64) ────────────────────────────────────────────────────────
