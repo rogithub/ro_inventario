@@ -44,7 +44,6 @@
       <td>{{ linea.cantidad }}</td>
       <td>
         <a href="/productos/{{ linea.nid }}" target="_blank">{{ linea.nombre }}</a>
-        <small class="text-muted ms-1">[{{ linea.nid }}]</small>
       </td>
       <td class="text-end">${{ linea.precio_unitario|pesos }}</td>
       <td class="text-end">${{ linea.total()|pesos }}</td>
@@ -104,6 +103,12 @@
           <td>Venta productos</td>
           <td class="text-end fw-bold">${{ resumen.venta_productos|pesos }}</td>
         </tr>
+        {% if !resumen.ingresos_trasladados.is_zero() %}
+        <tr>
+          <td>Ingresos trasladados</td>
+          <td class="text-end">${{ resumen.ingresos_trasladados|pesos }}</td>
+        </tr>
+        {% endif %}
         <tr class="table-light">
           <td><i class="bi bi-cash"></i> Efectivo en caja</td>
           <td class="text-end fw-bold">${{ resumen.efectivo_en_caja|pesos }}</td>

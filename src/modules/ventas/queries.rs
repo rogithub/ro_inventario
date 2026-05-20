@@ -25,6 +25,7 @@ struct VentaRow {
     cantidad: Decimal,
     precio_unitario: Decimal,
     monedero_linea: Decimal,
+    es_ingreso_trasladado: bool,
 }
 
 const VENTAS_DIA_SQL: &str = r#"
@@ -51,7 +52,8 @@ const VENTAS_DIA_SQL: &str = r#"
             WHERE mg.ajusteproductoid = ap.id
               AND mg.devolucionid IS NULL
               AND mg.fechaexpiracion > NOW()
-        ), 0) AS monedero_linea
+        ), 0) AS monedero_linea,
+        (ap.productoid IN (SELECT id FROM v_ingresos_trasladados)) AS es_ingreso_trasladado
     FROM ajustes a
     JOIN ajustesproductos ap ON ap.ajusteid = a.id
     JOIN productos p ON p.id = ap.productoid
@@ -98,6 +100,7 @@ pub async fn ventas_del_dia(
             nombre: row.nombre,
             cantidad: row.cantidad,
             precio_unitario: row.precio_unitario,
+            es_ingreso_trasladado: row.es_ingreso_trasladado,
         });
     }
 
