@@ -8,7 +8,7 @@ use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
-use super::models::{ResumenDia, Venta};
+use super::models::{NuevaVentaPayload, ResumenDia, Venta};
 use super::queries;
 #[allow(unused_imports)]
 use crate::filters; // requerido por el macro #[derive(Template)] para resolver filtros custom
@@ -88,6 +88,21 @@ pub async fn monedero(
 ) -> Result<Json<serde_json::Value>, AppError> {
     let balance = queries::balance_monedero(&state.pool, cliente_id).await?;
     Ok(Json(serde_json::json!({ "balance": balance })))
+}
+
+/// POST /ventas
+/// Acepta JSON con los datos del carrito y registra la venta en una transacción.
+/// Devuelve el UUID de la venta creada.
+pub async fn crear(
+    State(state): State<AppState>,
+    auth: crate::auth::AuthSession,
+    Json(payload): Json<NuevaVentaPayload>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let user = auth
+        .user
+        .ok_or_else(|| AppError::Internal(anyhow::anyhow!("Sesión inválida")))?;
+    let id = queries::crear_venta(&state.pool, &payload, user.id, &state.settings).await?;
+    Ok(Json(serde_json::json!({ "id": id })))
 }
 
 pub async fn index(

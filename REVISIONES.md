@@ -2,6 +2,38 @@
 
 ---
 
+## Paso 2 — POST /ventas (transacción de venta)
+
+**Archivos a mirar:**
+- `src/modules/ventas/models.rs` — structs `LineaPayload` y `NuevaVentaPayload`
+- `src/modules/ventas/queries.rs` — función `crear_venta()` + struct privado `FilaMonedero`
+- `src/modules/ventas/routes.rs` — handler `crear()`
+- `src/main.rs` — ruta `/ventas` ahora acepta GET y POST
+
+**Qué hace:**
+`POST /ventas` recibe el carrito como JSON y lo registra en una sola transacción sqlx con cuatro pasos:
+
+1. **INSERT ajustes** — encabezado de la venta. `tipoajuste = 0` (venta), `ivaventa` desde `Settings`.
+2. **INSERT ajustesproductos** — una fila por cada línea del carrito.
+3. **INSERT monederogenerados** — solo si hay cliente registrado (`cliente_id IS NOT NULL`) y la línea no es ingreso trasladado. `dinerodigital = cantidad × precio × tipo_cambio_monedero`; `fechaexpiracion = ahora + dias_vigencia_monedero`.
+4. **INSERT monederoredimidos** — solo si `pago_monedero > 0`. Consulta `v_ajuste_producto_monedero` para obtener las filas de balance ordenadas por antigüedad (`monederogeneradosid ASC`) y las consume de menor a mayor hasta cubrir el monto.
+
+Devuelve `{ "id": "<uuid-de-la-venta>" }`.
+
+**Notas de dominio:**
+- En el .NET esto era 3 transacciones separadas (`AjustesRepo.Save` → `AjustesProductosRepo.BulkSave` → `MonederoRepo.PagarConMonederos`). Aquí todo va en una sola — si falla cualquier paso, todo se revierte.
+- `MonederoGenerados.Id` es `SERIAL` (entero), no UUID. `FilaMonedero.monederogeneradosid: i32` refleja eso.
+- Los ingresos trasladados se excluyen del monedero: antes de la transacción se carga `v_ingresos_trasladados` como `HashSet<Uuid>` para hacer la verificación en O(1) por línea.
+- La subconsulta de redención: `balancedinero` en la vista es una suma acumulativa por cliente ordenada por `g.FechaCreado, g.Id`. La subconsulta encuentra el primer registro donde el acumulado cubre el pago; el outer query trae todos los registros hasta ese punto.
+
+**Notas de Rust:**
+- Las queries nuevas usan `sqlx::query(...)` y `sqlx::query_as` **sin `!`** — no necesitan entrada en el caché `.sqlx/` ni `cargo sqlx prepare`. El tradeoff es que el SQL no se verifica en compile time (solo en runtime contra la BD).
+- `sqlx::query_scalar::<_, Uuid>(sql)` — versión sin `!` para la query de ingresos trasladados.
+- `&mut *tx` al pasar la transacción como executor — sqlx necesita `&mut <impl Executor>` y `Transaction<Postgres>` implementa `Deref<Target=PgConnection>`, así que `&mut *tx` lo desreferencia correctamente.
+- `auth: crate::auth::AuthSession` como extractor en el handler — funciona porque el middleware `login_required!` ya garantiza que `auth.user` es `Some`.
+
+---
+
 ## Paso 1 — Endpoints JSON para nueva venta
 
 **Archivos a mirar:**

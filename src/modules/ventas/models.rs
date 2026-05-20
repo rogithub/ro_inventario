@@ -2,6 +2,27 @@ use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
+#[derive(serde::Deserialize)]
+pub struct LineaPayload {
+    pub producto_id: Uuid,
+    pub cantidad: Decimal,
+    pub precio_unitario: Decimal,
+    pub notas: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct NuevaVentaPayload {
+    pub cliente_id: Option<Uuid>,
+    pub pago: Decimal,
+    pub pago_monedero: Decimal,
+    pub pago_tarjeta: Decimal,
+    pub pago_transferencia: Decimal,
+    pub pago_dolares: Decimal,
+    pub tipo_cambio_dolares: Decimal,
+    pub cambio: Decimal,
+    pub lineas: Vec<LineaPayload>,
+}
+
 pub struct VentaLinea {
     pub id: Uuid,
     pub producto_id: Uuid,

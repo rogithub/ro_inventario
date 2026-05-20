@@ -3,8 +3,8 @@ use rust_decimal::Decimal;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use super::models::{ResumenDia, Venta, VentaLinea};
-use crate::error::AppError;
+use super::models::{NuevaVentaPayload, ResumenDia, Venta, VentaLinea};
+use crate::{db::settings::Settings, error::AppError};
 
 pub async fn balance_monedero(pool: &PgPool, cliente_id: Uuid) -> Result<Decimal, AppError> {
     // monederogenerados llega al cliente vía ajustesproductos → ajustes.clienteid
@@ -136,4 +136,154 @@ pub async fn ventas_del_dia(
 
     let resumen = ResumenDia::from_ventas(&ventas);
     Ok((ventas, resumen))
+}
+
+// Fila de v_ajuste_producto_monedero usada al redimir monedero
+#[derive(sqlx::FromRow)]
+struct FilaMonedero {
+    monederogeneradosid: i32,
+    dinerodigitaldisponible: Decimal,
+}
+
+/// Registra una venta completa en una sola transacción:
+/// 1. INSERT ajustes  2. INSERT ajustesproductos  3. INSERT monederogenerados (si aplica)
+/// 4. INSERT monederoredimidos (si pago_monedero > 0)
+pub async fn crear_venta(
+    pool: &PgPool,
+    payload: &NuevaVentaPayload,
+    user_id: Uuid,
+    settings: &Settings,
+) -> Result<Uuid, AppError> {
+    if payload.lineas.is_empty() {
+        return Err(AppError::Internal(anyhow::anyhow!("La venta debe tener al menos una línea")));
+    }
+
+    let generar_monedero = payload.cliente_id.is_some();
+
+    // Cargar IDs de ingresos trasladados para excluirlos del monedero.
+    // Se usa query_scalar (sin !) para no requerir entrada en el caché .sqlx/.
+    let ingresos_trasladados: std::collections::HashSet<Uuid> = if generar_monedero {
+        sqlx::query_scalar::<_, Uuid>("SELECT id FROM v_ingresos_trasladados")
+            .fetch_all(pool)
+            .await?
+            .into_iter()
+            .collect()
+    } else {
+        std::collections::HashSet::new()
+    };
+
+    let venta_id = Uuid::new_v4();
+    let ahora = chrono::Local::now().naive_local();
+    let fecha_expiracion = ahora + chrono::Duration::days(settings.dias_vigencia_monedero);
+
+    let mut tx = pool.begin().await?;
+
+    // 1. INSERT ajustes
+    sqlx::query(
+        "INSERT INTO ajustes \
+         (id, pago, pagomonedero, pagotransferencia, pagotarjeta, pagodolares, \
+          tipocambiodolares, cambio, fechaajuste, tipoajuste, ivaventa, userupdatedid, clienteid) \
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,$10,$11,$12)",
+    )
+    .bind(venta_id)
+    .bind(payload.pago)
+    .bind(payload.pago_monedero)
+    .bind(payload.pago_transferencia)
+    .bind(payload.pago_tarjeta)
+    .bind(payload.pago_dolares)
+    .bind(payload.tipo_cambio_dolares)
+    .bind(payload.cambio)
+    .bind(ahora)
+    .bind(settings.iva)
+    .bind(user_id)
+    .bind(payload.cliente_id)
+    .execute(&mut *tx)
+    .await?;
+
+    // 2 + 3. INSERT ajustesproductos y monederogenerados por línea
+    for linea in &payload.lineas {
+        let linea_id = Uuid::new_v4();
+        sqlx::query(
+            "INSERT INTO ajustesproductos \
+             (id, productoid, ajusteid, cantidad, notas, preciounitarioventa, datestamp, userupdatedid) \
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+        )
+        .bind(linea_id)
+        .bind(linea.producto_id)
+        .bind(venta_id)
+        .bind(linea.cantidad)
+        .bind(linea.notas.as_deref().unwrap_or(""))
+        .bind(linea.precio_unitario)
+        .bind(ahora)
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await?;
+
+        if generar_monedero && !ingresos_trasladados.contains(&linea.producto_id) {
+            let dinero_digital = linea.cantidad * linea.precio_unitario * settings.tipo_cambio_monedero;
+            sqlx::query(
+                "INSERT INTO monederogenerados \
+                 (ajusteproductoid, dinerodigital, tipocambiomonedero, userupdatedid, fechacreado, fechaexpiracion) \
+                 VALUES ($1,$2,$3,$4,$5,$6)",
+            )
+            .bind(linea_id)
+            .bind(dinero_digital)
+            .bind(settings.tipo_cambio_monedero)
+            .bind(user_id)
+            .bind(ahora)
+            .bind(fecha_expiracion)
+            .execute(&mut *tx)
+            .await?;
+        }
+    }
+
+    // 4. INSERT monederoredimidos — consume balance del cliente, más antiguo primero
+    if payload.pago_monedero > Decimal::ZERO {
+        if let Some(cliente_id) = payload.cliente_id {
+            // La subconsulta encuentra el primer MonederoGenerados cuyo BalanceDinero acumulado
+            // cubre el pago; luego seleccionamos todas las filas hasta ese punto.
+            let filas = sqlx::query_as::<_, FilaMonedero>(
+                "SELECT monederogeneradosid, dinerodigitaldisponible \
+                 FROM v_ajuste_producto_monedero \
+                 WHERE clienteid = $1 \
+                   AND monederogeneradosid <= ( \
+                       SELECT monederogeneradosid \
+                       FROM v_ajuste_producto_monedero \
+                       WHERE clienteid = $1 \
+                         AND balancedinero >= $2 \
+                       ORDER BY monederogeneradosid ASC \
+                       LIMIT 1 \
+                   ) \
+                 ORDER BY monederogeneradosid ASC",
+            )
+            .bind(cliente_id)
+            .bind(payload.pago_monedero)
+            .fetch_all(&mut *tx)
+            .await?;
+
+            let mut restante = payload.pago_monedero;
+            for fila in filas {
+                if restante <= Decimal::ZERO {
+                    break;
+                }
+                let consumir = restante.min(fila.dinerodigitaldisponible);
+                restante -= consumir;
+                sqlx::query(
+                    "INSERT INTO monederoredimidos \
+                     (monederogeneradosid, dinerodigital, userupdatedid, fecharedimido, ajusteid) \
+                     VALUES ($1,$2,$3,$4,$5)",
+                )
+                .bind(fila.monederogeneradosid)
+                .bind(consumir)
+                .bind(user_id)
+                .bind(ahora)
+                .bind(venta_id)
+                .execute(&mut *tx)
+                .await?;
+            }
+        }
+    }
+
+    tx.commit().await?;
+    Ok(venta_id)
 }

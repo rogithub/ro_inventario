@@ -65,7 +65,7 @@ async fn main() {
     // Rutas protegidas: login_required! redirige a /login si no hay sesión
     let protected = Router::new()
         .route("/", get(modules::home::index))
-        .route("/ventas", get(modules::ventas::index))
+        .route("/ventas", get(modules::ventas::index).post(modules::ventas::routes::crear))
         .route("/api/productos/buscar", get(modules::productos::routes::buscar))
         .route("/api/clientes/buscar", get(modules::clientes::routes::buscar))
         .route("/api/tipo-cambio", get(modules::ventas::routes::tipo_cambio))
