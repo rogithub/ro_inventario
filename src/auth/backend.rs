@@ -1,5 +1,5 @@
 use axum_login::AuthUser;
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha512;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -51,7 +51,6 @@ impl AuthBackend {
     }
 }
 
-#[async_trait::async_trait]
 impl axum_login::AuthnBackend for AuthBackend {
     type User = User;
     type Credentials = Credentials;
