@@ -2,6 +2,90 @@
 
 ---
 
+## Testing — ventas/models.rs + política de tests
+
+**Archivos a mirar:**
+- `CLAUDE.md` — sección nueva "Testing" con la política completa
+- `Cargo.toml` — `proptest = "1"` en `[dev-dependencies]`
+- `src/modules/ventas/models.rs` — bloque `#[cfg(test)] mod tests` al final; `#[derive(Debug)]` en `VentaLinea` y `Venta`
+- `src/auth/mod.rs` — re-exporta `AuthSession` (corrige path usado en routes.rs)
+- `src/modules/ventas/queries.rs` — bloque de `debug_assert!` al inicio de `crear_venta`
+
+**Qué hace:**
+9 tests cubriendo `ResumenDia::from_ventas()`, `Venta::total()`, y `VentaLinea::total()` — las funciones puras más críticas del módulo de ventas. Correr con `cargo test`.
+
+---
+
+### Concepto: Unit tests en Rust
+
+Los unit tests viven en el mismo archivo que el código, dentro de `#[cfg(test)] mod tests { ... }`. La anotación `#[cfg(test)]` hace que el bloque completo solo exista en la compilación de tests — en el binario de producción no ocupa espacio. Se definen con `#[test]` sobre la función:
+
+```rust
+#[test]
+fn nombre_descriptivo() {
+    assert_eq!(resultado, esperado);
+}
+```
+
+`cargo test` compila y corre todos los tests del proyecto. `cargo test ventas` corre solo los que contienen "ventas" en su nombre.
+
+---
+
+### Concepto: Property-based tests con proptest
+
+Un unit test verifica un caso concreto: "con esta entrada, espero esta salida". Un property-based test verifica una *propiedad*: "para cualquier entrada válida, esta relación siempre se cumple". proptest genera cientos de entradas aleatorias e intenta violarla.
+
+La clave es definir una **estrategia** — un generador de valores arbitrarios del tipo que necesitas:
+
+```rust
+fn monto() -> impl Strategy<Value = Decimal> {
+    (0i64..=100_000i64).prop_map(|n| Decimal::new(n, 2))
+}
+```
+
+Y usarla en `proptest! { #[test] fn ... }`:
+
+```rust
+proptest! {
+    #[test]
+    fn efectivo_es_ventas_menos_pagos_no_efectivo(
+        ventas in prop::collection::vec(venta_aleatoria(), 0..=10)
+    ) {
+        let r = ResumenDia::from_ventas(&ventas);
+        prop_assert_eq!(
+            r.efectivo_en_caja,
+            r.venta_productos + r.ingresos_trasladados - r.total_monedero - ...
+        );
+    }
+}
+```
+
+Cuando proptest encuentra un caso que falla, hace **shrinking**: reduce el input al mínimo que sigue fallando. En vez de "falló con este vector de 7 ventas complejas", te da "falló con esta venta de una línea, pago_tarjeta = 0.01". Eso hace que los bugs sean triviales de diagnosticar.
+
+Por qué se usa `Decimal::new(n, 2)` en vez de generar f64: `Decimal::from_f64` puede fallar con ciertos valores de punto flotante (NaN, Inf). Generando enteros y convirtiéndolos se garantiza que el Decimal siempre es válido.
+
+Los structs en estrategias proptest deben implementar `Debug` — proptest lo necesita para imprimir el caso que falló. Por eso se agregó `#[derive(Debug)]` a `VentaLinea` y `Venta`.
+
+---
+
+### Concepto: Contracts con debug_assert!
+
+Un contrato documenta y verifica las **precondiciones** que el llamador debe cumplir antes de que la función tenga sentido. En `crear_venta`:
+
+```rust
+debug_assert!(payload.pago_monedero >= Decimal::ZERO, "pago_monedero negativo");
+debug_assert!(
+    payload.lineas.iter().all(|l| l.cantidad > Decimal::ZERO),
+    "cantidad de línea debe ser positiva"
+);
+```
+
+`debug_assert!` se compila solo en modo debug (`cargo build` o `cargo test`). En release (`cargo build --release`, que es lo que usa el Containerfile) el compilador lo elimina completamente — cero costo en producción.
+
+La diferencia con un `if ... return Err(...)` es el propósito: un error de validación es para input del usuario (puede pasar, hay que manejarlo). Un `debug_assert!` es para bugs del programador (no debería pasar si el llamador hace su trabajo). Si truena en desarrollo, es un bug en el código, no en los datos.
+
+---
+
 ## Paso 2 — POST /ventas (transacción de venta)
 
 **Archivos a mirar:**

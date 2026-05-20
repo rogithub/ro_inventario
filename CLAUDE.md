@@ -134,6 +134,61 @@ Copiar `.env.example` a `.env` para desarrollo. `.env` está en `.gitignore`.
 
 ---
 
+## Testing
+
+### Qué se testea y qué no
+
+| Código | ¿Se testea? | Herramienta |
+|---|---|---|
+| Funciones puras en `models.rs` (sin BD, sin IO) | Sí — siempre | unit tests + proptest |
+| Invariantes de entrada/salida en funciones críticas | Sí — `debug_assert!` en el cuerpo | contratos |
+| Queries sqlx y handlers Axum (requieren BD) | No por ahora | — (infraestructura pendiente) |
+
+La regla de oro: **si una función recibe valores y devuelve valores sin tocar BD ni IO, tiene tests**. Si toca BD, no tiene tests todavía.
+
+### Tres herramientas
+
+**Unit tests** — `#[cfg(test)] mod tests { ... }` en el mismo archivo que el código. Corren con `cargo test`. Para casos concretos y valores de frontera conocidos.
+
+**Property-based tests** — crate `proptest` (dev-dependency). En vez de casos individuales, se describe una *propiedad* matemática que debe cumplirse para cualquier input, y proptest genera cientos de entradas aleatorias intentando violarla. Si encuentra un caso que falla, lo "encoge" (shrinking) al mínimo que sigue fallando. Ideal para invariantes financieras.
+
+```rust
+proptest! {
+    #[test]
+    fn efectivo_nunca_supera_lo_vendido(ventas in estrategia_ventas()) {
+        let r = ResumenDia::from_ventas(&ventas);
+        prop_assert!(r.efectivo_en_caja <= r.venta_productos + r.ingresos_trasladados);
+    }
+}
+```
+
+**Contracts (`debug_assert!`)** — aserciones que se compilan solo en modo `debug` (se eliminan en `--release`, cero costo en producción). Se usan para precondiciones, postcondiciones e invariantes en funciones críticas: cosas que *nunca* deberían ser falsas si el llamador hace su trabajo, pero que queremos verificar en desarrollo.
+
+```rust
+pub async fn crear_venta(payload: &NuevaVentaPayload, ...) {
+    debug_assert!(!payload.lineas.is_empty(), "venta sin líneas");
+    debug_assert!(payload.pago_monedero >= Decimal::ZERO, "pago_monedero negativo");
+}
+```
+
+### Prioridad por módulo
+
+Los módulos `ventas` y `compras` son los más críticos — aplicar los tres conceptos primero ahí. Los demás módulos, cuando tengan lógica financiera pura en `models.rs`.
+
+### En REVISIONES.md
+
+La primera vez que se usan tests o contracts en un módulo, incluir en la revisión una explicación del concepto (qué es, para qué sirve aquí) además del qué y para qué del test específico.
+
+### Correr los tests
+
+```bash
+cargo test                     # todos los tests
+cargo test ventas              # solo los del módulo ventas
+cargo test -- --nocapture      # ver println! dentro de los tests
+```
+
+---
+
 ## Desarrollo local
 
 ```bash

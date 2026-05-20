@@ -158,6 +158,24 @@ pub async fn crear_venta(
         return Err(AppError::Internal(anyhow::anyhow!("La venta debe tener al menos una línea")));
     }
 
+    // Contratos: invariantes que el llamador debe garantizar.
+    // debug_assert! se compila solo en modo debug — cero costo en producción (--release).
+    debug_assert!(payload.pago >= Decimal::ZERO, "pago negativo");
+    debug_assert!(payload.pago_monedero >= Decimal::ZERO, "pago_monedero negativo");
+    debug_assert!(payload.pago_tarjeta >= Decimal::ZERO, "pago_tarjeta negativo");
+    debug_assert!(payload.pago_transferencia >= Decimal::ZERO, "pago_transferencia negativo");
+    debug_assert!(payload.pago_dolares >= Decimal::ZERO, "pago_dolares negativo");
+    debug_assert!(payload.tipo_cambio_dolares >= Decimal::ZERO, "tipo_cambio_dolares negativo");
+    debug_assert!(payload.cambio >= Decimal::ZERO, "cambio negativo");
+    debug_assert!(
+        payload.lineas.iter().all(|l| l.cantidad > Decimal::ZERO),
+        "cantidad de línea debe ser positiva"
+    );
+    debug_assert!(
+        payload.lineas.iter().all(|l| l.precio_unitario >= Decimal::ZERO),
+        "precio de línea negativo"
+    );
+
     let generar_monedero = payload.cliente_id.is_some();
 
     // Cargar IDs de ingresos trasladados para excluirlos del monedero.
