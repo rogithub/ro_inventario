@@ -2,6 +2,70 @@
 
 ---
 
+## Paso 1 — Endpoints JSON para nueva venta
+
+**Archivos a mirar:**
+- `src/modules/productos/` — módulo nuevo: `models.rs`, `queries.rs`, `routes.rs`
+- `src/modules/clientes/` — módulo nuevo: `models.rs`, `queries.rs`, `routes.rs`
+- `src/modules/ventas/routes.rs` — agregados `tipo_cambio` y `monedero`
+- `src/modules/ventas/queries.rs` — agregada `balance_monedero()`
+- `src/db/settings.rs` — agregado campo `banxico_api_token`
+- `src/main.rs` — 4 rutas nuevas bajo `/api/`
+
+**Qué hace:**
+Cuatro endpoints JSON protegidos por autenticación, consumidos por el formulario de nueva venta:
+- `GET /api/productos/buscar?q=&stock=` — búsqueda en cascada: entero→NID, UUID→ID propio (QR), texto exacto→código de barras, FTS+ILIKE, trigramas. `stock=true` filtra a productos con existencia.
+- `GET /api/clientes/buscar?q=` — detecta si el input es teléfono (≥70% dígitos) y normaliza a los últimos 10; si no, busca por nombre/empresa/email con ILIKE y `unaccent`.
+- `GET /api/tipo-cambio` — llama a Banxico (`SF43718`); si falla devuelve el valor cacheado en `Settings`.
+- `GET /api/monedero/{cliente_id}` — balance vigente del cliente: generado (no expirado, sin devolución) menos redimido. El join llega al cliente vía `monederogenerados → ajustesproductos → ajustes.clienteid`.
+
+**Notas de Rust:**
+- `ProductoBuscado` y `ClienteBuscado` derivan `sqlx::FromRow` + `serde::Serialize` — sqlx mapea columnas por nombre, serde serializa a JSON directamente con `Json(vec)`.
+- Las queries de búsqueda de producto usan `sqlx::query_as` con string dinámica (no `query!`) porque la condición de stock se construye en runtime. La interpolación es segura: `stock_cond` es una constante interna, no input del usuario.
+- En Axum 0.8 los parámetros de ruta usan `{param}`, no `:param`.
+
+---
+
+## Actualización de dependencias
+
+**Archivos a mirar:**
+- `Cargo.toml` — versiones actualizadas
+- `src/filters.rs` — nuevo atributo `#[askama::filter_fn]`
+- `src/auth/backend.rs` — removido `#[async_trait::async_trait]`, agregado `KeyInit`
+
+**Qué cambió:**
+
+| Crate | Antes | Ahora |
+|---|---|---|
+| `askama` | `0.12` | `0.16` |
+| `axum-login` | `0.17` | `0.18` |
+| `hmac` | `0.12` | `0.13` |
+| `sha2` | `0.10` | `0.11` |
+| `async-trait` | `0.1` | eliminado |
+| `tower-sessions` | `0.14` | `0.14` (sin cambio) |
+
+**Notas:**
+- Askama 0.16: los filtros custom requieren `#[askama::filter_fn]` sobre la función y un segundo parámetro `_: &dyn askama::Values`. Sin el atributo, el derive macro busca un tipo, no una función, y falla en compilación.
+- axum-login 0.18 eliminó `async_trait` y usa RPITIT nativo. Quitar `#[async_trait::async_trait]` del impl es suficiente; `async fn` en el impl es compatible en edition 2024.
+- hmac 0.13: `KeyInit` ya no está en scope por defecto — importar explícitamente.
+- `tower-sessions` no se actualizó porque `tower-sessions-sqlx-store 0.15` todavía depende de `tower-sessions-core 0.14`. Cuando el store publique soporte para core 0.15, es cambio de una línea.
+
+---
+
+## Correcciones al resumen del día + UX
+
+**Archivos a mirar:**
+- `src/modules/ventas/queries.rs` — campo `es_ingreso_trasladado` en `VentaRow`
+- `src/modules/ventas/models.rs` — campo `es_ingreso_trasladado` en `VentaLinea`; campo `ingresos_trasladados` en `ResumenDia`
+- `templates/ventas/index.html` — fila "Ingresos trasladados" condicional; eliminado `[nid]` junto al nombre de producto
+- `templates/base.html` — botones de scroll ↑/↓ fijos en bottom-right con Alpine.js
+
+**Qué hace:**
+- **Ingresos trasladados:** productos con `esservicio = true AND preciocomprapromedio = ultimoprecioventa` (vista `v_ingresos_trasladados`). El resumen los separaba del total de venta en el .NET pero los sumaba todos juntos en Rust. Ahora cada línea lleva `es_ingreso_trasladado` y `ResumenDia` los divide: "Venta productos" y "Ingresos trasladados" son filas separadas. `efectivo_en_caja` sigue siendo correcto: suma ambos antes de restar métodos de pago.
+- **Scroll:** dos botones Bootstrap fijos (bottom-right, z-index 1030). Alpine detecta posición con `@scroll.window`; ↑ aparece al bajar 80px, ↓ desaparece al llegar al fondo. `d-print-none` los excluye al imprimir. Viven en `base.html` — disponibles en todas las páginas sin tocar nada más.
+
+---
+
 ## Fase 2a — Pulido visual + Settings
 
 **Archivos a mirar:**
