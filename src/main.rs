@@ -66,6 +66,7 @@ async fn main() {
     let protected = Router::new()
         .route("/", get(modules::home::index))
         .route("/ventas", get(modules::ventas::index).post(modules::ventas::routes::crear))
+        .route("/ventas/nueva", get(modules::ventas::routes::nueva))
         .route("/api/productos/buscar", get(modules::productos::routes::buscar))
         .route("/api/clientes/buscar", get(modules::clientes::routes::buscar))
         .route("/api/tipo-cambio", get(modules::ventas::routes::tipo_cambio))

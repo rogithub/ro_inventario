@@ -14,6 +14,26 @@ use super::queries;
 use crate::filters; // requerido por el macro #[derive(Template)] para resolver filtros custom
 use crate::{error::AppError, templates, AppState};
 
+#[derive(Template)]
+#[template(path = "ventas/nueva.html")]
+struct NuevaVentaTemplate {
+    tasa_comision_tc: Decimal,
+    iva: Decimal,
+    comision_tc_servicio_id: Uuid,
+    tipo_cambio_dolares: Decimal,
+    id_cliente_generico: Uuid,
+}
+
+pub async fn nueva(State(state): State<AppState>) -> Result<Response, AppError> {
+    Ok(templates::render(NuevaVentaTemplate {
+        tasa_comision_tc: state.settings.tasa_comision_tc,
+        iva: state.settings.iva,
+        comision_tc_servicio_id: state.settings.comision_tc_servicio_id,
+        tipo_cambio_dolares: state.settings.tipo_cambio_dolares,
+        id_cliente_generico: state.settings.id_cliente_generico,
+    }))
+}
+
 #[derive(serde::Deserialize)]
 pub struct VentasQuery {
     fecha: Option<NaiveDate>,

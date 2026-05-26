@@ -2,6 +2,35 @@
 
 ---
 
+## Nueva Venta — `GET /ventas/nueva` + template Alpine.js
+
+**Archivos a mirar:**
+- `src/modules/ventas/routes.rs` — handler `nueva` + struct `NuevaVentaTemplate`
+- `src/main.rs` — ruta `.route("/ventas/nueva", get(...))`
+- `templates/ventas/nueva.html` — template completo con Alpine.js
+
+**Qué hace:**
+Formulario de punto de venta con carrito interactivo en Alpine.js. Las piezas del backend (búsqueda de productos, tipo de cambio, balance de monedero, `POST /ventas`) ya estaban implementadas desde sesiones anteriores; este commit agrega la UI que las une.
+
+**Flujo completo:**
+1. Usuario escribe en el buscador → `GET /api/productos/buscar?q=...&stock=true` → dropdown
+2. Click en resultado → línea se agrega al carrito; si el mismo producto ya existe, se incrementa la cantidad
+3. +/- por línea, o editar cantidad directamente; si cantidad baja a 0, la línea se elimina
+4. Botones de método de pago (radio): efectivo | tarjeta | transferencia | dólares
+5. **Tarjeta**: se hace fetch del producto-servicio de comisión y se agrega como línea; el importe es iterativo: `comision(sub + comision(sub))`
+6. **Monedero**: aparece si el cliente tiene saldo ≥ $0.50; checkbox activa el campo; pre-rellena al máximo disponible redondeado a $0.50
+7. **Cliente**: botón persona o Alt+C abre selector; busca vía `/api/clientes/buscar`; al seleccionar carga saldo de `/api/monedero/{id}`
+8. **Submit**: `POST /ventas` con JSON → on success muestra fila verde con "Nueva venta" / "Ver ventas"
+
+**Diseño del Alpine:**
+- `cfg` se inyecta desde Askama como constante JS en el bloque `{% block scripts %}`
+- Getters calculados (`total`, `totalSinComision`, `cambio`, `puedeGuardar`) como `get` del objeto
+- `_actualizarComision()` modifica la línea de comisión existente; `_activarTarjeta()` la crea (hace fetch una sola vez)
+- Cualquier tecla alfanumérica cuando no hay input enfocado redirige al buscador (mismo comportamiento que el .NET)
+- `@mousedown.prevent` en los resultados del dropdown evita que el blur del input oculte la lista antes de que el click registre
+
+---
+
 ## Testing — ventas/models.rs + política de tests
 
 **Archivos a mirar:**
