@@ -8,7 +8,7 @@ Este documento dice **qué** es el sistema y **por qué**. Cada decisión concre
 
 - **La versión uno funciona, pero se enredó al crecer.** Una sola clase de ventas llegó a ~1,460 líneas; reglas del negocio viven en vistas SQL, en TypeScript y en C# a la vez; la misma regla se escribió dos veces en dos repos.
 - **Se aprendió mucho del negocio.** Reglas que costó años descubrir hoy están escritas y probadas: costo por promedio móvil, stock de kits, comisión iterativa de tarjeta, monedero, la trampa del JOIN en pagos. Ese conocimiento es el activo; el código se puede rehacer.
-- **Lo que viene necesita otra base.** El uso de efectivo se está restringiendo poco a poco. Los negocios chicos van a necesitar cobrar sin efectivo, facturar y reportar, y conectarse con sus proveedores y clientes. La versión uno no se diseñó para eso.
+- **Lo que viene necesita otra base.** El efectivo se sigue usando y se seguirá usando, pero tiende a reducirse: hay iniciativas para restringirlo en ciertos pagos y crecen los pagos digitales (tarjeta, transferencia; en México SPEI y CoDi). Los negocios chicos van a necesitar cobrar de muchas formas, facturar y reportar, y conectarse con sus proveedores y clientes. La versión uno no se diseñó para eso.
 - **Hacer software se volvió barato; tener el entorno, no.** Aquí se controla el negocio, el hardware, el cluster y los datos reales. Es un laboratorio vivo.
 
 ## Qué es
@@ -77,6 +77,12 @@ Base: lo que ya funciona en `xplaya`. Cada pieza se confirma en su decisión.
 - **Usuarios y permisos:** se diseñan para negocios con empleados (quién puede vender, comprar, ajustar inventario, ver costos, administrar usuarios), aunque la papelería use solo dos perfiles. El diseño es completo desde el principio; las pantallas para configurarlo pueden esperar a que un negocio las necesite.
 
 **Después del corte**, en el orden que pida el negocio: pedidos, monedero, kits, catálogo público completo, finanzas, impresoras y tóners, facturación electrónica (CFDI), pagos con terminal integrados, conexión entre negocios (la red).
+
+## Pagos y país
+
+- **El efectivo es una forma de pago más, no el centro.** Una venta se cobra con una o varias formas de pago; cada forma tiene sus reglas (si da cambio, si lleva comisión, si requiere referencia o confirmación) y agregar una nueva no toca las demás.
+- **Lo que depende del país es una pieza intercambiable:** moneda, impuestos, facturación electrónica, formas de pago locales, fuente del tipo de cambio. La primera implementación es la de México (IVA, CFDI, SPEI, CoDi, Banxico), elegida por configuración. Otro país se agrega cuando haya un negocio real ahí, sin tocar el núcleo.
+- **Nada del núcleo supone México:** no hay "IVA 16 %" ni "pesos" escritos en las reglas del negocio.
 
 ## El corte y la migración
 
