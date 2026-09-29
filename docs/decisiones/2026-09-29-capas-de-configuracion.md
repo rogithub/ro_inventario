@@ -11,8 +11,8 @@ Tres capas; **cada dato vive en exactamente una**, nunca en dos con reglas de "c
 | Capa | Qué va ahí | Quién la cambia | Cuándo aplica |
 |---|---|---|---|
 | **1. Variables de entorno** | Infraestructura y secretos: conexión a la BD, puerto, llaves, credenciales (PAC, pagos) | El deployment (SealedSecrets) | Al arrancar |
-| **2. Archivo del negocio** (`negocio.toml`) | Lo que se decide una vez y rara vez cambia: identidad (nombre, dominio, zona horaria), tasa de IVA, módulos prendidos, formas de pago aceptadas, qué implementación usar para cada pieza (tipo de cambio, facturación), nodos amigos | Un commit en el repo de manifests (revisado, con historial) | Al arrancar |
-| **3. Ajustes en la BD** | Lo que el dueño cambia desde la aplicación: vigencia del monedero, comisión de su terminal, textos del ticket | El usuario, en pantalla (queda registro de quién y cuándo) | En caliente |
+| **2. Archivo del negocio** (`negocio.toml`) | Lo que se decide una vez y rara vez cambia: identidad (nombre, dominio, zona horaria), tasa de IVA, módulos prendidos, formas de pago aceptadas, forma del reembolso (efectivo o la misma del pago), qué implementación usar para cada pieza (tipo de cambio, facturación), nodos amigos | Un commit en el repo de manifests (revisado, con historial) | Al arrancar |
+| **3. Ajustes en la BD** | Lo que el dueño cambia desde la aplicación: porcentaje y vigencia del monedero, spread del dólar, comisión de su terminal, días de vigencia de una cotización, plazo de un veto, textos del ticket | El usuario, en pantalla (queda registro de quién y cuándo) | En caliente |
 
 **La regla para decidir la capa:** secreto o infraestructura → entorno; se cambia con un commit → archivo; lo cambia el usuario en pantalla → BD.
 

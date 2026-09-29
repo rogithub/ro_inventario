@@ -57,7 +57,7 @@ graph TD
 
 ## Consecuencias
 - **Lo que el compilador garantiza:** las reglas del negocio no dependen de la base de datos, de la web ni de servicios externos; las áreas no forman ciclos.
-- **Lo que no garantiza:** que la aplicación pública no escriba. Depende de `postgres`, que también tiene repositorios que escriben. La barrera ahí es su **usuario de base de datos con permisos mínimos** (leer, y solo insertar pedidos en línea), más la revisión. Si algún día hace falta que lo impida el compilador, `postgres` se parte en lectura y escritura.
+- **Lo que no garantiza:** que la aplicación pública no escriba. Depende de `postgres`, que también tiene repositorios que escriben. La barrera ahí es su **usuario de base de datos con permisos mínimos** (leer, insertar pedidos en línea y crear clientes nuevos por teléfono), más la revisión. Si algún día hace falta que lo impida el compilador, `postgres` se parte en lectura y escritura.
 - `postgres` crece con cada área. Se organiza por carpetas por área; si pasa del límite de tamaño, se parte por área.
 - Los crates se crean cuando se necesitan, no todos el primer día: el corte mínimo empieza con `kernel`, `config`, `postgres`, `privada` y las áreas de ventas, compras, inventario y usuarios.
 - Una sola versión de cada dependencia para todo el workspace (`[workspace.dependencies]`) y un solo `Cargo.lock`.

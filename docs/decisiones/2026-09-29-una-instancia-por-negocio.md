@@ -23,3 +23,4 @@ El sistema va a atender a varios negocios (la papelería primero; después otros
 - **Las migraciones de esquema corren en cada base.** Cada instancia aplica las suyas al arrancar; una versión nueva se despliega negocio por negocio.
 - **Costo por negocio:** un par de procesos Rust (decenas de MB de memoria) y una base. Con decenas de negocios es poco; con cientos habría que revisar esta decisión.
 - **La red comercial nace distribuida:** la cadena de suministro se diseña como mensajes entre instancias desde el principio.
+- **Una demo para posibles compradores es otra instancia** (su base con datos de ejemplo, su configuración, su dominio): se restablece sin tocar a ningún negocio real. En la v1 se hacía con usuarios de demo dentro del sistema real.

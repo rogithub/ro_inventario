@@ -46,7 +46,7 @@ La lista que se le manda al proveedor. **Se congela al marcar la compra como env
 | Columna | Qué es |
 |---|---|
 | `id`, `compra_id`, `orden` | `orden` = posición en la lista. |
-| `producto_id` | Siempre apunta a un producto; si es nuevo, se da de alta al capturar el pedido y queda "en pedido" hasta su primera recepción. |
+| `producto_id` | Siempre apunta a un producto; si es nuevo, se da de alta al capturar el pedido y queda "por llegar" hasta su primera recepción. |
 | `nombre_proveedor` | Cómo lo llama el proveedor. |
 | `cantidad_proveedor`, `unidades_por_paquete` | "3 paquetes de 12". |
 
@@ -95,7 +95,7 @@ De las recepciones anteriores sale, por proveedor y producto: cómo lo llama, en
 ## Cómo entra al inventario
 - **Al guardar una recepción,** cada partida de producto físico escribe un movimiento `compra` al kárdex: la cantidad en unidad base, con su costo por unidad base.
 - **Fecha del movimiento = `recibida_at`**, que se puede corregir si se captura tarde. Es la fecha real en que hubo mercancía en la tienda: así el costo promedio no queda "sin costo" por capturar tarde.
-- **Partidas de servicio** (p. ej. el costo de un pago de servicios) no escriben al kárdex; dan el costo de referencia del servicio.
+- **Solo se compran productos:** un servicio nunca pasa por compras; su costo sale de su receta y su costo externo (diseño 03).
 - **Una recepción guardada no se edita:** un error se corrige con un ajuste de inventario o una devolución al proveedor (se diseña con ajustes).
 
 ## Evitar productos duplicados

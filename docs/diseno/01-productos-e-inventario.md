@@ -76,10 +76,10 @@ Un producto puede tener varios códigos (el proveedor cambió el empaque). El c�
 | Columna | Qué es |
 |---|---|
 | `id`, `producto_id`, `fecha` | |
-| `kind` | `compra`, `venta`, `devolucion`, `merma`, `ingreso_sin_compra`. |
+| `kind` | `compra`, `venta`, `cancelacion` (regresa lo de una venta cancelada), `devolucion`, `merma`, `ingreso_sin_compra`. |
 | `cantidad` | En **unidad base**, con signo: + entra, − sale. Una compra de 2 cajas de 5,000 hojas escribe +10,000. |
 | `precio_unitario` | Solo en compras: lo que costó cada unidad base. De aquí sale el costo promedio. |
-| referencia al documento | La partida de venta, recepción o ajuste que lo originó. Se define con esos módulos. |
+| `recepcion_partida_id`, `venta_partida_id`, `devolucion_partida_id`, `ajuste_id` | El documento que lo originó; exactamente uno tiene valor. Las ventas y cancelaciones apuntan a la partida vendida (la de un servicio con receta, para sus insumos). Los ajustes (merma, ingreso sin compra) se diseñan en el 08. |
 
 - **Solo productos escriben al kárdex.** Un servicio no; al venderlo, cada uno de sus insumos escribe su salida (con referencia al servicio vendido; ver diseño 03).
 - **Los renglones no se editan ni se borran:** una corrección es otro movimiento. Es la historia del inventario. (Única excepción controlada: fusionar productos duplicados, ver diseño 02.)
@@ -88,7 +88,7 @@ Un producto puede tener varios códigos (el proveedor cambió el empaque). El c�
 
 ## Cuándo un producto entra al inventario
 Un producto nuevo pasa por dos etapas, que salen de los datos (no hay un campo de estado):
-- **En pedido:** se dio de alta al capturar una compra, pero todavía no llega o no tiene precio de venta final. Solo se ve en esa compra; no aparece en caja, ni en inventario, ni en reportes.
+- **Por llegar:** se dio de alta al capturar una compra, pero todavía no llega o no tiene precio de venta final. Solo se ve en esa compra; no aparece en caja, ni en inventario, ni en reportes.
 - **En catálogo:** ya tuvo su primera recepción (hay movimientos en el kárdex) **y** tiene precio de venta final. Aparece en la página de inventario (con o sin stock) y en caja mientras tenga stock.
 
 Al guardar la primera recepción de un producto nuevo, el precio de venta es obligatorio (ver diseño 02).

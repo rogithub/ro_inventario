@@ -29,15 +29,14 @@
 | Columna | Qué es |
 |---|---|
 | `id`, `folio` | Folio consecutivo del ticket. |
-| `fecha` | Cuándo ocurrió la venta. Normalmente = `created_at`; se puede poner una anterior al capturar ventas atrasadas. Si difieren, se sabe que se capturó después. |
 | `cliente_id` | Opcional. En la v2 no hay "cliente anónimo": sin cliente es sin cliente (ver diseño 06). |
 | `contacto_nombre`, `contacto_telefono` | Opcionales, para pedidos y cotizaciones **sin cliente registrado** (un extraño, o no se tienen sus datos a la mano): sirven para encontrar el pedido ("mi teléfono es tal"). No generan monedero. |
 | `kind` | Cómo empezó: `mostrador` (venta normal en caja), `pedido` o `cotizacion`. Al cobrarse, cualquiera es una venta; el tipo solo dice su origen. |
 | `cambio` | Lo que se le regresó al cliente, en pesos. |
-| `cobrada_at` | Cuándo se terminó de cobrar. Vacío = pedido pendiente de cobro. |
+| `cobrada_at` | Cuándo se cobró: **es la fecha de la venta** (la de los reportes y del kárdex). Se puede poner una anterior al capturar ventas atrasadas; si difiere de `created_at` (cuándo se capturó), se sabe que se capturó después. Vacía = pedido o cotización sin cobrar. |
 | `entregada_at` | Cuándo se entregó. Vacío = pedido por entregar. En una venta normal de caja, las dos fechas son el mismo momento. |
 | `cancelada_at`, `motivo_cancelacion`, `cancelada_by` | Si se canceló. Una cancelada no cuenta en reportes ni en caja, pero se conserva. |
-| `punto_venta` | Desde dónde se cobró (computadora, iPad, Elo). Sirve para investigar diferencias en el corte de caja. |
+| `punto_venta` | Desde dónde llegó o se cobró: computadora, iPad, Elo o **sitio público** (pedidos en línea desde xplaya.com). Sirve para investigar diferencias en el corte de caja. En lo que llega del sitio público, `created_by` queda vacío: no lo creó una persona. |
 | `notas`, `created_at`, `created_by` | `created_by` = quien vendió. |
 
 ### `ventas_partidas`
@@ -101,12 +100,14 @@ Un pedido o una cotización tiene `cobrada_at` o `entregada_at` vacíos:
 - **Un pedido que nunca se recoge** se cancela con motivo "no lo recogió". Como el inventario sale al cobrar, lo que ya se gastó en prepararlo (las hojas de unas copias) se registra en ese momento como **merma**, para que la pérdida quede en el kárdex y en los reportes. Esos pedidos alimentan la historia del cliente (diseño 06).
 - **El pedido también es la cotización** que ve el cliente en el sitio público (`xplaya.com/cotizacion/{id}`, con su tarjeta Open Graph para WhatsApp): antes de pagar sabe qué se le entregará y cuánto costará.
   - El enlace usa el **id interno** de la venta (opaco), nunca el folio: con un número consecutivo cualquiera podría ver el pedido de otro.
-  - **El mismo enlace sirve para todo:** muestra la cotización mientras está pendiente y el recibo una vez cobrada. En la v1 el enlace muere al cobrarse (el pedido se borra).
-  - La migración conserva el identificador de cada pedido pendiente de la v1, para que los enlaces ya enviados sigan abriendo.
+  - **El mismo enlace sirve para todo:** `/cotizacion/{id}` muestra la cotización mientras está pendiente y, una vez cobrada, redirige a `/recibo/{id}` (mismo id). En la v1 el enlace muere al cobrarse (el pedido se borra).
+  - En la migración, el uid de cada pedido pendiente de la v1 se vuelve el id de su venta, para que los enlaces ya enviados sigan abriendo.
 - **La pantalla de caja** muestra los pedidos pendientes para cargarlos rápido (en la v1: el menú de pedidos).
 
 ## Cancelar una venta
-Un solo paso, con motivo obligatorio: marca la venta como cancelada y escribe en el kárdex las entradas que la anulan (el inventario regresa). Los pagos de una cancelada dejan de contar en el corte de caja. Después se captura la venta correcta.
+Un solo paso, con motivo obligatorio:
+- **Venta cobrada:** se marca cancelada y se escriben en el kárdex movimientos `cancelacion` que regresan el inventario. En el corte de caja, la cancelación cuenta en el periodo en que se hace; los cortes ya cerrados no cambian (diseño 05). Después se captura la venta correcta.
+- **Pedido o cotización sin cobrar:** se marca cancelada; no hay inventario que regresar, porque nunca salió. Solo si se gastó material en prepararlo (pedido no recogido) se registra como merma.
 
 ## Devoluciones (el cliente regresa mercancía)
 - `devoluciones`: `id`, `venta_id`, `fecha`, `motivo`, `reembolso` (cuánto se le regresó y por qué forma de pago; se preselecciona según la configuración del negocio), `created_by`.

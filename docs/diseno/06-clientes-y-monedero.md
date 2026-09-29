@@ -30,6 +30,8 @@ El monedero se diseñó con cuidado, se probó varias veces y ya **se anunció a
 | `id` | **Se conserva el de la v1:** es el que va en los enlaces del monedero ya enviados. |
 | `telefono` | **Obligatorio y único.** Es la forma más confiable de identificar al cliente: muchos compran por WhatsApp, se les mandan enlaces con tarjetas informativas (Open Graph) y los pedidos se consultan por teléfono. También identifica al cliente en `/saldo`. |
 | `nombre` | **Opcional:** a veces solo se sabe su número (escribió por WhatsApp para imprimir algo). |
+
+**El teléfono se guarda normalizado:** 10 dígitos, sin "+52" ni "01". En la v1 hay números con prefijos y xplaya.com compara los últimos 10 dígitos para encontrar al cliente; en la v2 el mismo cliente es el mismo número y la regla de único funciona. La migración normaliza los existentes; si al hacerlo dos clientes quedan con el mismo número, se le muestran al dueño para decidir.
 | `email` | Opcional, único. Casi nadie lo usa en la zona. |
 | `notas` | |
 | `acepto_programa_at` | Cuándo aceptó participar en el monedero. **El monedero se calcula siempre** (lógica simple); pero **solo se le ofrece, se le muestra y se reporta** a quien aceptó. Hay clientes que no lo quieren ("yo no quiero que me estén fregando"): es un permiso de comunicación, no una regla de cálculo. Si cambian de opinión, su saldo ya está ahí. |
@@ -59,6 +61,9 @@ El monedero se diseñó con cuidado, se probó varias veces y ya **se anunció a
 - **Máximo canjeable:** el saldo, redondeado hacia abajo a múltiplos de $0.50 (la regla de la v1, `calcularMaximoDivisor50c`).
 - **Por vencer:** lo que vence en los próximos N días, para el aviso en xplaya.com.
 
+## Clientes que llegan por el sitio público
+En xplaya.com se puede armar un pedido (en el sentido de la v1) y mandarlo por WhatsApp; el teléfono identifica al cliente: si ya existe, se reutiliza; si no, se crea con su teléfono y el nombre que escribió (un cliente "sin cara", cuya identidad es su número). En la v2 es igual: la aplicación pública puede **crear** un cliente, nunca modificar uno existente, y el pedido queda con punto de venta "sitio público" y sin usuario creador (diseño 04). En la v1 se usaba un usuario falso para eso (`ID_XPLAYA.COM_ANONYMOUS_USER`, diseño 07).
+
 ## Clientes que no recogen
 Pasa poco, pero duele: clientes (incluso conocidos) piden copias o impresiones desde su casa y nunca pasan por ellas; se pierden hojas y tinta.
 - **Historia automática, sin estrellas a mano:** los pedidos cancelados con motivo "no lo recogió" se cuentan solos. Al buscar al cliente o su teléfono para un pedido se ve, p. ej., "recogió 12 de 14 pedidos; el último que no recogió: 3 de agosto".
@@ -73,7 +78,7 @@ Los clientes ya tienen estos enlaces en WhatsApp. La aplicación pública de la 
 | `/monedero/{id}` | id del cliente |
 | `/saldo` | teléfono del cliente |
 | `/recibo/{id}` (y `/pdf`, `/print`) | id de la venta (en la v1, el id del "ajuste" de tipo venta) |
-| `/cotizacion/{uid}` (y `/pdf`, `/print`) | uid del pedido |
+| `/cotizacion/{uid}` (y `/pdf`, `/print`) | uid del pedido pendiente, que en la v2 es el id de su venta (ya cobrada, redirige a `/recibo/{id}`) |
 | `/terminos` | los términos del programa |
 
 Los enlaces que se comparten por WhatsApp llevan metadatos Open Graph (tarjeta con imagen y texto al pegarlos); la aplicación pública de la v2 los conserva.

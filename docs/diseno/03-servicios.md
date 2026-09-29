@@ -51,12 +51,12 @@ Salen de las ventas de los últimos 12 meses. **Son datos de la papelería, no d
 ### `recetas`
 `servicio_id`, `componente_id` (un artículo), `cantidad`. Lo que un servicio consume o incluye:
 - **Insumos:** productos que se gastan al hacerlo (copia carta BN → 1 hoja carta; enmicado carta → 1 mica carta). Al vender el servicio, cada insumo escribe su salida al kárdex. El ticket solo muestra el servicio.
-- **Servicios incluidos:** otros servicios que forman parte (polaroid → impresión color + corte). Sirven para el costo y para contar cuántas veces se hizo cada uno. Una receta no puede incluirse a sí misma, ni directa ni indirectamente.
+- **Servicios incluidos:** otros servicios que forman parte (polaroid → impresión color + corte). Sirven para el costo y para contar cuántas veces se hizo cada uno. Una receta no puede incluirse a sí misma, ni directa ni indirectamente, y no lleva kits: sus componentes son productos o servicios.
 
 ### Kits (artículos que se venden juntos)
 Un **kit** es un artículo (`kind = kit`) que al venderse **agrega varias partidas a la venta**, cada una con su precio. No tiene precio propio: vale lo que sumen sus partidas.
 
-`kit_componentes`: `kit_id`, `articulo_id` (producto o servicio), `cantidad`, `orden`.
+`kit_componentes`: `kit_id`, `articulo_id` (producto o servicio; un kit no contiene otros kits), `cantidad`, `orden`.
 
 | Kit | Partidas que agrega |
 |---|---|

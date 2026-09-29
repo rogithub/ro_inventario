@@ -12,7 +12,8 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 |---|---|
 | `Negocio` | La empresa que usa el sistema. Cada una tiene su propia instancia y base de datos. |
 | `Usuario` | Persona que entra al sistema. |
-| `Rol`, `Permiso` | Qué puede hacer cada usuario (vender, comprar, ajustar inventario, ver costos, administrar usuarios). |
+| `Permiso` | Una acción que un usuario puede hacer (vender, cancelar una venta, ver costos…). La lista vive en el código. |
+| `Rol` | Conjunto de permisos con nombre (Dueño, Encargado, Cajero). Cada negocio puede tener los suyos. |
 
 ## Productos
 | Término | Qué es |
@@ -43,7 +44,7 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 ## Ventas y cobro
 | Término | Qué es |
 |---|---|
-| `Venta` | Ticket cobrado. |
+| `Venta` | Documento con partidas y pagos. Puede estar cobrada, o sin cobrar si empezó como pedido o cotización. |
 | `Ticket` | Comprobante de una venta para el cliente. |
 | `FormaPago` | Cómo paga el cliente: efectivo, tarjeta, transferencia, dólares, monedero… (catálogo `c_FormaPago` del SAT). |
 | `MetodoPago` | Para el SAT: en una exhibición (PUE) o en parcialidades (PPD). **No** es efectivo/tarjeta. |
@@ -77,7 +78,7 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 | `Abono` | Lo que una partida de venta suma al monedero de un cliente; vence. |
 | `Canje` | Uso del monedero como forma de pago; sale de los abonos que vencen primero. |
 | `Proveedor` | A quien se le compra. |
-| `Contacto` | Cliente o proveedor en la agenda. |
+| `Contacto` | Nombre y teléfono de una venta sin cliente registrado (un pedido o una cotización de un extraño), para encontrarla. En la v1 era la agenda de clientes y proveedores. |
 | `Compra` | Mercancía recibida de un proveedor, con su factura. |
 | `OrdenCompra` | En la v1, el pedido a un proveedor. En la v2 no es un documento aparte: es una compra que todavía no se recibe (diseño 02). |
 | `Factura` | Comprobante fiscal (CFDI en México), emitido o recibido. |
@@ -115,4 +116,4 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 - `Stock`, `Kit` e `IVA` se dicen así en la tienda: son del glosario aunque no sean palabras en español.
 - `Aviso`, `Carrito`, `Boton`, `Linea` **no** son del negocio: van `Toast`, `Cart`, `Button`, `Line`.
 - Fechas y horas son técnicas: `created_at`, `factura_date`, no `fecha_factura`.
-- Palabras pendientes de decidir con el diseño de la base: si `Venta` y `Ajuste` comparten tabla como en la versión uno o se separan.
+- `Venta` y `Ajuste` son documentos separados (en la v1 compartían tabla).
