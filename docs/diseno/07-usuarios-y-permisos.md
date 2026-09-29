@@ -24,12 +24,12 @@
 | `ver_costos` | Ver costos, márgenes y ganancia (en pantallas y reportes). |
 | `editar_catalogo` | Dar de alta y editar artículos, precios, recetas, kits, categorías; descontinuar; fusionar duplicados. |
 | `comprar` | Capturar compras, recepciones y pagos a proveedores. |
-| `ajustar_inventario` | Mermas e ingresos sin compra. |
+| `ajustar_inventario` | Mermas e ingresos sin compra, conteos físicos y ubicaciones de los productos (diseño 08). |
 | `operar_caja` | Hacer cortes y registrar movimientos de caja ("Saqué dinero"). |
 | `gestionar_clientes` | Dar de alta y editar clientes. |
 | `vetar_clientes` | Poner y levantar vetos. |
 | `ver_reportes` | Ver reportes de ventas e inventario (sin costos, salvo que tenga `ver_costos`). |
-| `configurar_negocio` | Cambiar ajustes (porcentaje del monedero, spread del dólar, tasa de comisión). |
+| `configurar_negocio` | Cambiar ajustes (porcentaje y vigencia del monedero, spread del dólar, tasa de comisión, vigencia de cotizaciones, plazo de un veto). |
 | `administrar_usuarios` | Crear usuarios, asignar roles, restablecer contraseñas. |
 
 ## Roles de arranque

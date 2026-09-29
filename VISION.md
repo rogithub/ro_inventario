@@ -72,7 +72,7 @@ Base: lo que ya funciona en `xplaya`. Cada pieza se confirma en su decisión.
 
 ## Módulos
 
-**Núcleo (el corte mínimo):** usuarios y permisos, productos y servicios (con sus recetas: una copia consume una hoja), inventario (stock), ventas con sus formas de pago, pedidos (ventas por cobrar o por entregar: el flujo diario de WhatsApp), corte de caja, compras, clientes con su **monedero**, proveedores, costo por promedio móvil.
+**Núcleo (el corte mínimo):** usuarios y permisos, productos y servicios (con sus recetas: una copia consume una hoja), inventario (stock, ajustes con motivo y conteo físico por estante), ventas con sus formas de pago, pedidos (ventas por cobrar o por entregar: el flujo diario de WhatsApp), corte de caja, compras, clientes con su **monedero**, proveedores, costo por promedio móvil.
 
 - **Monedero:** ya se anunció a los clientes y cuentan con él (hay quien consulta su acumulado por el enlace de xplaya.com y regresa a comprar). La migración conserva los identificadores de los clientes, la aplicación pública mantiene la ruta `/monedero/{id}` (los enlaces enviados por WhatsApp deben seguir funcionando) y el saldo migrado cuadra al centavo con la v1.
 

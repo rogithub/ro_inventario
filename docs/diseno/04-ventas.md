@@ -97,7 +97,7 @@ Un pedido o una cotización tiene `cobrada_at` o `entregada_at` vacíos:
 - **El número de pedido es el folio de la venta:** el cliente llega con "mi pedido es tal" o con su teléfono. Un pedido se busca por folio, por el teléfono del cliente o por el teléfono de contacto.
 - **Se cobra** agregando sus pagos (puede ser en caja, al recoger, o antes por transferencia). Al cobrarse, sale el inventario y se genera su monedero.
 - **Al cobrar un pedido no entregado,** la caja pregunta si ya se entrega (como en la v1).
-- **Un pedido que nunca se recoge** se cancela con motivo "no lo recogió". Como el inventario sale al cobrar, lo que ya se gastó en prepararlo (las hojas de unas copias) se registra en ese momento como **merma**, para que la pérdida quede en el kárdex y en los reportes. Esos pedidos alimentan la historia del cliente (diseño 06).
+- **Un pedido que nunca se recoge** se cancela con motivo "no lo recogió". Como el inventario sale al cobrar, lo que ya se gastó en prepararlo (las hojas de unas copias) se registra en ese momento como **merma** con motivo `pedido_no_recogido` (diseño 08), para que la pérdida quede en el kárdex y en los reportes. Esos pedidos alimentan la historia del cliente (diseño 06).
 - **El pedido también es la cotización** que ve el cliente en el sitio público (`xplaya.com/cotizacion/{id}`, con su tarjeta Open Graph para WhatsApp): antes de pagar sabe qué se le entregará y cuánto costará.
   - El enlace usa el **id interno** de la venta (opaco), nunca el folio: con un número consecutivo cualquiera podría ver el pedido de otro.
   - **El mismo enlace sirve para todo:** `/cotizacion/{id}` muestra la cotización mientras está pendiente y, una vez cobrada, redirige a `/recibo/{id}` (mismo id). En la v1 el enlace muere al cobrarse (el pedido se borra).
@@ -112,7 +112,7 @@ Un solo paso, con motivo obligatorio:
 ## Devoluciones (el cliente regresa mercancía)
 - `devoluciones`: `id`, `venta_id`, `fecha`, `motivo`, `reembolso` (cuánto se le regresó y por qué forma de pago; se preselecciona según la configuración del negocio), `created_by`.
 - `devoluciones_partidas`: `venta_partida_id`, `cantidad_buen_estado`, `cantidad_danada`.
-- Lo que regresa en buen estado entra al kárdex (`devolucion`); lo dañado entra y sale como merma, para que quede la evidencia.
+- Lo que regresa en buen estado entra al kárdex (`devolucion`); lo dañado entra y sale como merma con motivo `danado` (diseño 08), para que quede la evidencia.
 
 ## Fuera de este diseño
 - **Monedero** (generar, canjear, consultar por enlace): diseño 06.
