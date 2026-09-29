@@ -17,7 +17,8 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 ## Productos
 | Término | Qué es |
 |---|---|
-| `Producto` | Artículo del catálogo. Tiene un número corto para buscarlo en caja. |
+| `Articulo` | Lo que se vende en caja: un producto o un servicio. Tiene NID, nombre, categoría y precio. |
+| `Producto` | Artículo físico: se compra, lleva stock y se revende o se consume en un servicio. |
 | `NID` | Número corto del producto: se teclea en caja y se imprime en la etiqueta como código de barras. |
 | `CodigoBarras` | Código impreso en un producto o en su empaque (presentación). |
 | `Marca`, `Modelo`, `Color`, `Descripcion` | Datos del catálogo de un producto. |
@@ -25,11 +26,12 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 | `Descontinuado` | Producto que ya no se resurte ni se ofrece; conserva su historia. |
 | `Motivo` | Por qué se hizo algo: una merma, un ajuste, una descontinuación. |
 | `Mayoreo` | Venta por volumen, con precio de descuento; se ofrece con presentaciones. |
-| `Servicio` | Producto que no lleva stock (copias, enmicado, recargas, trámites). |
+| `Servicio` | Artículo que es algo que se hace (copias, enmicado, recargas, trámites). No se compra ni lleva stock; puede tener receta. |
+| `CostoExterno` | Lo que se le paga a un tercero por dar un servicio (los derechos de un acta). |
 | `Receta` | Lo que un servicio consume o incluye para hacerse: insumos y otros servicios, con su cantidad. |
 | `Insumo` | Producto físico que un servicio gasta al hacerse y que no se vende por separado en ese momento (la hoja de una copia, la mica de un enmicado). |
 | `Componente` | Cada elemento de una receta (un insumo o un servicio incluido). |
-| `Kit` | Paquete de productos que se venden juntos (cuaderno + lápiz + goma). Hoy no existe; en la v1 se llamaba así a los servicios con receta. |
+| `Kit` | Artículo que se vende como varias partidas juntas ("Pago de servicio" = comisión + pago libre). No es una receta. En la v1 se llamaba kit a lo que hoy es un servicio con receta. |
 | `Presentacion` | Forma de venta con su factor: pieza, paquete, caja. |
 | `Categoria` | Agrupación del catálogo. |
 | `UnidadMedida` | Pieza, metro, hoja… |

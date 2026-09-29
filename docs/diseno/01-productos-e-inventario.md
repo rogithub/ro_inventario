@@ -1,19 +1,18 @@
 # Diseño 01 — Productos e inventario
 
-**Estado:** propuesta para revisión del dueño. Todavía no es SQL: primero se acuerda el modelo, después se escribe la migración.
+**Estado:** propuesta para revisión del dueño. Todavía no es SQL: primero se acuerda el modelo, después se escribe la migración. Los servicios tienen su propio diseño: [03 — Servicios](03-servicios.md).
 
 ## Lo que ya se decidió (2026-09-29)
 - **Kárdex único:** todo lo que mueve inventario escribe renglones en una sola tabla de movimientos. El stock y el costo salen de ahí.
-- **Una categoría por producto.**
+- **Artículo, producto y servicio:** todo lo que se vende en caja es un **artículo** (NID, nombre, categoría, precio). Un artículo es **producto** (lo físico que se compra y se revende, o se consume en un servicio; lleva stock), **servicio** (lo que se hace) o **kit** (se vende como varias partidas juntas); servicios y kits en el diseño 03. Lo común vive en `articulos`; lo propio, en `productos` o `servicios`. *(Cambio del 2026-09-29: antes era una sola tabla con un campo de tipo, y hubo un tercer tipo, kit.)*
+- **Una categoría por artículo.**
 - **Códigos de barras en su propia tabla**, apuntando al producto o a una de sus presentaciones.
-- **Un campo de tipo con dos valores:** producto (lo que se vende tal cual; lleva stock) o servicio (lo que se hace). *(Cambio del 2026-09-29: antes había un tercer tipo, kit; ver "Servicios con receta".)*
-- **Un servicio puede tener una receta:** los insumos que consume (la hoja de una copia, la mica de un enmicado) y otros servicios que incluye (la impresión y el corte de una polaroid). Los servicios se dan de alta en el catálogo, nunca en compras.
-- **Un producto se descontinúa, no se borra**, y queda anotado por qué (el proveedor ya no lo vende, ya no se resurte).
-- **Categorías:** cada producto conserva su categoría original; las que queden sin productos no se migran. El intento de recategorizar con IA se abandonó y no se toma en cuenta.
+- **Un artículo se descontinúa, no se borra**, y queda anotado por qué (el proveedor ya no lo vende, ya no se resurte).
+- **Categorías:** cada producto conserva su categoría original; las que queden sin artículos no se migran. El intento de recategorizar con IA se abandonó y no se toma en cuenta.
 - **Las presentaciones son para vender por mayoreo:** paquetes más grandes con precio de descuento, para los clientes que empiezan a preguntar por volumen (la mayoría compra por pieza).
 
 ## Datos de la versión uno que guiaron el diseño
-- 2,336 productos: 109 servicios, 5 "kits", 1 de precio libre. **Los 5 kits son en realidad servicios que consumen material** (enmicado = servicio + mica; polaroid = impresión + corte + papel fotográfico; impresión en folder = impresión + folder). 97 % se venden por pieza, 64 por metro, 2 por gramos.
+- 2,336 productos: 109 servicios, 5 "kits", 1 de precio libre. **Los 5 kits son en realidad servicios que consumen material** (ver diseño 03). 97 % se venden por pieza, 64 por metro, 2 por gramos.
 - 2,335 de 2,336 productos tienen una sola categoría (275 categorías; 93 con un solo producto).
 - Solo la hoja (NID 40) usa presentaciones: paquetes de 20, 50, 100 y 300.
 - Los códigos de barras vivían en tres lugares: `CodigoBarrasItem` (el producto suelto), `CodigoBarrasCaja` (el empaque del proveedor, p. ej. el tubo de lápices Mirado) y en cada presentación. Lo que no traía código se etiquetaba con un código generado del NID.
@@ -21,30 +20,37 @@
 
 ## Tablas propuestas
 
-### `productos`
+### `articulos` (lo que se vende en caja)
 | Columna | Qué es |
 |---|---|
 | `id` | Identificador interno (UUID). |
-| `nid` | Número corto para buscarlo en caja y para la etiqueta; se asigna solo, consecutivo. Los NID de la versión uno se conservan al migrar. |
-| `nombre` | Nombre del producto. |
-| `kind` | `producto` o `servicio`. |
+| `nid` | Número corto para buscarlo en caja y para la etiqueta; se asigna solo, consecutivo, único entre productos y servicios. Los NID de la versión uno se conservan al migrar. |
+| `nombre` | Nombre del artículo. |
+| `kind` | `producto`, `servicio` o `kit`. Un producto tiene su renglón en `productos`; un servicio, en `servicios`; un kit, sus componentes en `kit_componentes` (diseño 03). |
 | `categoria_id` | Su categoría (obligatoria). |
-| `unidad_medida_id` | La **unidad base**: en ella se cuenta el stock y se calcula el costo (pieza, hoja, metro…). |
-| `precio_venta` | Precio actual de una unidad base. |
-| `is_precio_libre` | Solo servicios: precio y descripción se capturan en cada venta. |
-| `marca`, `modelo`, `color`, `descripcion` | Datos del catálogo; opcionales. |
+| `unidad_medida_id` | Unidad en que se vende: para un producto es su **unidad base** (en ella se cuenta el stock y se calcula el costo: pieza, hoja, metro…); para un servicio, en qué se cobra (hoja, hora, página…). |
+| `precio_venta` | Precio actual de una unidad. |
+| `descripcion` | Texto para el catálogo; opcional. |
 | `descontinuado_at` | Cuándo se descontinuó. Vacío = se sigue manejando. Un descontinuado no se ofrece en caja ni en el catálogo, y no aparece en los reportes de resurtido; su historia se conserva. |
-| `motivo_descontinuado` | Por qué ya no se resurte ("el proveedor ya no lo vende"). Obligatorio al descontinuar. |
+| `motivo_descontinuado` | Por qué ya no se maneja ("el proveedor ya no lo vende"). Obligatorio al descontinuar. |
 | `created_at`, `updated_at`, `updated_by` | Auditoría. |
+
+### `productos` (lo propio de lo físico)
+| Columna | Qué es |
+|---|---|
+| `articulo_id` | El artículo que es este producto. |
+| `marca`, `modelo`, `color` | Datos del catálogo; opcionales. |
+
+Lo demás de un producto vive en sus propias tablas: presentaciones, códigos de barras y kárdex.
 
 ### `unidades_medida`
 | Columna | Qué es |
 |---|---|
-| `id`, `nombre` | Pieza, hoja, metro, gramos… |
+| `id`, `nombre` | Pieza, hoja, metro, gramos, hora… |
 | `allows_fraction` | Si se puede vender 1.5 (metro, gramos) o solo enteros (pieza). La caja lo valida. |
 
 ### `categorias`
-`id`, `nombre` (único). Plana, sin jerarquía.
+`id`, `nombre` (único). Plana, sin jerarquía. Productos y servicios comparten la tabla.
 
 ### `presentaciones`
 Formas de vender (y, si hace falta, de comprar) un producto en grupo. **Su uso principal es el mayoreo:** un paquete con precio de descuento frente a la suma de piezas sueltas.
@@ -63,18 +69,8 @@ Formas de vender (y, si hace falta, de comprar) un producto en grupo. **Su uso p
 
 Un producto puede tener varios códigos (el proveedor cambió el empaque). El código generado del NID no se guarda: la etiqueta imprime el NID y al escanearlo se busca por NID.
 
-### `recetas` (servicios con receta)
-`servicio_id`, `componente_id`, `cantidad`. Lo que un servicio consume o incluye:
-- **Insumos:** productos físicos que se gastan al hacerlo (copia carta BN → 1 hoja carta; enmicado carta → 1 mica carta). Al vender el servicio, cada insumo escribe su salida al kárdex. El ticket solo muestra el servicio.
-- **Servicios incluidos:** otros servicios que forman parte (polaroid → impresión color + corte). Sirven para el costo y para contar cuántas veces se usó cada servicio.
-
-Con esto:
-- **Disponibilidad:** un servicio sin receta (tramitar un CURP) siempre está disponible; uno con insumos, mientras alcancen (el menor de stock ÷ cantidad entre sus insumos, como los kits de la v1).
-- **Costo del servicio** = el de su receta. Sin receta, un costo fijo (0 para el CURP) o trasladado (recargas: cuesta lo que se cobra). El desgaste de la impresora llega con el módulo de impresoras.
-- **Un "kit" de verdad** (productos que se venden juntos en paquete, p. ej. cuaderno + lápiz + goma) hoy no existe; entra cuando haya un caso real.
-
 ### `precios_historial`
-`producto_id`, `presentacion_id` (opcional), `precio_venta`, `desde`, `updated_by`. Se escribe cada vez que cambia un precio. Sirve para reportes; la venta guarda de todas formas el precio con que se cobró.
+`articulo_id`, `presentacion_id` (opcional), `precio_venta`, `desde`, `updated_by`. Se escribe cada vez que cambia un precio. Sirve para reportes; la venta guarda de todas formas el precio con que se cobró.
 
 ### `movimientos_inventario` (el kárdex)
 | Columna | Qué es |
@@ -83,10 +79,10 @@ Con esto:
 | `kind` | `compra`, `venta`, `devolucion`, `merma`, `ingreso_sin_compra`. |
 | `cantidad` | En **unidad base**, con signo: + entra, − sale. Una compra de 2 cajas de 5,000 hojas escribe +10,000. |
 | `precio_unitario` | Solo en compras: lo que costó cada unidad base. De aquí sale el costo promedio. |
-| referencia al documento | El renglón de venta, compra o ajuste que lo originó. Se define con esos módulos. |
+| referencia al documento | La partida de venta, recepción o ajuste que lo originó. Se define con esos módulos. |
 
-- **Solo productos físicos escriben al kárdex.** Un servicio no; al venderlo, cada uno de sus insumos escribe su salida (con referencia al servicio vendido).
-- **Los renglones no se editan ni se borran:** una corrección es otro movimiento. Es la historia del inventario.
+- **Solo productos escriben al kárdex.** Un servicio no; al venderlo, cada uno de sus insumos escribe su salida (con referencia al servicio vendido; ver diseño 03).
+- **Los renglones no se editan ni se borran:** una corrección es otro movimiento. Es la historia del inventario. (Única excepción controlada: fusionar productos duplicados, ver diseño 02.)
 - **Stock = suma de `cantidad` por producto.**
 - **El costo por promedio móvil** lo sigue calculando la aplicación y lo guarda en tablas derivadas regenerables, como en la versión uno (`/home/ro/code/inventario_papeleria/docs/decisiones/2026-09-27-costo-promedio-movil.md`). El kárdex es el dato original; el costo, el calculado.
 
@@ -98,21 +94,16 @@ Un producto nuevo pasa por dos etapas, que salen de los datos (no hay un campo d
 Al guardar la primera recepción de un producto nuevo, el precio de venta es obligatorio (ver diseño 02).
 
 ## Fuera de este diseño
-- **Escalas de precio por cantidad** (p. ej. 1–99 hojas a $0.50, 100+ a $0.40): el mayoreo se resuelve con presentaciones; las escalas solo se agregan si un caso real no cabe en un paquete. El precio de un renglón se calcula en una sola función pura, así que agregarlas después es un cambio en un solo lugar.
+- **Escalas de precio por cantidad** (p. ej. 1–99 hojas a $0.50, 100+ a $0.40): el mayoreo se resuelve con presentaciones; las escalas solo se agregan si un caso real no cabe en un paquete. El precio de una partida se calcula en una sola función pura, así que agregarlas después es un cambio en un solo lugar.
 - **El margen del mayoreo:** como el costo siempre va por unidad base, el margen de un paquete es su precio menos `factor × costo unitario`. Los reportes lo mostrarán por presentación.
 - **Fotos, videos y destacados:** van con el catálogo público (aplicación pública), no con el inventario.
-- **El nombre del producto según el proveedor** (distinto en 1,433 renglones de compra): se diseña con compras; es la semilla del "código del proveedor" para la cadena de suministro.
+- **El nombre del producto según el proveedor:** está en el diseño 02 (compras).
 - **Comisión de tarjeta:** se diseña con ventas.
-- **El costo de los servicios** (se diseña con servicios e impresoras). Hay cuatro tipos:
-  - **sin costo directo** (tramitar un CURP: costo 0, todo es margen);
-  - **ingreso trasladado** (pago de servicios, recargas: costo = lo que se cobra);
-  - **consume material** (una copia se lleva una hoja: la hoja es su insumo, en su receta);
-  - **usa un equipo** (la impresora es una inversión, no mercancía; el costo por copia sale del tóner y del desgaste medido con los contadores SNMP).
-
-  En la v1 una impresora se dio de alta como "compra" de un servicio para ligar su costo a las copias: resolvía una pregunta real con la herramienta disponible. En la v2 la impresora es equipo.
-- **"CURP impreso"** (trámite + copia) son dos servicios que se venden juntos de un toque, en dos partidas: el trámite (sin receta) y la copia (con su hoja como insumo).
+- **Servicios** (recetas, costo externo, precio libre): diseño 03.
+- **Kits** (artículos que se venden como varias partidas juntas: "Pago de servicio", "CURP impreso"): diseño 03.
 
 ## Respuestas del dueño (2026-09-29)
 1. **Descontinuar sí hace falta,** con el motivo: hay productos sin stock que nunca se van a resurtir (el proveedor ya no los vende).
 2. **Categorías: se limpian** tomando la categoría original de cada producto.
 3. **Presentaciones:** hoy casi todo se vende por pieza (la zona es de bajos recursos), pero algunos clientes ya preguntan por mayoreo. Las presentaciones son para ir armando paquetes más grandes con descuento.
+4. **Artículo + dos tablas:** lo común de productos y servicios en `articulos`; lo propio, en `productos` y `servicios`.
