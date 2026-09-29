@@ -89,7 +89,10 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 |---|---|
 | `MovimientoFinanciero` | Entrada o salida de dinero que no es venta ni compra. |
 | `Concepto` | Clasificación de un movimiento financiero. |
-| `Caja`, `Banco` | Dónde se mueve el dinero. |
+| `Caja`, `Banco` | Dónde se mueve el dinero. La caja es el cajón físico de efectivo. |
+| `PuntoVenta` | Dispositivo desde el que se cobra (computadora, iPad, Elo). Varios pueden cobrar a la misma caja. |
+| `Corte` | Contar el efectivo de la caja (por moneda), compararlo con lo esperado y, si se quiere, retirar dinero. |
+| `Sobrante`, `Faltante` | Diferencia de un corte: se contó más o menos de lo esperado. |
 | `Socio` | Dueño que aporta o retira dinero. |
 
 ## Impresión

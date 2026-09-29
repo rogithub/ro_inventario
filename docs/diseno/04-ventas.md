@@ -31,6 +31,7 @@
 | `cliente_id` | Opcional. |
 | `cambio` | Lo que se le regresó al cliente, en pesos. |
 | `cancelada_at`, `motivo_cancelacion`, `cancelada_by` | Si se canceló. Una cancelada no cuenta en reportes ni en caja, pero se conserva. |
+| `punto_venta` | Desde dónde se cobró (computadora, iPad, Elo). Sirve para investigar diferencias en el corte de caja. |
 | `notas`, `created_at`, `created_by` | `created_by` = quien vendió. |
 
 ### `ventas_partidas`
@@ -77,7 +78,7 @@ Un solo paso, con motivo obligatorio: marca la venta como cancelada y escribe en
 
 ## Fuera de este diseño
 - **Monedero** (generar, canjear, consultar por enlace): se diseña con clientes, en el corte mínimo. **Pedidos:** después del corte.
-- **Corte de caja** (efectivo esperado contra contado, por forma de pago y moneda): se diseña aparte, es corto y va en el corte mínimo.
+- **Corte de caja:** diseño 05.
 - **Comisión que cobra la terminal** (contra la que se le cobra al cliente): con finanzas.
 - **Facturación (CFDI) de una venta** y el ticket público con enlace: después.
 - **Descuentos** por venta: no existen hoy; el mayoreo va por presentaciones.
