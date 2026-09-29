@@ -52,7 +52,9 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 | `Comision` | Cargo por cobrar con cierta forma de pago (p. ej. tarjeta). |
 | `Moneda`, `TipoCambio` | Moneda de un pago y su conversión a la moneda del negocio. |
 | `Impuesto`, `IVA` | Impuestos de la venta. IVA de 16 %, u 8 % en la región fronteriza. |
-| `Devolucion` | Regreso de productos de una venta. |
+| `Devolucion` | El cliente regresa mercancía de una venta. |
+| `Cancelacion` | Anular una venta mal capturada; el inventario regresa y la venta se conserva marcada, con su motivo. |
+| `Reembolso` | Lo que se le regresa al cliente en una devolución. |
 | `Pedido` | Encargo o cotización previa a la venta; puede llegar en línea. |
 | `IngresoTrasladado` | Servicio cobrado a su costo: entra y sale de caja sin ganancia. |
 
