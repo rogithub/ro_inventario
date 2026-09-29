@@ -22,7 +22,7 @@ Este documento dice **qué** es el sistema y **por qué**. Cada decisión concre
 
 - Las dos comparten el núcleo del negocio: una regla vive en un solo lugar y las dos la usan.
 - Son dos programas y dos imágenes separadas. La pública **lee** el catálogo y lo que el cliente consulta (monedero, recibos), y **solo escribe una cosa**: los pedidos en línea, que llegan como bandeja de entrada para que el negocio los revise. Su usuario de BD tiene exactamente esos permisos, y no puede depender de los demás módulos que escriben: el compilador lo impide.
-- **Un negocio = una instancia y una base de datos propias.** El código atiende siempre a un solo negocio; dar de alta otro es configuración y despliegue, no código. (Decisión pendiente de escribir.)
+- **Un negocio = una instancia y una base de datos propias.** El código atiende siempre a un solo negocio; dar de alta otro es configuración y despliegue, no código. Ver [la decisión](docs/decisiones/2026-09-29-una-instancia-por-negocio.md).
 
 ## Principios
 
