@@ -18,6 +18,13 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 | Término | Qué es |
 |---|---|
 | `Producto` | Artículo del catálogo. Tiene un número corto para buscarlo en caja. |
+| `NID` | Número corto del producto: se teclea en caja y se imprime en la etiqueta como código de barras. |
+| `CodigoBarras` | Código impreso en un producto o en su empaque (presentación). |
+| `Marca`, `Modelo`, `Color`, `Descripcion` | Datos del catálogo de un producto. |
+| `Kardex` | Registro de todos los movimientos de inventario (entradas y salidas) de cada producto. |
+| `Descontinuado` | Producto que ya no se resurte ni se ofrece; conserva su historia. |
+| `Motivo` | Por qué se hizo algo: una merma, un ajuste, una descontinuación. |
+| `Mayoreo` | Venta por volumen, con precio de descuento; se ofrece con presentaciones. |
 | `Servicio` | Producto que no lleva stock (copias, enmicado, recargas, trámites). |
 | `Kit` | Producto que se arma con otros; su stock es cuántos alcanzan a armarse. |
 | `Componente` | Producto que forma parte de un kit, con su cantidad en la receta. |
