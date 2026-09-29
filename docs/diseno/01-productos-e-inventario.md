@@ -41,7 +41,7 @@
 | `articulo_id` | El artículo que es este producto. |
 | `marca`, `modelo`, `color` | Datos del catálogo; opcionales. |
 
-Lo demás de un producto vive en sus propias tablas: presentaciones, códigos de barras y kárdex.
+Lo demás de un producto vive en sus propias tablas: presentaciones, códigos de barras, kárdex y ubicaciones (dónde puede estar: mostrador, bodeguita, bodega; diseño 08).
 
 ### `unidades_medida`
 | Columna | Qué es |
@@ -79,7 +79,7 @@ Un producto puede tener varios códigos (el proveedor cambió el empaque). El c�
 | `kind` | `compra`, `venta`, `cancelacion` (regresa lo de una venta cancelada), `devolucion`, `merma`, `ingreso_sin_compra`. |
 | `cantidad` | En **unidad base**, con signo: + entra, − sale. Una compra de 2 cajas de 5,000 hojas escribe +10,000. |
 | `precio_unitario` | Solo en compras: lo que costó cada unidad base. De aquí sale el costo promedio. |
-| `recepcion_partida_id`, `venta_partida_id`, `devolucion_partida_id`, `ajuste_id` | El documento que lo originó; exactamente uno tiene valor. Las ventas y cancelaciones apuntan a la partida vendida (la de un servicio con receta, para sus insumos). Los ajustes (merma, ingreso sin compra) se diseñan en el 08. |
+| `recepcion_partida_id`, `venta_partida_id`, `devolucion_partida_id`, `ajuste_partida_id` | El documento que lo originó; exactamente uno tiene valor. Las ventas y cancelaciones apuntan a la partida vendida (la de un servicio con receta, para sus insumos). Los ajustes (merma, ingreso sin compra, conteo físico) están en el diseño 08. |
 
 - **Solo productos escriben al kárdex.** Un servicio no; al venderlo, cada uno de sus insumos escribe su salida (con referencia al servicio vendido; ver diseño 03).
 - **Los renglones no se editan ni se borran:** una corrección es otro movimiento. Es la historia del inventario. (Única excepción controlada: fusionar productos duplicados, ver diseño 02.)

@@ -65,7 +65,10 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 |---|---|
 | `Merma` | Salida sin venta (dañado, perdido, consumo). |
 | `IngresoSinCompra` | Entrada de mercancía sin compra registrada. |
-| `Ajuste` | Corrección de inventario (merma o ingreso sin compra). |
+| `Ajuste` | Corrección de inventario (merma o ingreso sin compra), con su motivo. |
+| `Conteo` | Contar físicamente una parte del inventario (una ubicación, una categoría) y corregir las diferencias con ajustes. |
+| `Ubicacion` | Etiqueta del estante (o sección) donde puede estar un producto: "Mostrador", "Estante 1", "A-3". Libre y opcional; un producto puede estar en varias. |
+| `Extravio` | Motivo de merma: se perdió y no se sabe cómo. |
 | `Costo` | Costo de la mercancía por promedio móvil ponderado. |
 | `Margen` | Precio menos costo (bruto). |
 
