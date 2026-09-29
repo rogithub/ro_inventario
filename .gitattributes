@@ -1,0 +1,3 @@
+# Todo el texto se guarda con fin de línea LF: desarrollo y producción son Linux.
+# Git normaliza al hacer commit, sin importar el editor o la herramienta que escribió el archivo.
+* text=auto eol=lf
