@@ -32,3 +32,4 @@ Qué implica hacia adelante: costos, reglas nuevas, cómo revertir.
 |---|---|
 | 2026-09-29 | [Una instancia y una base de datos por negocio](2026-09-29-una-instancia-por-negocio.md) |
 | 2026-09-29 | [La configuración vive en tres capas, y cada dato en una sola](2026-09-29-capas-de-configuracion.md) |
+| 2026-09-29 | [Un crate por área del negocio, y el compilador vigila las dependencias](2026-09-29-estructura-de-crates.md) |
