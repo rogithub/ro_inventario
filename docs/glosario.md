@@ -13,7 +13,6 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 | `Negocio` | La empresa que usa el sistema. Cada una tiene su propia instancia y base de datos. |
 | `Usuario` | Persona que entra al sistema. |
 | `Rol`, `Permiso` | Qué puede hacer cada usuario (vender, comprar, ajustar inventario, ver costos, administrar usuarios). |
-| `Pais` | Define moneda, impuestos, facturación y formas de pago locales. |
 
 ## Productos
 | Término | Qué es |
@@ -41,7 +40,7 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 | `Cambio` | Lo que se le regresa al cliente. |
 | `Comision` | Cargo por cobrar con cierta forma de pago (p. ej. tarjeta). |
 | `Moneda`, `TipoCambio` | Moneda de un pago y su conversión a la moneda del negocio. |
-| `Impuesto`, `IVA` | Impuestos de la venta; los define el país. |
+| `Impuesto`, `IVA` | Impuestos de la venta. IVA de 16 %, u 8 % en la región fronteriza. |
 | `Devolucion` | Regreso de productos de una venta. |
 | `Pedido` | Encargo o cotización previa a la venta; puede llegar en línea. |
 | `IngresoTrasladado` | Servicio cobrado a su costo: entra y sale de caja sin ganancia. |

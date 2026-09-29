@@ -78,11 +78,11 @@ Base: lo que ya funciona en `xplaya`. Cada pieza se confirma en su decisión.
 
 **Después del corte**, en el orden que pida el negocio: pedidos, monedero, kits, catálogo público completo, finanzas, impresoras y tóners, facturación electrónica (CFDI), pagos con terminal integrados, conexión entre negocios (la red).
 
-## Pagos y país
+## Pagos, y solo México
 
 - **El efectivo es una forma de pago más, no el centro.** Una venta se cobra con una o varias formas de pago; cada forma tiene sus reglas (si da cambio, si lleva comisión, si requiere referencia o confirmación) y agregar una nueva no toca las demás.
-- **Lo que depende del país es una pieza intercambiable:** moneda, impuestos, facturación electrónica, formas de pago locales, fuente del tipo de cambio. La primera implementación es la de México (IVA, CFDI, SPEI, CoDi, Banxico), elegida por configuración. Otro país se agrega cuando haya un negocio real ahí, sin tocar el núcleo.
-- **Nada del núcleo supone México:** no hay "IVA 16 %" ni "pesos" escritos en las reglas del negocio.
+- **El sistema es para México:** pesos, IVA (16 %, u 8 % en la región fronteriza), CFDI, SPEI, CoDi, tipo de cambio de Banxico y horarios de México. No se diseña para otros países ni para varias monedas: sería complejidad sin un caso real. Si algún día hay un negocio en otro país, se agrega como extensión.
+- **Los servicios externos van detrás de un trait** (Banxico, y después el SAT o el PAC y los pagos). No es para cambiar de país, sino para probar sin llamar al servicio real.
 
 ## El corte y la migración
 
@@ -95,6 +95,7 @@ Base: lo que ya funciona en `xplaya`. Cada pieza se confirma en su decisión.
 
 - No es un ERP para todo tipo de empresa: es para negocios chicos de compra, venta y servicios.
 - No compite con WhatsApp, TikTok o los marketplaces: los aprovecha como canales, sin depender de ellos para lo esencial.
+- No es internacional: es para negocios en México.
 - No es un port de la versión uno: se rediseña desde la base de datos. El intento de port línea por línea sobre la misma base quedó archivado en la etiqueta `intento-2026-05`.
 
 ## Hacia dónde va

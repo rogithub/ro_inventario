@@ -14,7 +14,7 @@ crates/
   inventario/     área del negocio: productos, stock, kits, costos
   ventas/         área del negocio: venta, formas de pago, comisiones
   compras/        …una por área, creada cuando se necesita
-  pais-mx/        piezas de México: IVA, tipo de cambio Banxico; después CFDI, SPEI, CoDi
+  mexico/         servicios externos de México: tipo de cambio de Banxico; después SAT/PAC (CFDI), SPEI, CoDi
   config/         lectura y validación de negocio.toml
   postgres/       implementación de los repositorios de todas las áreas, y las migraciones
 apps/
@@ -29,17 +29,17 @@ e2e/              pruebas Playwright de las dos aplicaciones
 
 ```mermaid
 graph TD
-  privada --> ventas & inventario & postgres & config & paismx[pais-mx]
+  privada --> ventas & inventario & postgres & config & mexico
   publica --> inventario & postgres & config
   postgres --> ventas & inventario
-  paismx --> ventas & kernel
+  mexico --> ventas & kernel
   ventas --> inventario --> kernel
   ventas --> kernel
 ```
 
 1. **Las áreas del negocio son puras.** `inventario`, `ventas`, etc. dependen solo de `kernel` y de otras áreas. No tienen como dependencia `sqlx`, `axum` ni ninguna librería de red o de base de datos: una consulta SQL o una respuesta HTTP en una regla del negocio **no compila**.
 2. **Cada área define los traits que necesita** (`VentasRepo`, `TipoCambioProvider`…) y no sabe quién los implementa. Eso es la inversión de dependencias.
-3. **`postgres` y `pais-mx` implementan esos traits.** Dependen de las áreas, nunca al revés.
+3. **`postgres` y `mexico` implementan esos traits.** Así las áreas se prueban sin base de datos ni servicios externos. Dependen de las áreas, nunca al revés.
 4. **Las aplicaciones solo arman y conectan:** leen la configuración, eligen las implementaciones, registran rutas y muestran plantillas. Sin reglas del negocio.
 5. **Las dependencias entre áreas van en un solo sentido** (ventas conoce inventario; inventario no conoce ventas). Cargo no permite ciclos entre crates, así que un ciclo obliga a replantear la frontera.
 
@@ -56,7 +56,7 @@ graph TD
 - **Un solo crate con módulos** (como `xplaya`): el compilador no impide que un módulo use a cualquier otro; la separación vuelve a depender de la disciplina.
 
 ## Consecuencias
-- **Lo que el compilador garantiza:** las reglas del negocio no dependen de la base de datos, de la web ni del país; las áreas no forman ciclos.
+- **Lo que el compilador garantiza:** las reglas del negocio no dependen de la base de datos, de la web ni de servicios externos; las áreas no forman ciclos.
 - **Lo que no garantiza:** que la aplicación pública no escriba. Depende de `postgres`, que también tiene repositorios que escriben. La barrera ahí es su **usuario de base de datos con permisos mínimos** (leer, y solo insertar pedidos en línea), más la revisión. Si algún día hace falta que lo impida el compilador, `postgres` se parte en lectura y escritura.
 - `postgres` crece con cada área. Se organiza por carpetas por área; si pasa del límite de tamaño, se parte por área.
 - Los crates se crean cuando se necesitan, no todos el primer día: el corte mínimo empieza con `kernel`, `config`, `postgres`, `privada` y las áreas de ventas, compras, inventario y usuarios.
