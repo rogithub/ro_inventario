@@ -48,6 +48,7 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
 | Copia de la v1 `dev_inventario_papeleria` | mismo Postgres de kukulkan | Leer, como origen de `tools/migracion-v1` |
 | Pruebas de integración | bases temporales de `sqlx::test` | Las crean y borran las pruebas |
 
+- **Un hook lo hace cumplir:** `~/.claude/hooks/bloquear-produccion.sh` (configurado en `~/.claude/settings.json`, a nivel usuario, para todos los proyectos) rechaza cualquier comando que combine un cliente de Postgres con `192.168.0.10`/`30432`, y cualquier mención de `live_restore`. Si bloquea algo legítimo, se platica con el dueño; no se esquiva.
 - **Usuario de pruebas de la IA:** lo crea `db/semilla-dev.sql`; solo existe en desarrollo. Sus credenciales están en las variables `E2E_USER` y `E2E_PASS` del perfil del dueño: se leen corriendo el comando dentro de `zsh -ic '…'`. Nunca pedirlas, imprimirlas ni guardarlas.
 - Las copias de producción se usan con datos reales (sin anonimizar), por decisión del dueño.
 
