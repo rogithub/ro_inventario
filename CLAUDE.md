@@ -100,7 +100,7 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
 
 | Proyecto | Ruta | Para qué consultarlo |
 |---|---|---|
-| Versión uno | `/home/ro/code/inventario_papeleria` | Reglas del negocio ya descubiertas (`CLAUDE.md`, `docs/decisiones/`, pruebas). En producción; se congela cuando la v2 arranque en serio |
+| Versión uno | `/home/ro/code/inventario_papeleria` | Reglas del negocio ya descubiertas (`CLAUDE.md`, `docs/decisiones/`, pruebas). En producción; solo cambia por necesidad y el dueño avisa cuando pasa (lo que cambie ahí, la v2 lo contempla) |
 | Catálogo actual | `/home/ro/code/xplaya` | Base técnica en Rust (Axum, sqlx, plantillas) |
 | Infraestructura | `/home/ro/code/k3s-manifests` | Cluster, despliegues, respaldos |
 | Intento anterior | etiqueta `intento-2026-05` de este repo | Port abandonado; referencia, no base |

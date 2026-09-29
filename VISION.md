@@ -88,7 +88,7 @@ Base: lo que ya funciona en `xplaya`. Cada pieza se confirma en su decisión.
 
 - **La papelería pasa a la versión dos cuando pueda capturar ventas y compras.** Al inicio se captura en paralelo en las dos versiones para detectar diferencias.
 - **La migración de datos se escribe desde el primer día**, no al final: un script que convierte la base de la versión uno a la nueva y que se corre seguido contra una copia de producción. Las inconsistencias salen mientras se diseña, cuando es barato corregirlas.
-- **La versión uno queda congelada** una vez que el desarrollo de la dos arranque en serio: solo arreglos, nada nuevo.
+- **La versión uno no se congela formalmente:** el dueño es el único desarrollador y decide. Si por fuerza mayor cambia algo en la uno, lo avisa en la sesión de trabajo, para que la dos lo contemple.
 - Producción de la versión uno sigue intocable: solo se lee una copia.
 
 ## Qué no es
@@ -105,7 +105,7 @@ La visión larga, la **Red Comercial**, está en [`docs/red-comercial.md`](docs/
 ## Lecciones que se traen
 
 - De la versión uno: el costo se calculó mal durante años (promedio simple); reglas escondidas en vistas SQL; una clase de ventas que lo hacía todo; configuración leída "del primer formulario de la página" que se rompió al agregar otro; fines de línea mezclados. Cada una tiene hoy una regla que la evita.
-- Del intento `intento-2026-05`: se detuvo porque la versión uno siguió recibiendo funcionalidades nuevas y la de Rust se fue quedando atrás; además no había ningún cliente a la vista y no se veía como algo que le sirviera a alguien más. Por eso aquí la versión uno se congela, y la dos tiene un propósito claro desde el inicio. Ese propósito apareció solo: EKA llegó a partir de una demo del sistema a un amigo. Mostrar algo que funciona atrae interés.
+- Del intento `intento-2026-05`: se detuvo porque la versión uno siguió recibiendo funcionalidades nuevas y la de Rust se fue quedando atrás; además no había ningún cliente a la vista y no se veía como algo que le sirviera a alguien más. Por eso la dos tiene un propósito claro desde el inicio, y la uno solo cambia por necesidad. Ese propósito apareció solo: EKA llegó a partir de una demo del sistema a un amigo. Mostrar algo que funciona atrae interés.
 - Los roles de usuario: la versión uno nació con roles pensando en otros negocios, pero en la papelería nunca se usaron (dos personas; solo se separa quién crea usuarios) y quedaron mal manejados. Las funcionalidades se agregaban según el uso diario, sin pensar en negocios con más empleados. Aquí los usuarios y permisos se diseñan bien desde el principio, aunque la papelería use lo mínimo.
 - De `xplaya`: un sistema hecho casi todo por IA funciona, pero su dueño participó poco y lo entiende menos. Por eso aquí el dueño diseña.
 
