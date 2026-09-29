@@ -36,3 +36,4 @@ Qué implica hacia adelante: costos, reglas nuevas, cómo revertir.
 | 2026-09-29 | [Nombres: programación en inglés, negocio en español](2026-09-29-nombres.md) |
 | 2026-09-29 | [La base de datos: migraciones, vistas regenerables, semillas y ambientes](2026-09-29-base-de-datos-y-ambientes.md) |
 | 2026-09-29 | [Logs estructurados desde el día uno, legibles por la IA](2026-09-29-logs-desde-el-dia-uno.md) |
+| 2026-09-29 | [Formato y linters: los de fábrica, más unas reglas que importan en una caja](2026-09-29-formato-y-linters.md) |

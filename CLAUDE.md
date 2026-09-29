@@ -33,7 +33,8 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
 - **Nombres:** vocabulario de programación en inglés, sustantivos del glosario en español (`get_ventas_by_cliente`, `struct Venta`, `is_servicio`). Base de datos en `snake_case`. Términos del SAT cuando existen (`FormaPago`). Sin acentos en identificadores. Comentarios, pantallas y documentación en español.
 - **Base de datos:** migraciones numeradas en `migrations/` (una migración en `main` no se edita; se corrige con otra), vistas regenerables en `db/vistas/`, semilla solo de desarrollo en `db/semilla-dev.sql`. La aplicación aplica migraciones y vistas al arrancar.
 - **Logs:** `tracing` en JSON en producción; ids del negocio como campos; nunca secretos.
-- **Fines de línea LF** en todo el repo.
+- **Formato y linters:** `rustfmt` de fábrica; `clippy` sin advertencias; sin `unsafe`; sin `unwrap`/`expect` fuera de pruebas (los errores se manejan con `Result`); dinero y cantidades con `Decimal`, nunca `f64`; `cargo audit` en CI.
+- **Fines de línea LF** en todo el repo (`.gitattributes`, `.editorconfig`).
 
 ---
 
