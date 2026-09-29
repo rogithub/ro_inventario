@@ -55,7 +55,8 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 | `Devolucion` | El cliente regresa mercancía de una venta. |
 | `Cancelacion` | Anular una venta mal capturada; el inventario regresa y la venta se conserva marcada, con su motivo. |
 | `Reembolso` | Lo que se le regresa al cliente en una devolución. |
-| `Pedido` | Encargo o cotización previa a la venta; puede llegar en línea. |
+| `Pedido` | Venta que el cliente se comprometió a recoger y todavía no se cobra o no se entrega (p. ej. mandó por WhatsApp qué imprimir). Se puede editar hasta cobrarse. |
+| `Cotizacion` | Venta sin cobrar que solo informa precios (una lista de útiles); tal vez nunca se compre. Vence a los N días y se archiva. |
 | `IngresoTrasladado` | Servicio cobrado a su costo: entra y sale de caja sin ganancia. |
 
 ## Inventario
@@ -71,11 +72,14 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 | Término | Qué es |
 |---|---|
 | `Cliente` | Persona registrada, con monedero. |
+| `Veto` | Restricción temporal a un cliente: no se le reciben pedidos a distancia, solo se le vende en la tienda. Vence y se levanta sola. |
 | `Monedero` | Saldo del cliente: lo que gana al comprar y lo que usa como pago. |
+| `Abono` | Lo que una partida de venta suma al monedero de un cliente; vence. |
+| `Canje` | Uso del monedero como forma de pago; sale de los abonos que vencen primero. |
 | `Proveedor` | A quien se le compra. |
 | `Contacto` | Cliente o proveedor en la agenda. |
 | `Compra` | Mercancía recibida de un proveedor, con su factura. |
-| `OrdenCompra` | Pedido a un proveedor antes de recibirlo. |
+| `OrdenCompra` | En la v1, el pedido a un proveedor. En la v2 no es un documento aparte: es una compra que todavía no se recibe (diseño 02). |
 | `Factura` | Comprobante fiscal (CFDI en México), emitido o recibido. |
 | `RFC` | Identificador fiscal en México. |
 | `Paqueteria` | Envío de una compra. |

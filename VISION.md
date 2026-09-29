@@ -72,13 +72,13 @@ Base: lo que ya funciona en `xplaya`. Cada pieza se confirma en su decisión.
 
 ## Módulos
 
-**Núcleo (el corte mínimo):** usuarios y permisos, productos y servicios (con sus recetas: una copia consume una hoja), inventario (stock), ventas con sus formas de pago, corte de caja, compras, clientes con su **monedero**, proveedores, costo por promedio móvil.
+**Núcleo (el corte mínimo):** usuarios y permisos, productos y servicios (con sus recetas: una copia consume una hoja), inventario (stock), ventas con sus formas de pago, pedidos (ventas por cobrar o por entregar: el flujo diario de WhatsApp), corte de caja, compras, clientes con su **monedero**, proveedores, costo por promedio móvil.
 
 - **Monedero:** ya se anunció a los clientes y cuentan con él (hay quien consulta su acumulado por el enlace de xplaya.com y regresa a comprar). La migración conserva los identificadores de los clientes, la aplicación pública mantiene la ruta `/monedero/{id}` (los enlaces enviados por WhatsApp deben seguir funcionando) y el saldo migrado cuadra al centavo con la v1.
 
 - **Usuarios y permisos:** se diseñan para negocios con empleados (quién puede vender, comprar, ajustar inventario, ver costos, administrar usuarios), aunque la papelería use solo dos perfiles. El diseño es completo desde el principio; las pantallas para configurarlo pueden esperar a que un negocio las necesite.
 
-**Después del corte**, en el orden que pida el negocio: pedidos, catálogo público completo, finanzas, impresoras y tóners, facturación electrónica (CFDI), pagos con terminal integrados, conexión entre negocios (la red).
+**Después del corte**, en el orden que pida el negocio: catálogo público completo, finanzas, impresoras y tóners, facturación electrónica (CFDI), pagos con terminal integrados, conexión entre negocios (la red).
 
 ## Pagos, y solo México
 
