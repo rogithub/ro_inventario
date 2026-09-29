@@ -64,6 +64,17 @@ Cada uno es útil aunque la red nunca llegue:
 2. **Servidor MCP de solo lectura del catálogo:** productos, precio y si hay existencia.
 3. **Orden de compra → pedido entre dos sistemas**, cuando EKA sea cliente.
 
+## Puertas que la versión dos deja abiertas (2026-09-29)
+La red no se diseña con un solo nodo: sería adivinar. Pero el diseño de la v2 cuida no cerrarle ninguna puerta:
+- **Identificadores UUID:** nada de un negocio choca con lo de otro.
+- **Los negocios se hablan por API**, nunca con consultas entre bases (decisión "una instancia por negocio").
+- **Cliente y proveedor en tablas separadas** no impiden que un negocio sea las dos cosas: el día que haya otro nodo, el cliente y el proveedor apuntarán al mismo nodo, sin juntar tablas.
+- **Mi compra "pedida" y la venta "pedido" del otro tienen la misma forma** (y mi recepción, su entrega): conectarlas será traducir un documento en el otro.
+- **El nombre del producto según el proveedor** (vista de compras) es la semilla del mapeo "mi catálogo contra el tuyo".
+- **Los enlaces públicos** (catálogo, cotización, recibo) ya publican lo que se ofrece.
+
+Lo que **no** se hace hasta que exista el segundo nodo: columnas o tablas "por si acaso" para la red.
+
 ## Principios
 
 - Cada nodo vale por sí solo; la red es un premio, no un requisito.
