@@ -26,8 +26,10 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 | `Motivo` | Por qué se hizo algo: una merma, un ajuste, una descontinuación. |
 | `Mayoreo` | Venta por volumen, con precio de descuento; se ofrece con presentaciones. |
 | `Servicio` | Producto que no lleva stock (copias, enmicado, recargas, trámites). |
-| `Kit` | Producto que se arma con otros; su stock es cuántos alcanzan a armarse. |
-| `Componente` | Producto que forma parte de un kit, con su cantidad en la receta. |
+| `Receta` | Lo que un servicio consume o incluye para hacerse: insumos y otros servicios, con su cantidad. |
+| `Insumo` | Producto físico que un servicio gasta al hacerse y que no se vende por separado en ese momento (la hoja de una copia, la mica de un enmicado). |
+| `Componente` | Cada elemento de una receta (un insumo o un servicio incluido). |
+| `Kit` | Paquete de productos que se venden juntos (cuaderno + lápiz + goma). Hoy no existe; en la v1 se llamaba así a los servicios con receta. |
 | `Presentacion` | Forma de venta con su factor: pieza, paquete, caja. |
 | `Categoria` | Agrupación del catálogo. |
 | `UnidadMedida` | Pieza, metro, hoja… |
@@ -73,6 +75,10 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 | `Factura` | Comprobante fiscal (CFDI en México), emitido o recibido. |
 | `RFC` | Identificador fiscal en México. |
 | `Paqueteria` | Envío de una compra. |
+| `Folio` | Número consecutivo de un documento (compra, venta) para referirse a él. |
+| `Partida` | Cada renglón de un documento (pedido, recepción, venta): qué producto, cuánto y a qué precio. |
+| `Recepcion` | Una entrega de mercancía de un proveedor; una compra puede tener varias. |
+| `Regalo` | Mercancía que el proveedor dio sin costo; entra al inventario con costo 0. |
 
 ## Finanzas
 | Término | Qué es |

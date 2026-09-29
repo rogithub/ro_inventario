@@ -11,7 +11,7 @@ En la versión uno las reglas del negocio acabaron repartidas entre vistas SQL, 
 ```
 crates/
   kernel/         tipos que comparten todas las áreas: Dinero, Cantidad, ids tipados, errores
-  inventario/     área del negocio: productos, stock, kits, costos
+  inventario/     área del negocio: productos, servicios y sus recetas, stock, costos
   ventas/         área del negocio: venta, formas de pago, comisiones
   compras/        …una por área, creada cuando se necesita
   mexico/         servicios externos de México: tipo de cambio de Banxico; después SAT/PAC (CFDI), SPEI, CoDi
