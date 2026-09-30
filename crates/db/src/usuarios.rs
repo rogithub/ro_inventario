@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use kernel::RepoError;
 use sqlx::PgPool;
-use usuarios::contrasenas::HashContrasena;
+use usuarios::passwords::PasswordHash;
 use usuarios::permisos::{Permiso, Rol};
 use usuarios::usuarios::{Email, NuevoUsuario, Usuario, UsuarioError, UsuariosRepo};
 
@@ -53,7 +53,7 @@ impl UsuariosRepo for PgUsuarios {
     async fn find_for_login(
         &self,
         email: &Email,
-    ) -> Result<Option<(Usuario, HashContrasena)>, RepoError> {
+    ) -> Result<Option<(Usuario, PasswordHash)>, RepoError> {
         let fila = sqlx::query!(
             r#"SELECT u.email, u.nombre, u.password_hash,
                       u.desactivado_at IS NULL AS "activo!",
@@ -91,7 +91,7 @@ impl UsuariosRepo for PgUsuarios {
         };
         Ok(Some((
             usuario,
-            HashContrasena::from_stored(fila.password_hash),
+            PasswordHash::from_stored(fila.password_hash),
         )))
     }
 }

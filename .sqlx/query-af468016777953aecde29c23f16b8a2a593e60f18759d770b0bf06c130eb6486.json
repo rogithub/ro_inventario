@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM failed_logins WHERE at <= now() - ($1::bigint * interval '1 second')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "af468016777953aecde29c23f16b8a2a593e60f18759d770b0bf06c130eb6486"
+}

@@ -5,10 +5,10 @@
 
 pub use sqlx::PgPool;
 
-mod sesiones;
+mod sessions;
 mod unidades_medida;
 mod usuarios;
-pub use sesiones::PgSesiones;
+pub use sessions::PgSessions;
 pub use unidades_medida::PgUnidadesMedida;
 pub use usuarios::PgUsuarios;
 

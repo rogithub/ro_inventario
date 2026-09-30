@@ -3,7 +3,7 @@
 pub mod comandos;
 mod estaticos;
 mod health;
-mod sesion;
+mod session;
 mod unidades;
 
 use std::sync::Arc;
@@ -13,7 +13,7 @@ use axum::http::{HeaderMap, Request, StatusCode};
 use axum::middleware;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{get, post};
-use db::{PgPool, PgSesiones, PgUnidadesMedida, PgUsuarios};
+use db::{PgPool, PgSessions, PgUnidadesMedida, PgUsuarios};
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
 use tracing::Level;
@@ -27,7 +27,7 @@ pub struct AppState {
     pool: PgPool,
     unidades: PgUnidadesMedida,
     usuarios: PgUsuarios,
-    sesiones: PgSesiones,
+    sessions: PgSessions,
     /// Nombre del negocio (negocio.toml), para el título y la barra de las pantallas.
     negocio: Arc<str>,
 }
@@ -37,7 +37,7 @@ impl AppState {
         Self {
             unidades: PgUnidadesMedida::new(pool.clone()),
             usuarios: PgUsuarios::new(pool.clone()),
-            sesiones: PgSesiones::new(pool.clone()),
+            sessions: PgSessions::new(pool.clone()),
             pool,
             negocio: negocio.into(),
         }
@@ -53,14 +53,17 @@ pub fn router(state: AppState) -> Router {
         .route("/unidades", get(unidades::page).post(unidades::add))
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
-            sesion::require_session,
+            session::require_session,
         ));
     Router::new()
         .merge(con_sesion)
         .route("/health", get(health::health))
         .route("/static/{*ruta}", get(estaticos::archivo))
-        .route("/login", get(sesion::login_page).post(sesion::login_submit))
-        .route("/logout", post(sesion::logout_submit))
+        .route(
+            "/login",
+            get(session::login_page).post(session::login_submit),
+        )
+        .route("/logout", post(session::logout_submit))
         .with_state(state)
         .layer(
             tower::ServiceBuilder::new()
@@ -147,7 +150,7 @@ mod test_support {
             .await
             .unwrap();
         let (_, token) =
-            usuarios::sesiones::login(&usuarios, &PgSesiones::new(pool.clone()), email, CONTRASENA)
+            usuarios::sessions::login(&usuarios, &PgSessions::new(pool.clone()), email, CONTRASENA)
                 .await
                 .unwrap();
         format!("sesion={}", token.as_str())

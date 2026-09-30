@@ -8,7 +8,7 @@ use axum::http::{HeaderMap, HeaderValue, StatusCode, header};
 use axum::middleware::Next;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use serde::Deserialize;
-use usuarios::sesiones::{DURACION_SESION, LoginError, current_user, login, logout};
+use usuarios::sessions::{LoginError, SESSION_DURATION, current_user, login, logout};
 
 use crate::{AppState, falla_interna};
 
@@ -73,13 +73,13 @@ pub async fn require_session(
 ) -> Response {
     let headers = request.headers().clone();
     let cookie = read_cookie(&headers, COOKIE).unwrap_or_default();
-    match current_user(&state.usuarios, &state.sesiones, cookie).await {
+    match current_user(&state.usuarios, &state.sessions, cookie).await {
         Ok(Some(usuario)) => {
             request.extensions_mut().insert(usuario);
             let mut respuesta = next.run(request).await;
             // `current_user` ya validó el formato del token: es seguro devolverlo.
             if let Ok(valor) =
-                HeaderValue::from_str(&session_cookie(cookie, DURACION_SESION.as_secs()))
+                HeaderValue::from_str(&session_cookie(cookie, SESSION_DURATION.as_secs()))
             {
                 respuesta.headers_mut().append(header::SET_COOKIE, valor);
             }
@@ -105,7 +105,7 @@ fn to_login(request: &Request) -> Response {
 
 #[derive(Template)]
 #[template(path = "login.html")]
-struct PaginaLogin<'a> {
+struct LoginPage<'a> {
     negocio: &'a str,
     usuario_nombre: Option<&'a str>,
     email: &'a str,
@@ -114,21 +114,21 @@ struct PaginaLogin<'a> {
 }
 
 #[derive(Deserialize)]
-pub struct QueryLogin {
+pub struct LoginQuery {
     siguiente: Option<String>,
 }
 
 #[derive(Deserialize)]
-pub struct FormLogin {
+pub struct LoginForm {
     email: String,
-    contrasena: String,
+    password: String,
     siguiente: Option<String>,
 }
 
 pub async fn login_page(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Query(query): Query<QueryLogin>,
+    Query(query): Query<LoginQuery>,
 ) -> Response {
     let siguiente = safe_destination(query.siguiente.as_deref());
     render_login(&state, &headers, "", siguiente, None, StatusCode::OK)
@@ -142,7 +142,7 @@ fn render_login(
     error: Option<String>,
     status: StatusCode,
 ) -> Response {
-    let pagina = PaginaLogin {
+    let pagina = LoginPage {
         negocio: &state.negocio,
         usuario_nombre: None,
         email,
@@ -158,20 +158,20 @@ fn render_login(
 pub async fn login_submit(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Form(form): Form<FormLogin>,
+    Form(form): Form<LoginForm>,
 ) -> Response {
     let siguiente = safe_destination(form.siguiente.as_deref());
     match login(
         &state.usuarios,
-        &state.sesiones,
+        &state.sessions,
         &form.email,
-        &form.contrasena,
+        &form.password,
     )
     .await
     {
         Ok((usuario, token)) => {
             tracing::info!(usuario = usuario.email.as_str(), "entró");
-            let cookie = session_cookie(token.as_str(), DURACION_SESION.as_secs());
+            let cookie = session_cookie(token.as_str(), SESSION_DURATION.as_secs());
             ([(header::SET_COOKIE, cookie)], Redirect::to(siguiente)).into_response()
         }
         Err(LoginError::Repo(error)) => falla_interna(&headers, &error),
@@ -192,7 +192,7 @@ pub async fn login_submit(
 /// Siempre termina en la pantalla de entrar, aunque la sesión ya no existiera.
 pub async fn logout_submit(State(state): State<AppState>, headers: HeaderMap) -> Response {
     let cookie = read_cookie(&headers, COOKIE).unwrap_or_default();
-    if let Err(error) = logout(&state.sesiones, cookie).await {
+    if let Err(error) = logout(&state.sessions, cookie).await {
         tracing::error!(%error, "no se pudo borrar la sesión al salir");
     }
     (
@@ -326,7 +326,7 @@ mod tests {
 
         let respuesta = send(
             pool,
-            post_login("email=ana%40x.mx&contrasena=caja-de-lapices&siguiente=%2Funidades"),
+            post_login("email=ana%40x.mx&password=caja-de-lapices&siguiente=%2Funidades"),
         )
         .await;
 
@@ -343,7 +343,7 @@ mod tests {
 
         let respuesta = send(
             pool,
-            post_login("email=ana%40x.mx&contrasena=caja-de-lapices&siguiente=%2F%2Fotro.com"),
+            post_login("email=ana%40x.mx&password=caja-de-lapices&siguiente=%2F%2Fotro.com"),
         )
         .await;
 
@@ -354,11 +354,7 @@ mod tests {
     async fn una_contrasena_mala_dice_por_que_y_conserva_el_email(pool: PgPool) {
         cookie(&pool, "ana@x.mx", "Cajero").await;
 
-        let respuesta = send(
-            pool,
-            post_login("email=ana%40x.mx&contrasena=otra-cosa-1234"),
-        )
-        .await;
+        let respuesta = send(pool, post_login("email=ana%40x.mx&password=otra-cosa-1234")).await;
 
         assert_eq!(respuesta.status(), StatusCode::UNPROCESSABLE_ENTITY);
         assert!(respuesta.headers().get(header::SET_COOKIE).is_none());
@@ -372,13 +368,13 @@ mod tests {
         for _ in 0..5 {
             send(
                 pool.clone(),
-                post_login("email=nadie%40x.mx&contrasena=otra-cosa-1234"),
+                post_login("email=nadie%40x.mx&password=otra-cosa-1234"),
             )
             .await;
         }
         let respuesta = send(
             pool,
-            post_login("email=nadie%40x.mx&contrasena=otra-cosa-1234"),
+            post_login("email=nadie%40x.mx&password=otra-cosa-1234"),
         )
         .await;
         assert!(body_text(respuesta).await.contains("Demasiados intentos."));

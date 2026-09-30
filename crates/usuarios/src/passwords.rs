@@ -3,17 +3,17 @@
 use std::fmt;
 
 use argon2::Argon2;
-use argon2::password_hash::phc::PasswordHash;
+use argon2::password_hash::phc::PasswordHash as PhcHash;
 use argon2::password_hash::{PasswordHasher, PasswordVerifier};
 
 /// Mínimo razonable para una aplicación en internet, y aún tecleable en el iPad.
-pub const LONGITUD_MINIMA: usize = 10;
+pub const MIN_PASSWORD_LENGTH: usize = 10;
 
 /// Lo que se guarda en la base: el formato PHC (`$argon2id$v=19$...`), con su sal y parámetros.
 #[derive(Clone, PartialEq, Eq)]
-pub struct HashContrasena(String);
+pub struct PasswordHash(String);
 
-impl HashContrasena {
+impl PasswordHash {
     /// Uno leído de la base.
     pub fn from_stored(texto: String) -> Self {
         Self(texto)
@@ -25,49 +25,49 @@ impl HashContrasena {
 }
 
 // Sin el hash en los logs ni en los mensajes de error.
-impl fmt::Debug for HashContrasena {
+impl fmt::Debug for PasswordHash {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("HashContrasena(…)")
+        f.write_str("PasswordHash(…)")
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ContrasenaError {
+pub enum PasswordError {
     MuyCorta,
     /// Falla de Argon2 o de la fuente de azar; no depende de lo que escribió el usuario.
     Hash(String),
 }
 
-impl fmt::Display for ContrasenaError {
+impl fmt::Display for PasswordError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::MuyCorta => write!(
                 f,
-                "La contraseña debe tener al menos {LONGITUD_MINIMA} caracteres."
+                "La contraseña debe tener al menos {MIN_PASSWORD_LENGTH} caracteres."
             ),
             Self::Hash(detalle) => write!(f, "No se pudo proteger la contraseña: {detalle}"),
         }
     }
 }
 
-impl std::error::Error for ContrasenaError {}
+impl std::error::Error for PasswordError {}
 
 /// Revisa la longitud y calcula el hash con una sal nueva.
-pub fn hash_password(contrasena: &str) -> Result<HashContrasena, ContrasenaError> {
-    if contrasena.chars().count() < LONGITUD_MINIMA {
-        return Err(ContrasenaError::MuyCorta);
+pub fn hash_password(password: &str) -> Result<PasswordHash, PasswordError> {
+    if password.chars().count() < MIN_PASSWORD_LENGTH {
+        return Err(PasswordError::MuyCorta);
     }
     Argon2::default()
-        .hash_password(contrasena.as_bytes())
-        .map(|hash| HashContrasena(hash.to_string()))
-        .map_err(|e| ContrasenaError::Hash(e.to_string()))
+        .hash_password(password.as_bytes())
+        .map(|hash| PasswordHash(hash.to_string()))
+        .map_err(|e| PasswordError::Hash(e.to_string()))
 }
 
 /// `false` también si el hash guardado está dañado: nunca deja entrar por error.
-pub fn verify_password(contrasena: &str, hash: &HashContrasena) -> bool {
-    PasswordHash::new(&hash.0).is_ok_and(|hash| {
+pub fn verify_password(password: &str, hash: &PasswordHash) -> bool {
+    PhcHash::new(&hash.0).is_ok_and(|hash| {
         Argon2::default()
-            .verify_password(contrasena.as_bytes(), &hash)
+            .verify_password(password.as_bytes(), &hash)
             .is_ok()
     })
 }
@@ -100,25 +100,25 @@ mod tests {
 
     #[test]
     fn una_contrasena_corta_no_se_acepta() {
-        assert_eq!(hash_password("123456789"), Err(ContrasenaError::MuyCorta));
+        assert_eq!(hash_password("123456789"), Err(PasswordError::MuyCorta));
         assert!(hash_password("1234567890").is_ok());
     }
 
     #[test]
     fn la_longitud_cuenta_letras_no_bytes() {
         // 9 letras con acento ocupan más de 10 bytes, pero siguen siendo 9.
-        assert_eq!(hash_password("ñáéíóúñáé"), Err(ContrasenaError::MuyCorta));
+        assert_eq!(hash_password("ñáéíóúñáé"), Err(PasswordError::MuyCorta));
     }
 
     #[test]
     fn un_hash_danado_no_deja_entrar() {
-        let danado = HashContrasena::from_stored("no-es-un-hash".into());
+        let danado = PasswordHash::from_stored("no-es-un-hash".into());
         assert!(!verify_password("lo-que-sea", &danado));
     }
 
     #[test]
     fn el_hash_no_aparece_en_debug() {
         let hash = hash_password("caja-de-lapices").unwrap();
-        assert_eq!(format!("{hash:?}"), "HashContrasena(…)");
+        assert_eq!(format!("{hash:?}"), "PasswordHash(…)");
     }
 }

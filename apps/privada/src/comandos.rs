@@ -40,16 +40,16 @@ pub fn parse_crear_usuario(args: &[String]) -> Result<DatosUsuario, String> {
 pub async fn crear_usuario(
     repo: &impl UsuariosRepo,
     datos: &DatosUsuario,
-    contrasena: &str,
+    password: &str,
 ) -> Result<Usuario, UsuarioError> {
-    let nuevo = NuevoUsuario::new(&datos.email, &datos.nombre, &datos.rol, contrasena)?;
+    let nuevo = NuevoUsuario::new(&datos.email, &datos.nombre, &datos.rol, password)?;
     repo.add(nuevo).await
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use usuarios::contrasenas::verify_password;
+    use usuarios::passwords::verify_password;
     use usuarios::usuarios::Email;
     use usuarios::usuarios::en_memoria::UsuariosEnMemoria;
 

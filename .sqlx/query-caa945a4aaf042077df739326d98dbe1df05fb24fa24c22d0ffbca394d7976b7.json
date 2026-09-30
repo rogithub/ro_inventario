@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "DELETE FROM sesiones WHERE huella = $1",
+  "query": "DELETE FROM sessions WHERE token_hash = $1",
   "describe": {
     "columns": [],
     "parameters": {
@@ -10,5 +10,5 @@
     },
     "nullable": []
   },
-  "hash": "6aef2c72fb99bfecb82e4f76889adfab5839620ad0da09cd6698681c34be056d"
+  "hash": "caa945a4aaf042077df739326d98dbe1df05fb24fa24c22d0ffbca394d7976b7"
 }

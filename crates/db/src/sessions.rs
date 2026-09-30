@@ -2,33 +2,33 @@ use std::time::Duration;
 
 use kernel::RepoError;
 use sqlx::PgPool;
-use usuarios::sesiones::{HuellaToken, SesionesRepo};
+use usuarios::sessions::{SessionsRepo, TokenHash};
 use usuarios::usuarios::Email;
 
 #[derive(Clone)]
-pub struct PgSesiones {
+pub struct PgSessions {
     pool: PgPool,
 }
 
-impl PgSesiones {
+impl PgSessions {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
 
-fn seconds(duracion: Duration) -> i64 {
-    i64::try_from(duracion.as_secs()).unwrap_or(i64::MAX)
+fn seconds(duration: Duration) -> i64 {
+    i64::try_from(duration.as_secs()).unwrap_or(i64::MAX)
 }
 
 fn repo_error(error: sqlx::Error) -> RepoError {
     RepoError(error.to_string())
 }
 
-impl SesionesRepo for PgSesiones {
-    async fn create(&self, huella: &HuellaToken, email: &Email) -> Result<(), RepoError> {
+impl SessionsRepo for PgSessions {
+    async fn create(&self, token_hash: &TokenHash, email: &Email) -> Result<(), RepoError> {
         let insertadas = sqlx::query!(
-            "INSERT INTO sesiones (huella, usuario_id) SELECT $1, id FROM usuarios WHERE email = $2",
-            &huella.0[..],
+            "INSERT INTO sessions (token_hash, usuario_id) SELECT $1, id FROM usuarios WHERE email = $2",
+            &token_hash.0[..],
             email.as_str()
         )
         .execute(&self.pool)
@@ -47,19 +47,19 @@ impl SesionesRepo for PgSesiones {
 
     async fn find_email(
         &self,
-        huella: &HuellaToken,
-        duracion: Duration,
+        token_hash: &TokenHash,
+        duration: Duration,
     ) -> Result<Option<Email>, RepoError> {
         // Encontrarla y renovarla en la misma consulta.
         let email = sqlx::query_scalar!(
-            "UPDATE sesiones s SET last_used_at = now()
+            "UPDATE sessions s SET last_used_at = now()
              FROM usuarios u
-             WHERE s.huella = $1
+             WHERE s.token_hash = $1
                AND s.last_used_at > now() - ($2::bigint * interval '1 second')
                AND u.id = s.usuario_id
              RETURNING u.email",
-            &huella.0[..],
-            seconds(duracion)
+            &token_hash.0[..],
+            seconds(duration)
         )
         .fetch_optional(&self.pool)
         .await
@@ -69,17 +69,20 @@ impl SesionesRepo for PgSesiones {
             .transpose()
     }
 
-    async fn delete(&self, huella: &HuellaToken) -> Result<(), RepoError> {
-        sqlx::query!("DELETE FROM sesiones WHERE huella = $1", &huella.0[..])
-            .execute(&self.pool)
-            .await
-            .map_err(repo_error)?;
+    async fn delete(&self, token_hash: &TokenHash) -> Result<(), RepoError> {
+        sqlx::query!(
+            "DELETE FROM sessions WHERE token_hash = $1",
+            &token_hash.0[..]
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(repo_error)?;
         Ok(())
     }
 
     async fn record_failure(&self, email: &Email) -> Result<(), RepoError> {
         sqlx::query!(
-            "INSERT INTO intentos_fallidos (email) VALUES ($1)",
+            "INSERT INTO failed_logins (email) VALUES ($1)",
             email.as_str()
         )
         .execute(&self.pool)
@@ -91,13 +94,13 @@ impl SesionesRepo for PgSesiones {
     async fn count_recent_failures(
         &self,
         email: &Email,
-        ventana: Duration,
+        window: Duration,
     ) -> Result<u32, RepoError> {
         let total = sqlx::query_scalar!(
-            r#"SELECT count(*) AS "total!" FROM intentos_fallidos
+            r#"SELECT count(*) AS "total!" FROM failed_logins
                WHERE email = $1 AND at > now() - ($2::bigint * interval '1 second')"#,
             email.as_str(),
-            seconds(ventana)
+            seconds(window)
         )
         .fetch_one(&self.pool)
         .await
@@ -106,31 +109,28 @@ impl SesionesRepo for PgSesiones {
     }
 
     async fn clear_failures(&self, email: &Email) -> Result<(), RepoError> {
-        sqlx::query!(
-            "DELETE FROM intentos_fallidos WHERE email = $1",
-            email.as_str()
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(repo_error)?;
+        sqlx::query!("DELETE FROM failed_logins WHERE email = $1", email.as_str())
+            .execute(&self.pool)
+            .await
+            .map_err(repo_error)?;
         Ok(())
     }
 
     async fn purge_expired(
         &self,
-        duracion_sesion: Duration,
-        ventana_fallos: Duration,
+        session_duration: Duration,
+        failures_window: Duration,
     ) -> Result<(), RepoError> {
         sqlx::query!(
-            "DELETE FROM sesiones WHERE last_used_at <= now() - ($1::bigint * interval '1 second')",
-            seconds(duracion_sesion)
+            "DELETE FROM sessions WHERE last_used_at <= now() - ($1::bigint * interval '1 second')",
+            seconds(session_duration)
         )
         .execute(&self.pool)
         .await
         .map_err(repo_error)?;
         sqlx::query!(
-            "DELETE FROM intentos_fallidos WHERE at <= now() - ($1::bigint * interval '1 second')",
-            seconds(ventana_fallos)
+            "DELETE FROM failed_logins WHERE at <= now() - ($1::bigint * interval '1 second')",
+            seconds(failures_window)
         )
         .execute(&self.pool)
         .await
@@ -143,70 +143,73 @@ impl SesionesRepo for PgSesiones {
 mod tests {
     use super::*;
     use crate::PgUsuarios;
-    use usuarios::sesiones::{BLOQUEO, DURACION_SESION, TokenSesion, contrato};
+    use usuarios::sessions::{LOCKOUT, SESSION_DURATION, SessionToken, contrato};
     use usuarios::usuarios::{NuevoUsuario, UsuariosRepo};
 
     #[sqlx::test]
     async fn cumple_el_contrato_sesion_creada(pool: PgPool) {
         contrato::sesion_creada_se_encuentra_y_borrada_ya_no(
             &PgUsuarios::new(pool.clone()),
-            &PgSesiones::new(pool),
+            &PgSessions::new(pool),
         )
         .await;
     }
 
     #[sqlx::test]
     async fn cumple_el_contrato_huella_desconocida(pool: PgPool) {
-        contrato::huella_desconocida_no_se_encuentra(&PgSesiones::new(pool)).await;
+        contrato::huella_desconocida_no_se_encuentra(&PgSessions::new(pool)).await;
     }
 
     #[sqlx::test]
     async fn cumple_el_contrato_fallos(pool: PgPool) {
-        contrato::los_fallos_se_cuentan_por_email_y_se_borran(&PgSesiones::new(pool)).await;
+        contrato::los_fallos_se_cuentan_por_email_y_se_borran(&PgSessions::new(pool)).await;
     }
 
     #[sqlx::test]
     async fn cumple_el_contrato_purgar(pool: PgPool) {
         contrato::purgar_no_borra_lo_vigente(
             &PgUsuarios::new(pool.clone()),
-            &PgSesiones::new(pool),
+            &PgSessions::new(pool),
         )
         .await;
     }
 
-    async fn sesion_de_ana(pool: &PgPool) -> (Email, HuellaToken) {
+    async fn sesion_de_ana(pool: &PgPool) -> (Email, TokenHash) {
         PgUsuarios::new(pool.clone())
             .add(NuevoUsuario::new("ana@x.mx", "Ana", "Cajero", "caja-de-lapices").unwrap())
             .await
             .unwrap();
         let email = Email::parse("ana@x.mx").unwrap();
-        let huella = TokenSesion::generate().unwrap().huella();
-        PgSesiones::new(pool.clone())
-            .create(&huella, &email)
+        let token_hash = SessionToken::generate().unwrap().token_hash();
+        PgSessions::new(pool.clone())
+            .create(&token_hash, &email)
             .await
             .unwrap();
-        (email, huella)
+        (email, token_hash)
     }
 
     #[sqlx::test]
     async fn una_sesion_sin_usar_7_dias_ya_no_sirve_y_se_purga(pool: PgPool) {
-        let (_, huella) = sesion_de_ana(&pool).await;
-        sqlx::query("UPDATE sesiones SET last_used_at = now() - interval '7 days 1 minute'")
+        let (_, token_hash) = sesion_de_ana(&pool).await;
+        sqlx::query("UPDATE sessions SET last_used_at = now() - interval '7 days 1 minute'")
             .execute(&pool)
             .await
             .unwrap();
-        let sesiones = PgSesiones::new(pool.clone());
+        let sessions = PgSessions::new(pool.clone());
 
         assert_eq!(
-            sesiones.find_email(&huella, DURACION_SESION).await.unwrap(),
+            sessions
+                .find_email(&token_hash, SESSION_DURATION)
+                .await
+                .unwrap(),
             None
         );
 
-        sesiones
-            .purge_expired(DURACION_SESION, BLOQUEO)
+        sessions
+            .purge_expired(SESSION_DURATION, LOCKOUT)
             .await
             .unwrap();
-        let quedan: i64 = sqlx::query_scalar("SELECT count(*) FROM sesiones")
+        let quedan: i64 = sqlx::query_scalar("SELECT count(*) FROM sessions")
             .fetch_one(&pool)
             .await
             .unwrap();
@@ -215,20 +218,20 @@ mod tests {
 
     #[sqlx::test]
     async fn usar_la_sesion_la_renueva(pool: PgPool) {
-        let (_, huella) = sesion_de_ana(&pool).await;
-        sqlx::query("UPDATE sesiones SET last_used_at = now() - interval '6 days'")
+        let (_, token_hash) = sesion_de_ana(&pool).await;
+        sqlx::query("UPDATE sessions SET last_used_at = now() - interval '6 days'")
             .execute(&pool)
             .await
             .unwrap();
 
-        PgSesiones::new(pool.clone())
-            .find_email(&huella, DURACION_SESION)
+        PgSessions::new(pool.clone())
+            .find_email(&token_hash, SESSION_DURATION)
             .await
             .unwrap()
             .unwrap();
 
         let recien: bool =
-            sqlx::query_scalar("SELECT last_used_at > now() - interval '1 minute' FROM sesiones")
+            sqlx::query_scalar("SELECT last_used_at > now() - interval '1 minute' FROM sessions")
                 .fetch_one(&pool)
                 .await
                 .unwrap();
@@ -239,27 +242,27 @@ mod tests {
     /// entre bien.
     #[sqlx::test]
     async fn un_intento_fallido_tambien_limpia_los_intentos_viejos(pool: PgPool) {
-        let sesiones = PgSesiones::new(pool.clone());
+        let sessions = PgSessions::new(pool.clone());
         for _ in 0..3 {
-            sesiones
+            sessions
                 .record_failure(&Email::parse("viejo@x.mx").unwrap())
                 .await
                 .unwrap();
         }
-        sqlx::query("UPDATE intentos_fallidos SET at = now() - interval '16 minutes'")
+        sqlx::query("UPDATE failed_logins SET at = now() - interval '16 minutes'")
             .execute(&pool)
             .await
             .unwrap();
 
-        let _ = usuarios::sesiones::login(
+        let _ = usuarios::sessions::login(
             &PgUsuarios::new(pool.clone()),
-            &sesiones,
+            &sessions,
             "nuevo@x.mx",
-            "no-es-la-contrasena",
+            "no-es-la-password",
         )
         .await;
 
-        let quedan: Vec<String> = sqlx::query_scalar("SELECT email FROM intentos_fallidos")
+        let quedan: Vec<String> = sqlx::query_scalar("SELECT email FROM failed_logins")
             .fetch_all(&pool)
             .await
             .unwrap();
@@ -268,19 +271,19 @@ mod tests {
 
     #[sqlx::test]
     async fn los_fallos_de_hace_mas_de_15_minutos_no_cuentan(pool: PgPool) {
-        let sesiones = PgSesiones::new(pool.clone());
+        let sessions = PgSessions::new(pool.clone());
         let ana = Email::parse("ana@x.mx").unwrap();
         for _ in 0..3 {
-            sesiones.record_failure(&ana).await.unwrap();
+            sessions.record_failure(&ana).await.unwrap();
         }
-        sqlx::query("UPDATE intentos_fallidos SET at = now() - interval '16 minutes'")
+        sqlx::query("UPDATE failed_logins SET at = now() - interval '16 minutes'")
             .execute(&pool)
             .await
             .unwrap();
-        sesiones.record_failure(&ana).await.unwrap();
+        sessions.record_failure(&ana).await.unwrap();
 
         assert_eq!(
-            sesiones.count_recent_failures(&ana, BLOQUEO).await.unwrap(),
+            sessions.count_recent_failures(&ana, LOCKOUT).await.unwrap(),
             1
         );
     }

@@ -17,8 +17,8 @@
                autocomplete="username" required{% if email.is_empty() %} autofocus{% endif %}>
       </div>
       <div class="mb-3">
-        <label for="contrasena" class="form-label">Contraseña</label>
-        <input id="contrasena" name="contrasena" type="password" class="form-control"
+        <label for="password" class="form-label">Contraseña</label>
+        <input id="password" name="password" type="password" class="form-control"
                autocomplete="current-password" required{% if !email.is_empty() %} autofocus{% endif %}>
       </div>
       <button type="submit" class="btn btn-primary w-100">Entrar</button>

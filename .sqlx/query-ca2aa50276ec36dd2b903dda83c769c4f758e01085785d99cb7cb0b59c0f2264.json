@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO sessions (token_hash, usuario_id) SELECT $1, id FROM usuarios WHERE email = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Bytea",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ca2aa50276ec36dd2b903dda83c769c4f758e01085785d99cb7cb0b59c0f2264"
+}

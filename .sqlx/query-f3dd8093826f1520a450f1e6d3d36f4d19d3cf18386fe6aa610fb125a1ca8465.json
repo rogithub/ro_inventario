@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT count(*) AS \"total!\" FROM intentos_fallidos\n               WHERE email = $1 AND at > now() - ($2::bigint * interval '1 second')",
+  "query": "SELECT count(*) AS \"total!\" FROM failed_logins\n               WHERE email = $1 AND at > now() - ($2::bigint * interval '1 second')",
   "describe": {
     "columns": [
       {
@@ -20,5 +20,5 @@
       null
     ]
   },
-  "hash": "bcec60607e31a509e01f1bc961577e1558f525a310c0433854708e8b57250e5b"
+  "hash": "f3dd8093826f1520a450f1e6d3d36f4d19d3cf18386fe6aa610fb125a1ca8465"
 }

@@ -85,8 +85,8 @@ async fn crear_usuario(args: &[String]) -> ExitCode {
         eprintln!("falta DATABASE_URL");
         return ExitCode::FAILURE;
     };
-    let contrasena = match read_password() {
-        Ok(contrasena) => contrasena,
+    let password = match read_password() {
+        Ok(password) => password,
         Err(error) => {
             eprintln!("{error}");
             return ExitCode::FAILURE;
@@ -103,7 +103,7 @@ async fn crear_usuario(args: &[String]) -> ExitCode {
         eprintln!("falló una migración: {error}");
         return ExitCode::FAILURE;
     }
-    match privada::comandos::crear_usuario(&db::PgUsuarios::new(pool), &datos, &contrasena).await {
+    match privada::comandos::crear_usuario(&db::PgUsuarios::new(pool), &datos, &password).await {
         Ok(usuario) => {
             println!(
                 "Usuario creado: {} ({}).",

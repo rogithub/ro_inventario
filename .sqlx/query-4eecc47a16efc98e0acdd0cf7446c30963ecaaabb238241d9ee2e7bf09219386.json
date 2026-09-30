@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "DELETE FROM intentos_fallidos WHERE email = $1",
+  "query": "INSERT INTO failed_logins (email) VALUES ($1)",
   "describe": {
     "columns": [],
     "parameters": {
@@ -10,5 +10,5 @@
     },
     "nullable": []
   },
-  "hash": "bfffccc8253b9647b6db29e7837000a928824886654cc03acaf37d1f73b6135a"
+  "hash": "4eecc47a16efc98e0acdd0cf7446c30963ecaaabb238241d9ee2e7bf09219386"
 }

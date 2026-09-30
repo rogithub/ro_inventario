@@ -5,7 +5,7 @@ use std::future::Future;
 
 use kernel::RepoError;
 
-use crate::contrasenas::{ContrasenaError, HashContrasena, hash_password};
+use crate::passwords::{PasswordError, PasswordHash, hash_password};
 use crate::permisos::{Permiso, Rol};
 
 /// Con él se entra. Se guarda sin espacios y en minúsculas: "Ana@X.mx" y "ana@x.mx" son la misma.
@@ -57,22 +57,17 @@ pub struct NuevoUsuario {
     email: Email,
     nombre: String,
     rol: String,
-    password_hash: HashContrasena,
+    password_hash: PasswordHash,
 }
 
 impl NuevoUsuario {
-    pub fn new(
-        email: &str,
-        nombre: &str,
-        rol: &str,
-        contrasena: &str,
-    ) -> Result<Self, UsuarioError> {
+    pub fn new(email: &str, nombre: &str, rol: &str, password: &str) -> Result<Self, UsuarioError> {
         let email = Email::parse(email)?;
         let nombre = nombre.trim();
         if nombre.is_empty() {
             return Err(UsuarioError::NombreVacio);
         }
-        let password_hash = hash_password(contrasena).map_err(UsuarioError::Contrasena)?;
+        let password_hash = hash_password(password).map_err(UsuarioError::Password)?;
         Ok(Self {
             email,
             nombre: nombre.to_string(),
@@ -94,7 +89,7 @@ impl NuevoUsuario {
         &self.rol
     }
 
-    pub fn password_hash(&self) -> &HashContrasena {
+    pub fn password_hash(&self) -> &PasswordHash {
         &self.password_hash
     }
 }
@@ -103,7 +98,7 @@ impl NuevoUsuario {
 pub enum UsuarioError {
     EmailInvalido,
     NombreVacio,
-    Contrasena(ContrasenaError),
+    Password(PasswordError),
     EmailRepetido(String),
     RolNoExiste(String),
     Repo(RepoError),
@@ -114,7 +109,7 @@ impl fmt::Display for UsuarioError {
         match self {
             Self::EmailInvalido => write!(f, "El email no es válido."),
             Self::NombreVacio => write!(f, "Escribe el nombre de la persona."),
-            Self::Contrasena(error) => write!(f, "{error}"),
+            Self::Password(error) => write!(f, "{error}"),
             Self::EmailRepetido(email) => write!(f, "Ya existe un usuario con el email {email}."),
             Self::RolNoExiste(rol) => write!(f, "No existe el rol «{rol}»."),
             Self::Repo(_) => write!(f, "No se pudo guardar el usuario."),
@@ -141,7 +136,7 @@ pub trait UsuariosRepo {
     fn find_for_login(
         &self,
         email: &Email,
-    ) -> impl Future<Output = Result<Option<(Usuario, HashContrasena)>, RepoError>> + Send;
+    ) -> impl Future<Output = Result<Option<(Usuario, PasswordHash)>, RepoError>> + Send;
 }
 
 #[cfg(any(test, feature = "pruebas"))]
@@ -153,7 +148,7 @@ pub mod en_memoria {
 
     pub struct UsuariosEnMemoria {
         roles: Vec<Rol>,
-        usuarios: Mutex<Vec<(Usuario, HashContrasena)>>,
+        usuarios: Mutex<Vec<(Usuario, PasswordHash)>>,
     }
 
     /// Con los roles de arranque, como una base recién migrada.
@@ -190,7 +185,7 @@ pub mod en_memoria {
         async fn find_for_login(
             &self,
             email: &Email,
-        ) -> Result<Option<(Usuario, HashContrasena)>, RepoError> {
+        ) -> Result<Option<(Usuario, PasswordHash)>, RepoError> {
             Ok(self.lock().iter().find(|(u, _)| &u.email == email).cloned())
         }
     }
@@ -206,7 +201,7 @@ pub mod en_memoria {
         }
 
         // Si una prueba falló con el candado tomado, los datos siguen sirviendo para las demás.
-        fn lock(&self) -> std::sync::MutexGuard<'_, Vec<(Usuario, HashContrasena)>> {
+        fn lock(&self) -> std::sync::MutexGuard<'_, Vec<(Usuario, PasswordHash)>> {
             self.usuarios.lock().unwrap_or_else(|e| e.into_inner())
         }
     }
@@ -220,7 +215,7 @@ pub mod contrato {
     use std::collections::BTreeSet;
 
     use super::*;
-    use crate::contrasenas::verify_password;
+    use crate::passwords::verify_password;
 
     fn nuevo(email: &str, rol: &str) -> NuevoUsuario {
         NuevoUsuario::new(email, "Ana López", rol, "caja-de-lapices").unwrap()
@@ -311,7 +306,7 @@ mod tests {
     fn un_usuario_nuevo_con_contrasena_corta_no_se_acepta() {
         assert_eq!(
             NuevoUsuario::new("ana@x.mx", "Ana", "Cajero", "corta").map(|_| ()),
-            Err(UsuarioError::Contrasena(ContrasenaError::MuyCorta))
+            Err(UsuarioError::Password(PasswordError::MuyCorta))
         );
     }
 

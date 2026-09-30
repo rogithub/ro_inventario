@@ -3,7 +3,7 @@
 //! Pura: no depende de la base de datos, de la web ni de la red. El código revisa permisos,
 //! nunca el nombre de un rol.
 
-pub mod contrasenas;
+pub mod passwords;
 pub mod permisos;
-pub mod sesiones;
+pub mod sessions;
 pub mod usuarios;
