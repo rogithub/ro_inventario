@@ -5,6 +5,9 @@
 
 pub use sqlx::PgPool;
 
+mod unidades_medida;
+pub use unidades_medida::PgUnidadesMedida;
+
 /// Las migraciones de `crates/db/migrations/`, incluidas en el binario al compilar.
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!();
 

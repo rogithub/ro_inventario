@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# htmx pinta también las respuestas de error (422 validación, 500 falla): el mensaje queda en su lugar. #}
+  <meta name="htmx-config" content='{"responseHandling":[{"code":"204","swap":false},{"code":".*","swap":true}]}'>
+  <title>{% block titulo %}{% endblock %} · {{ negocio }}</title>
+  <link rel="stylesheet" href="/static/bootstrap.min.css">
+  <link rel="stylesheet" href="/static/bootstrap-icons.min.css">
+  <script src="/static/htmx.min.js" defer></script>
+  <script src="/static/bootstrap.bundle.min.js" defer></script>
+</head>
+<body>
+  <nav class="navbar bg-body-tertiary mb-3">
+    <div class="container">
+      <span class="navbar-brand">{{ negocio }}</span>
+    </div>
+  </nav>
+  <main class="container">
+    {% block contenido %}{% endblock %}
+  </main>
+</body>
+</html>

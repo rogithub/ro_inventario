@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block titulo %}Unidades de medida{% endblock %}
+
+{% block contenido %}
+<h1 class="h4">Unidades de medida</h1>
+{% block unidades %}
+<div id="unidades">
+  <form method="post" action="/unidades" hx-post="/unidades" hx-target="#unidades" hx-swap="outerHTML"
+        class="row g-2 align-items-end mb-3">
+    <div class="col-12 col-md-6">
+      <label for="nombre" class="form-label">Nombre</label>
+      <input id="nombre" name="nombre" value="{{ nombre }}" autocomplete="off" autofocus
+             class="form-control{% if error.is_some() %} is-invalid{% endif %}"
+             {% if error.is_some() %}aria-describedby="nombre-error"{% endif %}>
+    </div>
+    <div class="col-auto">
+      <div class="form-check mb-2">
+        <input id="allows_fraction" name="allows_fraction" type="checkbox" class="form-check-input"
+               {% if allows_fraction %}checked{% endif %}>
+        <label for="allows_fraction" class="form-check-label">Se vende en fracciones</label>
+      </div>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary" title="Agregar unidad" aria-label="Agregar unidad">
+        <i class="bi bi-plus-lg"></i><span class="d-none d-lg-inline"> Agregar</span>
+      </button>
+    </div>
+    {# En su propio renglón, para que no desalinee la casilla y el botón. #}
+    {% if let Some(error) = error %}
+    <div class="col-12 mt-0"><div id="nombre-error" class="invalid-feedback d-block">{{ error }}</div></div>
+    {% endif %}
+  </form>
+
+  <table class="table table-sm table-hover">
+    <thead>
+      <tr><th>Nombre</th><th>Fracciones</th></tr>
+    </thead>
+    <tbody>
+      {% for unidad in unidades %}
+      <tr>
+        <td>{{ unidad.nombre }}</td>
+        <td>{% if unidad.allows_fraction %}Sí{% else %}No{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+{% endblock %}

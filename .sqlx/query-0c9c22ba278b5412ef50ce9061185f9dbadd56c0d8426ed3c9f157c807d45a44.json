@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT nombre, allows_fraction FROM unidades_medida ORDER BY lower(nombre)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "unidades_medida",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "allows_fraction",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "unidades_medida",
+            "name": "allows_fraction"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "0c9c22ba278b5412ef50ce9061185f9dbadd56c0d8426ed3c9f157c807d45a44"
+}

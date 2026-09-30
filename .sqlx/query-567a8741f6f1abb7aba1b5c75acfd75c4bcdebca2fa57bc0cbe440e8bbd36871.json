@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO unidades_medida (nombre, allows_fraction) VALUES ($1, $2)\n             RETURNING nombre, allows_fraction",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "unidades_medida",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "allows_fraction",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "unidades_medida",
+            "name": "allows_fraction"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "567a8741f6f1abb7aba1b5c75acfd75c4bcdebca2fa57bc0cbe440e8bbd36871"
+}

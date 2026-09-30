@@ -108,9 +108,12 @@ async fn main() -> ExitCode {
     };
     tracing::info!(%address, "escuchando");
 
-    if let Err(error) = axum::serve(listener, router(pool))
-        .with_graceful_shutdown(shutdown_signal())
-        .await
+    if let Err(error) = axum::serve(
+        listener,
+        router(privada::AppState::new(pool, &config.negocio.nombre)),
+    )
+    .with_graceful_shutdown(shutdown_signal())
+    .await
     {
         tracing::error!(%error, "el servidor se detuvo con error");
         return ExitCode::FAILURE;

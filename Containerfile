@@ -7,8 +7,11 @@
 FROM docker.io/library/rust:1.98.0-bookworm AS build
 WORKDIR /src
 COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
+# Foto de las consultas: el build no tiene base de datos.
+COPY .sqlx ./.sqlx
 COPY crates ./crates
 COPY apps ./apps
+ENV SQLX_OFFLINE=true
 RUN cargo build --release --locked -p privada
 
 # ── ejecución ───────────────────────────────────────────────────────────────

@@ -32,6 +32,8 @@ jobs:
 
     env:
       DATABASE_URL: postgres://postgres:ci@localhost:5432/postgres
+      # Se compila con la foto de las consultas (.sqlx/); el paso "Consultas SQL al día" la revisa.
+      SQLX_OFFLINE: "true"
 
     steps:
       - name: Bajar el código
@@ -58,6 +60,15 @@ jobs:
       - name: Dependencias con vulnerabilidades conocidas
         run: cargo audit
 
+      # rust-cache guarda ~/.cargo/bin: solo se compila la primera vez.
+      - name: Instalar sqlx-cli
+        run: command -v sqlx || cargo install sqlx-cli --version 0.9.0 --no-default-features --features postgres --locked
+
+      - name: Consultas SQL al día
+        run: sqlx migrate run --source crates/db/migrations && cargo sqlx prepare --workspace --check
+        env:
+          SQLX_OFFLINE: "false"
+
       - name: Pruebas
         run: cargo test
 
@@ -81,6 +92,7 @@ jobs:
 
     env:
       DATABASE_URL: postgres://postgres:ci@localhost:5432/postgres
+      SQLX_OFFLINE: "true"
 
     steps:
       - name: Bajar el código

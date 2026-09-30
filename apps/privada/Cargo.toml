@@ -7,9 +7,11 @@ publish.workspace = true
 
 [dependencies]
 kernel.workspace = true
+inventario.workspace = true
 negocio-config.workspace = true
 db.workspace = true
 serde.workspace = true
+askama.workspace = true
 tokio.workspace = true
 axum.workspace = true
 tower.workspace = true
