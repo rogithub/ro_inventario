@@ -33,6 +33,9 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
 http-body-util = "0.1.5"
 
+# Base de datos. Sin TLS: la conexión va dentro del cluster o a localhost.
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "postgres", "macros", "migrate"] }
+
 # Reglas para todos los crates (docs/decisiones/2026-09-29-formato-y-linters.md).
 # Cada crate las hereda con `[lints] workspace = true`.
 [workspace.lints.rust]

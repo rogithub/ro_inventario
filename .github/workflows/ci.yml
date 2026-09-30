@@ -14,6 +14,25 @@ permissions:
 jobs:
   revisar:
     runs-on: ubuntu-latest
+
+    # Postgres desechable para las pruebas de la base (cada prueba crea la suya).
+    # La contraseña solo existe dentro de esta corrida de CI: no es un secreto.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://postgres:ci@localhost:5432/postgres
+
     steps:
       - name: Bajar el código
         uses: actions/checkout@v4

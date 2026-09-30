@@ -9,8 +9,10 @@ use negocio_config::load_negocio_config;
 use privada::{VERSION, router};
 use tracing_subscriber::EnvFilter;
 
-/// Variables de entorno (capa 1: infraestructura). Todas tienen un valor técnico por omisión.
+/// Variables de entorno (capa 1: infraestructura y secretos).
 struct Entorno {
+    /// `DATABASE_URL`: obligatoria, sin valor por omisión. Lleva la contraseña: nunca va al log.
+    database_url: String,
     /// `NEGOCIO_CONFIG`: ruta del archivo del negocio.
     negocio_config: PathBuf,
     /// `PORT`: puerto donde escucha.
@@ -27,7 +29,10 @@ impl Entorno {
                 .map_err(|_| format!("PORT no es un número de puerto: {texto}"))?,
             Err(_) => 5100,
         };
+        let database_url =
+            std::env::var("DATABASE_URL").map_err(|_| "falta DATABASE_URL".to_string())?;
         Ok(Self {
+            database_url,
             negocio_config: std::env::var("NEGOCIO_CONFIG")
                 .unwrap_or_else(|_| "negocio.toml".into())
                 .into(),
@@ -79,6 +84,20 @@ async fn main() -> ExitCode {
         "arrancando"
     );
 
+    // El error de sqlx no incluye la URL ni la contraseña.
+    let pool = match db::connect(&entorno.database_url).await {
+        Ok(pool) => pool,
+        Err(error) => {
+            tracing::error!(%error, "no se pudo conectar a la base; la aplicación no arranca");
+            return ExitCode::FAILURE;
+        }
+    };
+    if let Err(error) = db::run_migrations(&pool).await {
+        tracing::error!(%error, "falló una migración; la aplicación no arranca");
+        return ExitCode::FAILURE;
+    }
+    tracing::info!("base de datos al día");
+
     let address = SocketAddr::from(([0, 0, 0, 0], entorno.port));
     let listener = match tokio::net::TcpListener::bind(address).await {
         Ok(listener) => listener,
@@ -89,7 +108,7 @@ async fn main() -> ExitCode {
     };
     tracing::info!(%address, "escuchando");
 
-    if let Err(error) = axum::serve(listener, router())
+    if let Err(error) = axum::serve(listener, router(pool))
         .with_graceful_shutdown(shutdown_signal())
         .await
     {

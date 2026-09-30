@@ -65,10 +65,12 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
 
 ## Comandos
 
-- **Revisar todo (lo mismo que CI):** `herramientas/revisar.sh` (formato, clippy, audit, pruebas; se detiene en la primera falla).
-- **Correr la aplicación privada en desarrollo:** `NEGOCIO_CONFIG=negocio.ejemplo.toml PORT=5100 cargo run -p privada` (agregar `LOG_FORMAT=json` para ver los logs como en producción). Probar: `curl localhost:5100/health`.
-- **Variables de entorno de la aplicación:** `NEGOCIO_CONFIG` (ruta del `negocio.toml`; por omisión `negocio.toml`), `PORT` (por omisión 5100), `LOG_FORMAT` (`json` o legible), `RUST_LOG` (nivel; por omisión `info`).
-- *Pendientes:* reconstruir la base de desarrollo, pruebas de integración contra Postgres, E2E y consulta de logs de producción.
+- **Base de desarrollo (una vez, o para empezar de cero):** `herramientas/dev-db.sh` crea el usuario `ro_inventario` y la base `dev_ro_inventario` en el Postgres local (podman `postgres`, localhost:5432). Lee la contraseña de `~/secrets/ro_inventario_dev.env` (`DEV_DB_PASSWORD=…`, chmod 600) sin imprimirla. No toca `dev_inventario_papeleria`.
+- **Revisar todo (lo mismo que CI):** `herramientas/revisar.sh` (formato, clippy, audit, pruebas; se detiene en la primera falla). Si no hay `DATABASE_URL`, la arma desde el secreto.
+- **Correr la aplicación privada en desarrollo:** `. herramientas/dev-env.sh && NEGOCIO_CONFIG=negocio.ejemplo.toml PORT=5100 cargo run -p privada` (agregar `LOG_FORMAT=json` para ver los logs como en producción). Al arrancar aplica las migraciones pendientes. Probar: `curl localhost:5100/health`.
+- **Variables de entorno de la aplicación:** `DATABASE_URL` (obligatoria; lleva la contraseña: nunca imprimirla ni ponerla en el log), `NEGOCIO_CONFIG` (ruta del `negocio.toml`; por omisión `negocio.toml`), `PORT` (por omisión 5100), `LOG_FORMAT` (`json` o legible), `RUST_LOG` (nivel; por omisión `info`).
+- **Migraciones:** `crates/db/migrations/NNNN_descripcion.sql`, numeradas y solo se agregan (una aplicada nunca se edita). Las pruebas con `#[sqlx::test]` reciben una base nueva por prueba.
+- *Pendientes:* E2E y consulta de logs de producción.
 
 **Reglas al correrlos:**
 - **Verificar el código de salida**, no solo el resumen impreso: un "passed" puede venir con salida en error. Reportar fallas tal cual, con su salida.
