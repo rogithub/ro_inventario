@@ -1,0 +1,49 @@
+import { defineConfig, devices } from '@playwright/test';
+
+// Arranca la aplicación privada compilada del código actual, contra la base que diga
+// DATABASE_URL (en desarrollo, dev_ro_inventario; en CI, un Postgres desechable).
+// Sin interfaz gráfica: los navegadores corren headless (kukulkan y CI no tienen pantalla).
+const PORT = Number(process.env.E2E_PORT ?? 5099);
+const baseURL = `http://localhost:${PORT}`;
+
+export default defineConfig({
+  testDir: './tests',
+  forbidOnly: !!process.env.CI,
+  reporter: [['list'], ['html', { open: 'never' }]],
+  use: {
+    baseURL,
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+  },
+  // Los dos puntos de venta reales (CLAUDE.md, "Entorno de uso"). El iPad se emula con
+  // Chromium: WebKit en Linux ARM pide paquetes del sistema y aun así no es el Safari real;
+  // lo que más importa del iPad es el ancho (744 px, entre los breakpoints sm y md).
+  projects: [
+    {
+      name: 'escritorio-firefox',
+      use: { ...devices['Desktop Firefox'], viewport: { width: 1920, height: 1080 } },
+    },
+    {
+      name: 'ipad-mini',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 744, height: 1133 },
+        deviceScaleFactor: 2,
+        hasTouch: true,
+      },
+    },
+  ],
+  webServer: {
+    command: 'cargo run -q -p privada',
+    cwd: '..',
+    url: `${baseURL}/health`,
+    // Compilar en la Raspberry Pi puede tardar.
+    timeout: 300_000,
+    // Siempre el código actual, nunca un servidor que se quedó corriendo.
+    reuseExistingServer: false,
+    env: {
+      PORT: String(PORT),
+      NEGOCIO_CONFIG: 'negocio.ejemplo.toml',
+    },
+  },
+});

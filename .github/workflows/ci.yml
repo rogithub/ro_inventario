@@ -60,3 +60,69 @@ jobs:
 
       - name: Pruebas
         run: cargo test
+
+  # Pruebas E2E: la aplicación real, contra un Postgres desechable, en Firefox y en el ancho del iPad.
+  e2e:
+    needs: revisar
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://postgres:ci@localhost:5432/postgres
+
+    steps:
+      - name: Bajar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Rust
+        run: rustup show
+
+      - name: Caché de lo compilado
+        uses: Swatinem/rust-cache@v2
+
+      # Compila antes, para que Playwright no espere la compilación al arrancar la app.
+      - name: Compilar la aplicación
+        run: cargo build -p privada
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Instalar dependencias de las pruebas
+        working-directory: e2e
+        run: npm ci
+
+      - name: Instalar navegadores
+        working-directory: e2e
+        run: npx playwright install --with-deps firefox chromium
+
+      - name: Tipos de las pruebas
+        working-directory: e2e
+        run: npx tsc --noEmit
+
+      - name: Pruebas E2E
+        working-directory: e2e
+        run: npx playwright test
+
+      - name: Guardar el reporte si fallan
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-e2e
+          path: e2e/playwright-report
+          retention-days: 7

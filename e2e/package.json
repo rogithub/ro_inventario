@@ -1,0 +1,15 @@
+{
+  "name": "ro-inventario-e2e",
+  "private": true,
+  "description": "Pruebas E2E con Playwright de las aplicaciones (docs/decisiones/2026-09-29-estructura-de-crates.md)",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "26.6.3",
+    "typescript": "7.0.2"
+  }
+}

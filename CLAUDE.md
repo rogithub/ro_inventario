@@ -70,7 +70,8 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
 - **Correr la aplicación privada en desarrollo:** `. herramientas/dev-env.sh && NEGOCIO_CONFIG=negocio.ejemplo.toml PORT=5100 cargo run -p privada` (agregar `LOG_FORMAT=json` para ver los logs como en producción). Al arrancar aplica las migraciones pendientes. Probar: `curl localhost:5100/health`.
 - **Variables de entorno de la aplicación:** `DATABASE_URL` (obligatoria; lleva la contraseña: nunca imprimirla ni ponerla en el log), `NEGOCIO_CONFIG` (ruta del `negocio.toml`; por omisión `negocio.toml`), `PORT` (por omisión 5100), `LOG_FORMAT` (`json` o legible), `RUST_LOG` (nivel; por omisión `info`).
 - **Migraciones:** `crates/db/migrations/NNNN_descripcion.sql`, numeradas y solo se agregan (una aplicada nunca se edita). Las pruebas con `#[sqlx::test]` reciben una base nueva por prueba.
-- *Pendientes:* E2E y consulta de logs de producción.
+- **Pruebas E2E:** `. herramientas/dev-env.sh && cd e2e && npx playwright test` (Playwright arranca la aplicación en el puerto 5099 con el código actual; sin interfaz gráfica). Proyectos `escritorio-firefox` e `ipad-mini`. Primera vez: `cd e2e && npm ci && npx playwright install firefox chromium`.
+- *Pendientes:* consulta de logs de producción.
 
 **Reglas al correrlos:**
 - **Verificar el código de salida**, no solo el resumen impreso: un "passed" puede venir con salida en error. Reportar fallas tal cual, con su salida.
