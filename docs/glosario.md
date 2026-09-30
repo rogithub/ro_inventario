@@ -12,7 +12,7 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 |---|---|
 | `Negocio` | La empresa que usa el sistema. Cada una tiene su propia instancia y base de datos. |
 | `Usuario` | Persona que entra al sistema. |
-| `Permiso` | Una acción que un usuario puede hacer (vender, cancelar una venta, ver costos…). La lista vive en el código. |
+| `Permiso` | Una acción que un usuario puede hacer (vender, cancelar una venta, ver costos…). La lista vive en el código y sus nombres son del glosario (ver casos de frontera). |
 | `Rol` | Conjunto de permisos con nombre (Dueño, Encargado, Cajero). Cada negocio puede tener los suyos. |
 
 ## Productos
@@ -22,7 +22,7 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 | `Producto` | Artículo físico: se compra, lleva stock y se revende o se consume en un servicio. |
 | `NID` | Número corto del producto: se teclea en caja y se imprime en la etiqueta como código de barras. |
 | `CodigoBarras` | Código impreso en un producto o en su empaque (presentación). |
-| `Marca`, `Modelo`, `Color`, `Descripcion` | Datos del catálogo de un producto. |
+| `Nombre`, `Marca`, `Modelo`, `Color`, `Descripcion` | Datos del catálogo de un producto. `Nombre` también es el de un cliente, un proveedor, un usuario, un rol o una unidad. |
 | `Kardex` | Registro de todos los movimientos de inventario (entradas y salidas) de cada producto. |
 | `Descontinuado` | Producto que ya no se resurte ni se ofrece; conserva su historia. |
 | `Motivo` | Por qué se hizo algo: una merma, un ajuste, una descontinuación. |
@@ -119,4 +119,6 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 - `Stock`, `Kit` e `IVA` se dicen así en la tienda: son del glosario aunque no sean palabras en español.
 - `Aviso`, `Carrito`, `Boton`, `Linea` **no** son del negocio: van `Toast`, `Cart`, `Button`, `Line`.
 - Fechas y horas son técnicas: `created_at`, `factura_date`, no `fecha_factura`.
+- Los **permisos** van en español aunque sean verbos (`Vender`, `CancelarVenta`, `VerCostos`; en la base `vender`, `cancelar_venta`): son la lista de acciones del negocio, se guardan como texto y así se leen en los roles.
+- "Activo", "nuevo", "página", "sección", "entorno" y "datos" **no** son del negocio: `is_active`, `deactivated_at`, `NewUsuario`, `UnidadesPage`, `UnidadesSection`, `Env`. `Descontinuado` sí lo es (un producto que ya no se ofrece).
 - `Venta` y `Ajuste` son documentos separados (en la v1 compartían tabla).

@@ -40,7 +40,7 @@
 | **Cajero** | `vender`, `gestionar_clientes`, `operar_caja` (anotar lo que sale; el corte puede quedar para el encargado si el negocio quiere quitarle este permiso). |
 
 ## Tablas propuestas
-- `usuarios`: `id`, `email` (único; con él se entra), `nombre`, `password_hash`, `rol_id`, `desactivado_at` (un usuario que se va se desactiva, no se borra: sus ventas conservan quién las hizo), `created_at`.
+- `usuarios`: `id`, `email` (único; con él se entra), `nombre`, `password_hash`, `rol_id`, `deactivated_at` (un usuario que se va se desactiva, no se borra: sus ventas conservan quién las hizo), `created_at`.
 - `roles`: `id`, `nombre`.
 - `roles_permisos`: `rol_id`, `permiso` (uno de la lista de arriba; la lista vive en el código como `enum`).
 - Sesiones en Postgres (con cookie), como en el intento anterior.
