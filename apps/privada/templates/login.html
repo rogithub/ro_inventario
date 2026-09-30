@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block titulo %}Entrar{% endblock %}
+{% block title %}Entrar{% endblock %}
 
-{% block contenido %}
+{% block content %}
 <div class="row justify-content-center">
   <div class="col-12 col-sm-8 col-md-6 col-lg-4">
     <h1 class="h4 mb-3">Entrar</h1>
     <form method="post" action="/login">
-      <input type="hidden" name="siguiente" value="{{ siguiente }}">
+      <input type="hidden" name="next" value="{{ next }}">
       {% if let Some(error) = error %}
       <div class="alert alert-danger" role="alert">{{ error }}</div>
       {% endif %}

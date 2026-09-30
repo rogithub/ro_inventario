@@ -4,7 +4,7 @@ use kernel::RepoError;
 use sqlx::PgPool;
 use usuarios::passwords::PasswordHash;
 use usuarios::permisos::{Permiso, Rol};
-use usuarios::usuarios::{Email, NuevoUsuario, Usuario, UsuarioError, UsuariosRepo};
+use usuarios::usuarios::{Email, NewUsuario, Usuario, UsuarioError, UsuariosRepo};
 
 #[derive(Clone)]
 pub struct PgUsuarios {
@@ -18,31 +18,31 @@ impl PgUsuarios {
 }
 
 impl UsuariosRepo for PgUsuarios {
-    async fn add(&self, nuevo: NuevoUsuario) -> Result<Usuario, UsuarioError> {
+    async fn add(&self, new_usuario: NewUsuario) -> Result<Usuario, UsuarioError> {
         // Sin fila si el rol no existe en este negocio.
-        let insertado = sqlx::query_scalar!(
+        let inserted = sqlx::query_scalar!(
             "INSERT INTO usuarios (email, nombre, password_hash, rol_id)
              SELECT $1, $2, $3, id FROM roles WHERE nombre = $4
              RETURNING email",
-            nuevo.email().as_str(),
-            nuevo.nombre(),
-            nuevo.password_hash().as_str(),
-            nuevo.rol()
+            new_usuario.email().as_str(),
+            new_usuario.nombre(),
+            new_usuario.password_hash().as_str(),
+            new_usuario.rol()
         )
         .fetch_optional(&self.pool)
         .await
         .map_err(
             |e| match e.as_database_error().and_then(|d| d.constraint()) {
                 Some("usuarios_email_key") => {
-                    UsuarioError::EmailRepetido(nuevo.email().as_str().to_string())
+                    UsuarioError::DuplicateEmail(new_usuario.email().as_str().to_string())
                 }
                 _ => UsuarioError::Repo(RepoError(e.to_string())),
             },
         )?;
-        if insertado.is_none() {
-            return Err(UsuarioError::RolNoExiste(nuevo.rol().to_string()));
+        if inserted.is_none() {
+            return Err(UsuarioError::RolNotFound(new_usuario.rol().to_string()));
         }
-        match self.find_for_login(nuevo.email()).await? {
+        match self.find_for_login(new_usuario.email()).await? {
             Some((usuario, _)) => Ok(usuario),
             None => Err(UsuarioError::Repo(RepoError(
                 "el usuario recién creado no se encontró".into(),
@@ -54,9 +54,9 @@ impl UsuariosRepo for PgUsuarios {
         &self,
         email: &Email,
     ) -> Result<Option<(Usuario, PasswordHash)>, RepoError> {
-        let fila = sqlx::query!(
+        let row = sqlx::query!(
             r#"SELECT u.email, u.nombre, u.password_hash,
-                      u.desactivado_at IS NULL AS "activo!",
+                      u.deactivated_at IS NULL AS "is_active!",
                       r.nombre AS rol,
                       array_remove(array_agg(rp.permiso), NULL) AS "permisos!"
                FROM usuarios u
@@ -70,28 +70,28 @@ impl UsuariosRepo for PgUsuarios {
         .await
         .map_err(|e| RepoError(e.to_string()))?;
 
-        let Some(fila) = fila else {
+        let Some(row) = row else {
             return Ok(None);
         };
         // Un permiso que el código no conoce es un error de datos, no algo que se ignore.
-        let permisos = fila
+        let permisos = row
             .permisos
             .iter()
             .map(|p| p.parse::<Permiso>())
             .collect::<Result<BTreeSet<_>, _>>()
             .map_err(|e| RepoError(e.to_string()))?;
         let usuario = Usuario {
-            email: Email::parse(&fila.email).map_err(|e| RepoError(e.to_string()))?,
-            nombre: fila.nombre,
+            email: Email::parse(&row.email).map_err(|e| RepoError(e.to_string()))?,
+            nombre: row.nombre,
             rol: Rol {
-                nombre: fila.rol,
+                nombre: row.rol,
                 permisos,
             },
-            activo: fila.activo,
+            is_active: row.is_active,
         };
         Ok(Some((
             usuario,
-            PasswordHash::from_stored(fila.password_hash),
+            PasswordHash::from_stored(row.password_hash),
         )))
     }
 }
@@ -99,40 +99,40 @@ impl UsuariosRepo for PgUsuarios {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use usuarios::permisos::roles_de_arranque;
-    use usuarios::usuarios::contrato;
+    use usuarios::permisos::default_roles;
+    use usuarios::usuarios::contract;
 
     #[sqlx::test]
     async fn cumple_el_contrato_agregado_se_encuentra(pool: PgPool) {
-        contrato::agregado_se_encuentra_por_email_sin_importar_mayusculas(&PgUsuarios::new(pool))
+        contract::agregado_se_encuentra_por_email_sin_importar_mayusculas(&PgUsuarios::new(pool))
             .await;
     }
 
     #[sqlx::test]
     async fn cumple_el_contrato_email_repetido(pool: PgPool) {
-        contrato::email_repetido_se_rechaza(&PgUsuarios::new(pool)).await;
+        contract::email_repetido_se_rechaza(&PgUsuarios::new(pool)).await;
     }
 
     #[sqlx::test]
     async fn cumple_el_contrato_rol_que_no_existe(pool: PgPool) {
-        contrato::rol_que_no_existe_se_rechaza(&PgUsuarios::new(pool)).await;
+        contract::rol_que_no_existe_se_rechaza(&PgUsuarios::new(pool)).await;
     }
 
     #[sqlx::test]
     async fn cumple_el_contrato_email_que_no_existe(pool: PgPool) {
-        contrato::email_que_no_existe_no_se_encuentra(&PgUsuarios::new(pool)).await;
+        contract::email_que_no_existe_no_se_encuentra(&PgUsuarios::new(pool)).await;
     }
 
     #[sqlx::test]
     async fn los_roles_de_la_migracion_son_los_del_codigo(pool: PgPool) {
-        let filas: Vec<(String, String)> = sqlx::query_as(
+        let rows: Vec<(String, String)> = sqlx::query_as(
             "SELECT r.nombre, rp.permiso FROM roles r JOIN roles_permisos rp ON rp.rol_id = r.id",
         )
         .fetch_all(&pool)
         .await
         .unwrap();
         let mut roles: Vec<Rol> = Vec::new();
-        for (nombre, permiso) in filas {
+        for (nombre, permiso) in rows {
             let permiso: Permiso = permiso.parse().unwrap();
             match roles.iter_mut().find(|r| r.nombre == nombre) {
                 Some(rol) => {
@@ -145,18 +145,18 @@ mod tests {
             }
         }
         roles.sort_by(|a, b| a.nombre.cmp(&b.nombre));
-        let mut esperados = roles_de_arranque();
-        esperados.sort_by(|a, b| a.nombre.cmp(&b.nombre));
-        assert_eq!(roles, esperados);
+        let mut expected = default_roles();
+        expected.sort_by(|a, b| a.nombre.cmp(&b.nombre));
+        assert_eq!(roles, expected);
     }
 
     #[sqlx::test]
     async fn un_usuario_desactivado_se_encuentra_como_inactivo(pool: PgPool) {
         let repo = PgUsuarios::new(pool.clone());
-        repo.add(NuevoUsuario::new("ana@x.mx", "Ana", "Dueño", "caja-de-lapices").unwrap())
+        repo.add(NewUsuario::new("ana@x.mx", "Ana", "Dueño", "caja-de-lapices").unwrap())
             .await
             .unwrap();
-        sqlx::query("UPDATE usuarios SET desactivado_at = now()")
+        sqlx::query("UPDATE usuarios SET deactivated_at = now()")
             .execute(&pool)
             .await
             .unwrap();
@@ -166,7 +166,7 @@ mod tests {
             .await
             .unwrap()
             .unwrap();
-        assert!(!usuario.activo);
+        assert!(!usuario.is_active);
         assert!(!usuario.can(Permiso::Vender));
     }
 }

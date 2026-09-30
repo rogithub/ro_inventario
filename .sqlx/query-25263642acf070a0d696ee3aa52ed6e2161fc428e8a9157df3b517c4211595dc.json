@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT u.email, u.nombre, u.password_hash,\n                      u.desactivado_at IS NULL AS \"activo!\",\n                      r.nombre AS rol,\n                      array_remove(array_agg(rp.permiso), NULL) AS \"permisos!\"\n               FROM usuarios u\n               JOIN roles r ON r.id = u.rol_id\n               LEFT JOIN roles_permisos rp ON rp.rol_id = r.id\n               WHERE u.email = $1\n               GROUP BY u.id, r.id",
+  "query": "SELECT u.email, u.nombre, u.password_hash,\n                      u.deactivated_at IS NULL AS \"is_active!\",\n                      r.nombre AS rol,\n                      array_remove(array_agg(rp.permiso), NULL) AS \"permisos!\"\n               FROM usuarios u\n               JOIN roles r ON r.id = u.rol_id\n               LEFT JOIN roles_permisos rp ON rp.rol_id = r.id\n               WHERE u.email = $1\n               GROUP BY u.id, r.id",
   "describe": {
     "columns": [
       {
@@ -38,7 +38,7 @@
       },
       {
         "ordinal": 3,
-        "name": "activo!",
+        "name": "is_active!",
         "type_info": "Bool",
         "origin": "Expression"
       },
@@ -74,5 +74,5 @@
       null
     ]
   },
-  "hash": "a894f2c36ddb53bad9bc0b4278fcef02d655f7af0da07ec86aca8c4bd74c76e2"
+  "hash": "25263642acf070a0d696ee3aa52ed6e2161fc428e8a9157df3b517c4211595dc"
 }

@@ -14,17 +14,17 @@ pub struct UnidadMedida {
 
 /// Una unidad por agregar, ya validada: solo se construye con `new`.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct NuevaUnidadMedida {
+pub struct NewUnidadMedida {
     nombre: String,
     allows_fraction: bool,
 }
 
-impl NuevaUnidadMedida {
+impl NewUnidadMedida {
     /// Quita los espacios de las orillas del nombre; vacío no se acepta.
     pub fn new(nombre: &str, allows_fraction: bool) -> Result<Self, UnidadMedidaError> {
         let nombre = nombre.trim();
         if nombre.is_empty() {
-            return Err(UnidadMedidaError::NombreVacio);
+            return Err(UnidadMedidaError::EmptyNombre);
         }
         Ok(Self {
             nombre: nombre.to_string(),
@@ -43,17 +43,17 @@ impl NuevaUnidadMedida {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UnidadMedidaError {
-    NombreVacio,
+    EmptyNombre,
     /// Ya hay una con ese nombre, sin importar mayúsculas ("hoja" choca con "Hoja").
-    NombreRepetido(String),
+    DuplicateNombre(String),
     Repo(RepoError),
 }
 
 impl fmt::Display for UnidadMedidaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::NombreVacio => write!(f, "Escribe el nombre de la unidad."),
-            Self::NombreRepetido(nombre) => write!(f, "Ya existe la unidad «{nombre}»."),
+            Self::EmptyNombre => write!(f, "Escribe el nombre de la unidad."),
+            Self::DuplicateNombre(nombre) => write!(f, "Ya existe la unidad «{nombre}»."),
             Self::Repo(_) => write!(f, "No se pudo guardar la unidad."),
         }
     }
@@ -65,51 +65,54 @@ impl From<RepoError> for UnidadMedidaError {
     }
 }
 
-/// Dónde viven las unidades. Lo implementa `db`; para pruebas, `en_memoria`.
+/// Dónde viven las unidades. Lo implementa `db`; para pruebas, `in_memory`.
 pub trait UnidadesMedidaRepo {
     /// Todas, en orden alfabético.
     fn list(&self) -> impl Future<Output = Result<Vec<UnidadMedida>, RepoError>> + Send;
 
     fn add(
         &self,
-        nueva: NuevaUnidadMedida,
+        new_unidad: NewUnidadMedida,
     ) -> impl Future<Output = Result<UnidadMedida, UnidadMedidaError>> + Send;
 }
 
-#[cfg(any(test, feature = "pruebas"))]
-pub mod en_memoria {
+#[cfg(any(test, feature = "test-support"))]
+pub mod in_memory {
     use std::sync::Mutex;
 
     use super::*;
 
     #[derive(Default)]
-    pub struct UnidadesMedidaEnMemoria {
+    pub struct InMemoryUnidadesMedida {
         unidades: Mutex<Vec<UnidadMedida>>,
     }
 
-    impl UnidadesMedidaRepo for UnidadesMedidaEnMemoria {
+    impl UnidadesMedidaRepo for InMemoryUnidadesMedida {
         async fn list(&self) -> Result<Vec<UnidadMedida>, RepoError> {
             let mut unidades = self.lock().clone();
             unidades.sort_by_key(|u| u.nombre.to_lowercase());
             Ok(unidades)
         }
 
-        async fn add(&self, nueva: NuevaUnidadMedida) -> Result<UnidadMedida, UnidadMedidaError> {
+        async fn add(
+            &self,
+            new_unidad: NewUnidadMedida,
+        ) -> Result<UnidadMedida, UnidadMedidaError> {
             let mut unidades = self.lock();
-            let clave = nueva.nombre().to_lowercase();
-            if unidades.iter().any(|u| u.nombre.to_lowercase() == clave) {
-                return Err(UnidadMedidaError::NombreRepetido(nueva.nombre));
+            let key = new_unidad.nombre().to_lowercase();
+            if unidades.iter().any(|u| u.nombre.to_lowercase() == key) {
+                return Err(UnidadMedidaError::DuplicateNombre(new_unidad.nombre));
             }
             let unidad = UnidadMedida {
-                nombre: nueva.nombre,
-                allows_fraction: nueva.allows_fraction,
+                nombre: new_unidad.nombre,
+                allows_fraction: new_unidad.allows_fraction,
             };
             unidades.push(unidad.clone());
             Ok(unidad)
         }
     }
 
-    impl UnidadesMedidaEnMemoria {
+    impl InMemoryUnidadesMedida {
         // Si una prueba falló con el candado tomado, los datos siguen sirviendo para las demás.
         fn lock(&self) -> std::sync::MutexGuard<'_, Vec<UnidadMedida>> {
             self.unidades.lock().unwrap_or_else(|e| e.into_inner())
@@ -120,48 +123,48 @@ pub mod en_memoria {
 /// Lo que toda implementación de `UnidadesMedidaRepo` debe cumplir. Corre contra la de memoria
 /// (aquí) y contra la de Postgres (en `db`). Cada función recibe un repo que puede traer
 /// unidades de antes (las base de la migración); usa nombres que no existen.
-#[cfg(any(test, feature = "pruebas"))]
+#[cfg(any(test, feature = "test-support"))]
 #[allow(clippy::unwrap_used)] // código de pruebas
-pub mod contrato {
+pub mod contract {
     use super::*;
 
     pub async fn agregada_aparece_en_la_lista(repo: &impl UnidadesMedidaRepo) {
-        let agregada = repo
-            .add(NuevaUnidadMedida::new("Cuartilla", true).unwrap())
+        let added = repo
+            .add(NewUnidadMedida::new("Cuartilla", true).unwrap())
             .await
             .unwrap();
         assert_eq!(
-            agregada,
+            added,
             UnidadMedida {
                 nombre: "Cuartilla".into(),
                 allows_fraction: true
             }
         );
-        assert!(repo.list().await.unwrap().contains(&agregada));
+        assert!(repo.list().await.unwrap().contains(&added));
     }
 
     pub async fn nombre_repetido_se_rechaza_sin_importar_mayusculas(
         repo: &impl UnidadesMedidaRepo,
     ) {
-        repo.add(NuevaUnidadMedida::new("Hoja", false).unwrap())
+        repo.add(NewUnidadMedida::new("Hoja", false).unwrap())
             .await
             .unwrap();
-        let antes = repo.list().await.unwrap();
+        let before = repo.list().await.unwrap();
 
-        let resultado = repo
-            .add(NuevaUnidadMedida::new(" hOJA ", true).unwrap())
+        let result = repo
+            .add(NewUnidadMedida::new(" hOJA ", true).unwrap())
             .await;
 
         assert_eq!(
-            resultado,
-            Err(UnidadMedidaError::NombreRepetido("hOJA".into()))
+            result,
+            Err(UnidadMedidaError::DuplicateNombre("hOJA".into()))
         );
-        assert_eq!(repo.list().await.unwrap(), antes, "no debe agregar nada");
+        assert_eq!(repo.list().await.unwrap(), before, "no debe agregar nada");
     }
 
     pub async fn la_lista_va_en_orden_alfabetico(repo: &impl UnidadesMedidaRepo) {
         for nombre in ["Zeta", "Alfa", "Media"] {
-            repo.add(NuevaUnidadMedida::new(nombre, false).unwrap())
+            repo.add(NewUnidadMedida::new(nombre, false).unwrap())
                 .await
                 .unwrap();
         }
@@ -173,51 +176,51 @@ pub mod contrato {
             .into_iter()
             .map(|u| u.nombre)
             .collect();
-        let mut ordenados = nombres.clone();
-        ordenados.sort_by_key(|n| n.to_lowercase());
-        assert_eq!(nombres, ordenados);
+        let mut sorted = nombres.clone();
+        sorted.sort_by_key(|n| n.to_lowercase());
+        assert_eq!(nombres, sorted);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::en_memoria::UnidadesMedidaEnMemoria;
+    use super::in_memory::InMemoryUnidadesMedida;
     use super::*;
 
     #[test]
     fn el_nombre_se_guarda_sin_espacios_en_las_orillas() {
-        let nueva = NuevaUnidadMedida::new("  Hoja carta  ", false).unwrap();
-        assert_eq!(nueva.nombre(), "Hoja carta");
-        assert!(!nueva.allows_fraction());
+        let new_unidad = NewUnidadMedida::new("  Hoja carta  ", false).unwrap();
+        assert_eq!(new_unidad.nombre(), "Hoja carta");
+        assert!(!new_unidad.allows_fraction());
     }
 
     #[test]
     fn un_nombre_vacio_o_solo_espacios_no_se_acepta() {
         assert_eq!(
-            NuevaUnidadMedida::new("", true),
-            Err(UnidadMedidaError::NombreVacio)
+            NewUnidadMedida::new("", true),
+            Err(UnidadMedidaError::EmptyNombre)
         );
         assert_eq!(
-            NuevaUnidadMedida::new("   ", true),
-            Err(UnidadMedidaError::NombreVacio)
+            NewUnidadMedida::new("   ", true),
+            Err(UnidadMedidaError::EmptyNombre)
         );
     }
 
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_agregada_aparece_en_la_lista() {
-        contrato::agregada_aparece_en_la_lista(&UnidadesMedidaEnMemoria::default()).await;
+        contract::agregada_aparece_en_la_lista(&InMemoryUnidadesMedida::default()).await;
     }
 
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_nombre_repetido() {
-        contrato::nombre_repetido_se_rechaza_sin_importar_mayusculas(
-            &UnidadesMedidaEnMemoria::default(),
+        contract::nombre_repetido_se_rechaza_sin_importar_mayusculas(
+            &InMemoryUnidadesMedida::default(),
         )
         .await;
     }
 
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_orden_alfabetico() {
-        contrato::la_lista_va_en_orden_alfabetico(&UnidadesMedidaEnMemoria::default()).await;
+        contract::la_lista_va_en_orden_alfabetico(&InMemoryUnidadesMedida::default()).await;
     }
 }

@@ -12,7 +12,7 @@ kernel.workspace = true
 [features]
 # Implementaciones en memoria y pruebas de contrato de los repositorios, para las pruebas de
 # este crate y de `db` (que corre el mismo contrato contra Postgres).
-pruebas = []
+test-support = []
 
 [dev-dependencies]
 tokio.workspace = true

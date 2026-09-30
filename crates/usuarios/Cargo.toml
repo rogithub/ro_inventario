@@ -15,7 +15,7 @@ sha2.workspace = true
 
 [features]
 # Implementación en memoria y pruebas de contrato del repositorio, para este crate y para `db`.
-pruebas = []
+test-support = []
 
 [dev-dependencies]
 tokio.workspace = true

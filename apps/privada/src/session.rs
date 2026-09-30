@@ -1,5 +1,5 @@
 //! La sesión en la web: la cookie, el guardia que pide sesión, entrar y salir.
-//! Las reglas (bloqueo, vigencia, contraseñas) viven en `usuarios::sesiones`.
+//! Las reglas (bloqueo, vigencia, contraseñas) viven en `usuarios::sessions`.
 
 use askama::Template;
 use axum::Form;
@@ -10,20 +10,20 @@ use axum::response::{Html, IntoResponse, Redirect, Response};
 use serde::Deserialize;
 use usuarios::sessions::{LoginError, SESSION_DURATION, current_user, login, logout};
 
-use crate::{AppState, falla_interna};
+use crate::{AppState, internal_error};
 
-const COOKIE: &str = "sesion";
+const COOKIE: &str = "session";
 
 /// El valor de una cookie del encabezado `Cookie`.
-pub fn read_cookie<'a>(headers: &'a HeaderMap, nombre: &str) -> Option<&'a str> {
+pub fn read_cookie<'a>(headers: &'a HeaderMap, name: &str) -> Option<&'a str> {
     headers
         .get_all(header::COOKIE)
         .iter()
-        .filter_map(|valor| valor.to_str().ok())
-        .flat_map(|valor| valor.split(';'))
-        .filter_map(|par| par.trim().split_once('='))
-        .find(|(clave, _)| *clave == nombre)
-        .map(|(_, valor)| valor.trim())
+        .filter_map(|value| value.to_str().ok())
+        .flat_map(|value| value.split(';'))
+        .filter_map(|pair| pair.trim().split_once('='))
+        .find(|(key, _)| *key == name)
+        .map(|(_, value)| value.trim())
 }
 
 /// `HttpOnly`: JavaScript no la lee. `Secure`: solo viaja por https (o localhost).
@@ -34,27 +34,26 @@ fn session_cookie(token: &str, max_age_secs: u64) -> String {
 
 /// A dónde ir después de entrar: solo rutas de este sitio. `//otro.com`, `https://…` o una ruta
 /// con caracteres raros van a `/`.
-pub fn safe_destination(siguiente: Option<&str>) -> &str {
-    match siguiente {
+pub fn safe_destination(next: Option<&str>) -> &str {
+    match next {
         // Sin espacios, controles ni `\`: el navegador los quita o los cambia por `/`, y
         // "/\t/otro.com" terminaría siendo "//otro.com".
-        Some(ruta)
-            if ruta.starts_with('/')
-                && !ruta.starts_with("//")
-                && !ruta
+        Some(path)
+            if path.starts_with('/')
+                && !path.starts_with("//")
+                && !path
                     .chars()
                     .any(|c| c.is_whitespace() || c.is_control() || c == '\\') =>
         {
-            ruta
+            path
         }
         _ => "/",
     }
 }
 
-/// Para poner una ruta dentro de `?siguiente=`.
-pub fn percent_encode(texto: &str) -> String {
-    texto
-        .bytes()
+/// Para poner una ruta dentro de `?next=`.
+pub fn percent_encode(text: &str) -> String {
+    text.bytes()
         .map(|b| match b {
             b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
                 char::from(b).to_string()
@@ -76,17 +75,17 @@ pub async fn require_session(
     match current_user(&state.usuarios, &state.sessions, cookie).await {
         Ok(Some(usuario)) => {
             request.extensions_mut().insert(usuario);
-            let mut respuesta = next.run(request).await;
+            let mut response = next.run(request).await;
             // `current_user` ya validó el formato del token: es seguro devolverlo.
-            if let Ok(valor) =
+            if let Ok(value) =
                 HeaderValue::from_str(&session_cookie(cookie, SESSION_DURATION.as_secs()))
             {
-                respuesta.headers_mut().append(header::SET_COOKIE, valor);
+                response.headers_mut().append(header::SET_COOKIE, value);
             }
-            respuesta
+            response
         }
         Ok(None) => to_login(&request),
-        Err(error) => falla_interna(&headers, &error),
+        Err(error) => internal_error(&headers, &error),
     }
 }
 
@@ -96,11 +95,11 @@ fn to_login(request: &Request) -> Response {
     if request.headers().contains_key("hx-request") {
         return (StatusCode::UNAUTHORIZED, [("hx-redirect", "/login")]).into_response();
     }
-    let ruta = request
+    let path = request
         .uri()
         .path_and_query()
-        .map_or("/", |ruta| ruta.as_str());
-    Redirect::to(&format!("/login?siguiente={}", percent_encode(ruta))).into_response()
+        .map_or("/", |path| path.as_str());
+    Redirect::to(&format!("/login?next={}", percent_encode(path))).into_response()
 }
 
 #[derive(Template)]
@@ -109,20 +108,20 @@ struct LoginPage<'a> {
     negocio: &'a str,
     usuario_nombre: Option<&'a str>,
     email: &'a str,
-    siguiente: &'a str,
+    next: &'a str,
     error: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct LoginQuery {
-    siguiente: Option<String>,
+    next: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct LoginForm {
     email: String,
     password: String,
-    siguiente: Option<String>,
+    next: Option<String>,
 }
 
 pub async fn login_page(
@@ -130,28 +129,28 @@ pub async fn login_page(
     headers: HeaderMap,
     Query(query): Query<LoginQuery>,
 ) -> Response {
-    let siguiente = safe_destination(query.siguiente.as_deref());
-    render_login(&state, &headers, "", siguiente, None, StatusCode::OK)
+    let next = safe_destination(query.next.as_deref());
+    render_login(&state, &headers, "", next, None, StatusCode::OK)
 }
 
 fn render_login(
     state: &AppState,
     headers: &HeaderMap,
     email: &str,
-    siguiente: &str,
+    next: &str,
     error: Option<String>,
     status: StatusCode,
 ) -> Response {
-    let pagina = LoginPage {
+    let page = LoginPage {
         negocio: &state.negocio,
         usuario_nombre: None,
         email,
-        siguiente,
+        next,
         error,
     };
-    match pagina.render() {
+    match page.render() {
         Ok(html) => (status, Html(html)).into_response(),
-        Err(error) => falla_interna(headers, &error),
+        Err(error) => internal_error(headers, &error),
     }
 }
 
@@ -160,7 +159,7 @@ pub async fn login_submit(
     headers: HeaderMap,
     Form(form): Form<LoginForm>,
 ) -> Response {
-    let siguiente = safe_destination(form.siguiente.as_deref());
+    let next = safe_destination(form.next.as_deref());
     match login(
         &state.usuarios,
         &state.sessions,
@@ -172,16 +171,16 @@ pub async fn login_submit(
         Ok((usuario, token)) => {
             tracing::info!(usuario = usuario.email.as_str(), "entró");
             let cookie = session_cookie(token.as_str(), SESSION_DURATION.as_secs());
-            ([(header::SET_COOKIE, cookie)], Redirect::to(siguiente)).into_response()
+            ([(header::SET_COOKIE, cookie)], Redirect::to(next)).into_response()
         }
-        Err(LoginError::Repo(error)) => falla_interna(&headers, &error),
+        Err(LoginError::Repo(error)) => internal_error(&headers, &error),
         Err(error) => {
             tracing::warn!(%error, "no pudo entrar");
             render_login(
                 &state,
                 &headers,
                 form.email.trim(),
-                siguiente,
+                next,
                 Some(error.to_string()),
                 StatusCode::UNPROCESSABLE_ENTITY,
             )
@@ -217,19 +216,19 @@ mod tests {
         let mut headers = HeaderMap::new();
         headers.insert(
             header::COOKIE,
-            HeaderValue::from_static("tema=claro; sesion=abc123 ; x=1"),
+            HeaderValue::from_static("tema=claro; session=abc123 ; x=1"),
         );
-        assert_eq!(read_cookie(&headers, "sesion"), Some("abc123"));
+        assert_eq!(read_cookie(&headers, "session"), Some("abc123"));
         assert_eq!(read_cookie(&headers, "tema"), Some("claro"));
         assert_eq!(read_cookie(&headers, "otra"), None);
-        assert_eq!(read_cookie(&HeaderMap::new(), "sesion"), None);
+        assert_eq!(read_cookie(&HeaderMap::new(), "session"), None);
     }
 
     #[test]
     fn la_cookie_lleva_sus_banderas() {
         assert_eq!(
             session_cookie("abc", 604800),
-            "sesion=abc; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800"
+            "session=abc; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800"
         );
     }
 
@@ -263,11 +262,11 @@ mod tests {
 
     #[sqlx::test(migrator = "db::MIGRATOR")]
     async fn sin_sesion_una_pagina_lleva_a_entrar_con_la_ruta(pool: PgPool) {
-        let respuesta = get(pool, "/unidades").await;
-        assert_eq!(respuesta.status(), StatusCode::SEE_OTHER);
+        let response = get(pool, "/unidades").await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(
-            respuesta.headers()[header::LOCATION],
-            "/login?siguiente=%2Funidades"
+            response.headers()[header::LOCATION],
+            "/login?next=%2Funidades"
         );
     }
 
@@ -277,37 +276,38 @@ mod tests {
             .header("hx-request", "true")
             .body(Body::empty())
             .unwrap();
-        let respuesta = send(pool, request).await;
-        assert_eq!(respuesta.status(), StatusCode::UNAUTHORIZED);
-        assert_eq!(respuesta.headers()["hx-redirect"], "/login");
+        let response = send(pool, request).await;
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+        assert_eq!(response.headers()["hx-redirect"], "/login");
     }
 
     #[sqlx::test(migrator = "db::MIGRATOR")]
     async fn una_cookie_que_no_es_de_nadie_tambien_lleva_a_entrar(pool: PgPool) {
-        let respuesta = get_con(pool, "/unidades", &format!("sesion={}", "a".repeat(64))).await;
-        assert_eq!(respuesta.status(), StatusCode::SEE_OTHER);
+        let response =
+            get_with_cookie(pool, "/unidades", &format!("session={}", "a".repeat(64))).await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
     }
 
     #[tokio::test]
     async fn si_la_base_falla_al_revisar_la_sesion_se_ve_el_id_para_reportarlo() {
-        let cookie = format!("sesion={}", "a".repeat(64));
-        let respuesta = get_con(pool_sin_base(), "/unidades", &cookie).await;
-        assert_eq!(respuesta.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        let cookie = format!("session={}", "a".repeat(64));
+        let response = get_with_cookie(unreachable_pool(), "/unidades", &cookie).await;
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 
-        let id = respuesta.headers()["x-request-id"]
+        let id = response.headers()["x-request-id"]
             .to_str()
             .unwrap()
             .to_string();
-        assert!(body_text(respuesta).await.contains(&id));
+        assert!(body_text(response).await.contains(&id));
     }
 
     #[sqlx::test(migrator = "db::MIGRATOR")]
     async fn la_pantalla_de_entrar_no_pide_sesion(pool: PgPool) {
-        let respuesta = get(pool, "/login?siguiente=%2Funidades").await;
-        assert_eq!(respuesta.status(), StatusCode::OK);
-        let html = body_text(respuesta).await;
+        let response = get(pool, "/login?next=%2Funidades").await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let html = body_text(response).await;
         assert!(html.contains(r#"<form method="post" action="/login">"#));
-        assert!(html.contains(r#"name="siguiente" value="/unidades""#));
+        assert!(html.contains(r#"name="next" value="/unidades""#));
         assert!(!html.contains("Salir"), "sin sesión no hay botón de salir");
     }
 
@@ -324,16 +324,16 @@ mod tests {
     async fn entrar_pone_la_cookie_y_lleva_a_donde_iba(pool: PgPool) {
         cookie(&pool, "ana@x.mx", "Cajero").await;
 
-        let respuesta = send(
+        let response = send(
             pool,
-            post_login("email=ana%40x.mx&password=caja-de-lapices&siguiente=%2Funidades"),
+            post_login("email=ana%40x.mx&password=caja-de-lapices&next=%2Funidades"),
         )
         .await;
 
-        assert_eq!(respuesta.status(), StatusCode::SEE_OTHER);
-        assert_eq!(respuesta.headers()[header::LOCATION], "/unidades");
-        let cookie = respuesta.headers()[header::SET_COOKIE].to_str().unwrap();
-        assert!(cookie.starts_with("sesion="));
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(response.headers()[header::LOCATION], "/unidades");
+        let cookie = response.headers()[header::SET_COOKIE].to_str().unwrap();
+        assert!(cookie.starts_with("session="));
         assert!(cookie.ends_with("; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800"));
     }
 
@@ -341,24 +341,24 @@ mod tests {
     async fn entrar_no_lleva_fuera_del_sitio(pool: PgPool) {
         cookie(&pool, "ana@x.mx", "Cajero").await;
 
-        let respuesta = send(
+        let response = send(
             pool,
-            post_login("email=ana%40x.mx&password=caja-de-lapices&siguiente=%2F%2Fotro.com"),
+            post_login("email=ana%40x.mx&password=caja-de-lapices&next=%2F%2Fotro.com"),
         )
         .await;
 
-        assert_eq!(respuesta.headers()[header::LOCATION], "/");
+        assert_eq!(response.headers()[header::LOCATION], "/");
     }
 
     #[sqlx::test(migrator = "db::MIGRATOR")]
     async fn una_contrasena_mala_dice_por_que_y_conserva_el_email(pool: PgPool) {
         cookie(&pool, "ana@x.mx", "Cajero").await;
 
-        let respuesta = send(pool, post_login("email=ana%40x.mx&password=otra-cosa-1234")).await;
+        let response = send(pool, post_login("email=ana%40x.mx&password=otra-cosa-1234")).await;
 
-        assert_eq!(respuesta.status(), StatusCode::UNPROCESSABLE_ENTITY);
-        assert!(respuesta.headers().get(header::SET_COOKIE).is_none());
-        let html = body_text(respuesta).await;
+        assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert!(response.headers().get(header::SET_COOKIE).is_none());
+        let html = body_text(response).await;
         assert!(html.contains("Email o contraseña incorrectos."));
         assert!(html.contains(r#"value="ana@x.mx""#));
     }
@@ -372,12 +372,12 @@ mod tests {
             )
             .await;
         }
-        let respuesta = send(
+        let response = send(
             pool,
             post_login("email=nadie%40x.mx&password=otra-cosa-1234"),
         )
         .await;
-        assert!(body_text(respuesta).await.contains("Demasiados intentos."));
+        assert!(body_text(response).await.contains("Demasiados intentos."));
     }
 
     // --- con sesión ---
@@ -386,18 +386,18 @@ mod tests {
     async fn cada_respuesta_con_sesion_renueva_la_cookie(pool: PgPool) {
         let cookie = cookie(&pool, "ana@x.mx", "Cajero").await;
 
-        let respuesta = get_con(pool, "/unidades", &cookie).await;
+        let response = get_with_cookie(pool, "/unidades", &cookie).await;
 
-        assert_eq!(respuesta.status(), StatusCode::OK);
-        let renovada = respuesta.headers()[header::SET_COOKIE].to_str().unwrap();
-        assert!(renovada.starts_with(&format!("{cookie};")));
-        assert!(renovada.ends_with("Max-Age=604800"));
+        assert_eq!(response.status(), StatusCode::OK);
+        let renewed = response.headers()[header::SET_COOKIE].to_str().unwrap();
+        assert!(renewed.starts_with(&format!("{cookie};")));
+        assert!(renewed.ends_with("Max-Age=604800"));
     }
 
     #[sqlx::test(migrator = "db::MIGRATOR")]
     async fn la_barra_muestra_quien_esta_y_como_salir(pool: PgPool) {
         let cookie = cookie(&pool, "ana@x.mx", "Cajero").await;
-        let html = body_text(get_con(pool, "/unidades", &cookie).await).await;
+        let html = body_text(get_with_cookie(pool, "/unidades", &cookie).await).await;
         assert!(html.contains("Ana López"));
         assert!(html.contains(r#"action="/logout""#));
     }
@@ -405,8 +405,8 @@ mod tests {
     #[sqlx::test(migrator = "db::MIGRATOR")]
     async fn la_raiz_lleva_a_unidades(pool: PgPool) {
         let cookie = cookie(&pool, "ana@x.mx", "Cajero").await;
-        let respuesta = get_con(pool, "/", &cookie).await;
-        assert_eq!(respuesta.headers()[header::LOCATION], "/unidades");
+        let response = get_with_cookie(pool, "/", &cookie).await;
+        assert_eq!(response.headers()[header::LOCATION], "/unidades");
     }
 
     #[sqlx::test(migrator = "db::MIGRATOR")]
@@ -417,19 +417,19 @@ mod tests {
             .body(Body::empty())
             .unwrap();
 
-        let respuesta = send(pool.clone(), request).await;
+        let response = send(pool.clone(), request).await;
 
-        assert_eq!(respuesta.status(), StatusCode::SEE_OTHER);
-        assert_eq!(respuesta.headers()[header::LOCATION], "/login");
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(response.headers()[header::LOCATION], "/login");
         assert!(
-            respuesta.headers()[header::SET_COOKIE]
+            response.headers()[header::SET_COOKIE]
                 .to_str()
                 .unwrap()
                 .ends_with("Max-Age=0")
         );
-        let despues = get_con(pool, "/unidades", &cookie).await;
+        let after = get_with_cookie(pool, "/unidades", &cookie).await;
         assert_eq!(
-            despues.status(),
+            after.status(),
             StatusCode::SEE_OTHER,
             "la cookie vieja ya no sirve"
         );

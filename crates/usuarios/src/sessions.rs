@@ -33,9 +33,9 @@ impl SessionToken {
     }
 
     /// Solo acepta lo que pudo haber salido de `generate`.
-    pub fn from_cookie(texto: &str) -> Option<Self> {
-        let valido = texto.len() == 64 && texto.chars().all(|c| c.is_ascii_hexdigit());
-        valido.then(|| Self(texto.to_ascii_lowercase()))
+    pub fn from_cookie(text: &str) -> Option<Self> {
+        let is_valid = text.len() == 64 && text.chars().all(|c| c.is_ascii_hexdigit());
+        is_valid.then(|| Self(text.to_ascii_lowercase()))
     }
 
     pub fn as_str(&self) -> &str {
@@ -58,7 +58,7 @@ impl fmt::Debug for SessionToken {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TokenHash(pub [u8; 32]);
 
-/// Dónde viven las sesiones y los intentos fallidos. Lo implementa `db`; para pruebas, `en_memoria`.
+/// Dónde viven las sesiones y los intentos fallidos. Lo implementa `db`; para pruebas, `in_memory`.
 pub trait SessionsRepo {
     fn create(
         &self,
@@ -66,7 +66,7 @@ pub trait SessionsRepo {
         email: &Email,
     ) -> impl Future<Output = Result<(), RepoError>> + Send;
 
-    /// El email de una sesión usada dentro de `duracion`, y renueva su último uso.
+    /// El email de una sesión usada dentro de `duration`, y renueva su último uso.
     fn find_email(
         &self,
         token_hash: &TokenHash,
@@ -77,7 +77,7 @@ pub trait SessionsRepo {
 
     fn record_failure(&self, email: &Email) -> impl Future<Output = Result<(), RepoError>> + Send;
 
-    /// Intentos fallidos de un email dentro de `ventana`.
+    /// Intentos fallidos de un email dentro de `window`.
     fn count_recent_failures(
         &self,
         email: &Email,
@@ -86,7 +86,7 @@ pub trait SessionsRepo {
 
     fn clear_failures(&self, email: &Email) -> impl Future<Output = Result<(), RepoError>> + Send;
 
-    /// Borra sesiones sin usar en `duracion_sesion` e intentos más viejos que `ventana_fallos`.
+    /// Borra sesiones sin usar en `session_duration` e intentos más viejos que `failures_window`.
     fn purge_expired(
         &self,
         session_duration: Duration,
@@ -144,7 +144,7 @@ pub async fn login(
         return Err(LoginError::LockedOut);
     }
     let usuario = match usuarios.find_for_login(&email).await? {
-        Some((usuario, hash)) if verify_password(password, &hash) && usuario.activo => {
+        Some((usuario, hash)) if verify_password(password, &hash) && usuario.is_active => {
             Some(usuario)
         }
         Some(_) => None,
@@ -185,7 +185,7 @@ pub async fn current_user(
         .find_for_login(&email)
         .await?
         .map(|(usuario, _)| usuario)
-        .filter(|usuario| usuario.activo))
+        .filter(|usuario| usuario.is_active))
 }
 
 pub async fn logout(sessions: &impl SessionsRepo, cookie: &str) -> Result<(), RepoError> {
@@ -195,15 +195,15 @@ pub async fn logout(sessions: &impl SessionsRepo, cookie: &str) -> Result<(), Re
     }
 }
 
-#[cfg(any(test, feature = "pruebas"))]
-pub mod en_memoria {
+#[cfg(any(test, feature = "test-support"))]
+pub mod in_memory {
     use std::sync::Mutex;
     use std::time::Instant;
 
     use super::*;
 
     #[derive(Default)]
-    pub struct SessionsEnMemoria {
+    pub struct InMemorySessions {
         sessions: Mutex<Vec<(TokenHash, Email, Instant)>>,
         failures: Mutex<Vec<(Email, Instant)>>,
     }
@@ -213,7 +213,7 @@ pub mod en_memoria {
         m.lock().unwrap_or_else(|e| e.into_inner())
     }
 
-    impl SessionsRepo for SessionsEnMemoria {
+    impl SessionsRepo for InMemorySessions {
         async fn create(&self, token_hash: &TokenHash, email: &Email) -> Result<(), RepoError> {
             lock(&self.sessions).push((token_hash.clone(), email.clone(), Instant::now()));
             Ok(())
@@ -225,14 +225,14 @@ pub mod en_memoria {
             duration: Duration,
         ) -> Result<Option<Email>, RepoError> {
             let mut sessions = lock(&self.sessions);
-            let Some(sesion) = sessions
+            let Some(session) = sessions
                 .iter_mut()
-                .find(|(h, _, usada)| h == token_hash && usada.elapsed() < duration)
+                .find(|(h, _, used_at)| h == token_hash && used_at.elapsed() < duration)
             else {
                 return Ok(None);
             };
-            sesion.2 = Instant::now();
-            Ok(Some(sesion.1.clone()))
+            session.2 = Instant::now();
+            Ok(Some(session.1.clone()))
         }
 
         async fn delete(&self, token_hash: &TokenHash) -> Result<(), RepoError> {
@@ -252,7 +252,7 @@ pub mod en_memoria {
         ) -> Result<u32, RepoError> {
             let total = lock(&self.failures)
                 .iter()
-                .filter(|(e, cuando)| e == email && cuando.elapsed() < window)
+                .filter(|(e, at)| e == email && at.elapsed() < window)
                 .count();
             Ok(u32::try_from(total).unwrap_or(u32::MAX))
         }
@@ -267,8 +267,8 @@ pub mod en_memoria {
             session_duration: Duration,
             failures_window: Duration,
         ) -> Result<(), RepoError> {
-            lock(&self.sessions).retain(|(_, _, usada)| usada.elapsed() < session_duration);
-            lock(&self.failures).retain(|(_, cuando)| cuando.elapsed() < failures_window);
+            lock(&self.sessions).retain(|(_, _, used_at)| used_at.elapsed() < session_duration);
+            lock(&self.failures).retain(|(_, at)| at.elapsed() < failures_window);
             Ok(())
         }
     }
@@ -276,15 +276,15 @@ pub mod en_memoria {
 
 /// Lo que toda implementación de `SessionsRepo` debe cumplir, junto con su `UsuariosRepo`
 /// (una sesión es de un usuario que existe). Corre contra memoria (aquí) y Postgres (en `db`).
-#[cfg(any(test, feature = "pruebas"))]
+#[cfg(any(test, feature = "test-support"))]
 #[allow(clippy::unwrap_used)] // código de pruebas
-pub mod contrato {
+pub mod contract {
     use super::*;
-    use crate::usuarios::NuevoUsuario;
+    use crate::usuarios::NewUsuario;
 
     async fn ana(usuarios: &impl UsuariosRepo) -> Email {
         usuarios
-            .add(NuevoUsuario::new("ana@x.mx", "Ana", "Cajero", "caja-de-lapices").unwrap())
+            .add(NewUsuario::new("ana@x.mx", "Ana", "Cajero", "caja-de-lapices").unwrap())
             .await
             .unwrap();
         Email::parse("ana@x.mx").unwrap()
@@ -394,10 +394,10 @@ pub mod contrato {
 
 #[cfg(test)]
 mod tests {
-    use super::en_memoria::SessionsEnMemoria;
+    use super::in_memory::InMemorySessions;
     use super::*;
-    use crate::usuarios::NuevoUsuario;
-    use crate::usuarios::en_memoria::UsuariosEnMemoria;
+    use crate::usuarios::NewUsuario;
+    use crate::usuarios::in_memory::InMemoryUsuarios;
 
     // --- el token ---
 
@@ -422,8 +422,8 @@ mod tests {
     #[test]
     fn la_huella_es_el_sha256_del_token_y_no_el_token() {
         let token = SessionToken::from_cookie(&"a".repeat(64)).unwrap();
-        let esperado: [u8; 32] = Sha256::digest("a".repeat(64).as_bytes()).into();
-        assert_eq!(token.token_hash(), TokenHash(esperado));
+        let expected: [u8; 32] = Sha256::digest("a".repeat(64).as_bytes()).into();
+        assert_eq!(token.token_hash(), TokenHash(expected));
     }
 
     #[test]
@@ -436,65 +436,65 @@ mod tests {
 
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_sesion_creada() {
-        contrato::sesion_creada_se_encuentra_y_borrada_ya_no(
-            &UsuariosEnMemoria::default(),
-            &SessionsEnMemoria::default(),
+        contract::sesion_creada_se_encuentra_y_borrada_ya_no(
+            &InMemoryUsuarios::default(),
+            &InMemorySessions::default(),
         )
         .await;
     }
 
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_huella_desconocida() {
-        contrato::huella_desconocida_no_se_encuentra(&SessionsEnMemoria::default()).await;
+        contract::huella_desconocida_no_se_encuentra(&InMemorySessions::default()).await;
     }
 
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_fallos() {
-        contrato::los_fallos_se_cuentan_por_email_y_se_borran(&SessionsEnMemoria::default()).await;
+        contract::los_fallos_se_cuentan_por_email_y_se_borran(&InMemorySessions::default()).await;
     }
 
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_purgar() {
-        contrato::purgar_no_borra_lo_vigente(
-            &UsuariosEnMemoria::default(),
-            &SessionsEnMemoria::default(),
+        contract::purgar_no_borra_lo_vigente(
+            &InMemoryUsuarios::default(),
+            &InMemorySessions::default(),
         )
         .await;
     }
 
     // --- entrar, reconocer y salir ---
 
-    async fn con_ana() -> (UsuariosEnMemoria, SessionsEnMemoria) {
-        let usuarios = UsuariosEnMemoria::default();
+    async fn with_ana() -> (InMemoryUsuarios, InMemorySessions) {
+        let usuarios = InMemoryUsuarios::default();
         usuarios
-            .add(NuevoUsuario::new("ana@x.mx", "Ana", "Cajero", "caja-de-lapices").unwrap())
+            .add(NewUsuario::new("ana@x.mx", "Ana", "Cajero", "caja-de-lapices").unwrap())
             .await
             .unwrap();
-        (usuarios, SessionsEnMemoria::default())
+        (usuarios, InMemorySessions::default())
     }
 
     #[tokio::test]
     async fn con_la_contrasena_correcta_entra_y_la_cookie_la_reconoce() {
-        let (usuarios, sessions) = con_ana().await;
+        let (usuarios, sessions) = with_ana().await;
 
         let (usuario, token) = login(&usuarios, &sessions, " ANA@x.mx ", "caja-de-lapices")
             .await
             .unwrap();
         assert_eq!(usuario.nombre, "Ana");
 
-        let actual = current_user(&usuarios, &sessions, token.as_str())
+        let current = current_user(&usuarios, &sessions, token.as_str())
             .await
             .unwrap();
-        assert_eq!(actual, Some(usuario));
+        assert_eq!(current, Some(usuario));
     }
 
     #[tokio::test]
     async fn una_contrasena_equivocada_no_entra_y_cuenta_como_fallo() {
-        let (usuarios, sessions) = con_ana().await;
+        let (usuarios, sessions) = with_ana().await;
 
-        let resultado = login(&usuarios, &sessions, "ana@x.mx", "caja-de-plumas").await;
+        let result = login(&usuarios, &sessions, "ana@x.mx", "caja-de-plumas").await;
 
-        assert_eq!(resultado.map(|_| ()), Err(LoginError::Invalid));
+        assert_eq!(result.map(|_| ()), Err(LoginError::Invalid));
         let ana = Email::parse("ana@x.mx").unwrap();
         assert_eq!(
             sessions.count_recent_failures(&ana, LOCKOUT).await.unwrap(),
@@ -504,38 +504,38 @@ mod tests {
 
     #[tokio::test]
     async fn un_email_que_no_existe_da_el_mismo_error() {
-        let (usuarios, sessions) = con_ana().await;
+        let (usuarios, sessions) = with_ana().await;
         for email in ["nadie@x.mx", "no-es-email"] {
-            let resultado = login(&usuarios, &sessions, email, "caja-de-lapices").await;
-            assert_eq!(resultado.map(|_| ()), Err(LoginError::Invalid), "{email}");
+            let result = login(&usuarios, &sessions, email, "caja-de-lapices").await;
+            assert_eq!(result.map(|_| ()), Err(LoginError::Invalid), "{email}");
         }
     }
 
     #[tokio::test]
     async fn un_usuario_desactivado_no_entra() {
-        let (usuarios, sessions) = con_ana().await;
+        let (usuarios, sessions) = with_ana().await;
         usuarios.deactivate(&Email::parse("ana@x.mx").unwrap());
 
-        let resultado = login(&usuarios, &sessions, "ana@x.mx", "caja-de-lapices").await;
+        let result = login(&usuarios, &sessions, "ana@x.mx", "caja-de-lapices").await;
 
-        assert_eq!(resultado.map(|_| ()), Err(LoginError::Invalid));
+        assert_eq!(result.map(|_| ()), Err(LoginError::Invalid));
     }
 
     #[tokio::test]
     async fn tras_cinco_fallos_se_bloquea_aunque_la_contrasena_sea_correcta() {
-        let (usuarios, sessions) = con_ana().await;
+        let (usuarios, sessions) = with_ana().await;
         for _ in 0..MAX_FAILED_ATTEMPTS {
             let _ = login(&usuarios, &sessions, "ana@x.mx", "caja-de-plumas").await;
         }
 
-        let resultado = login(&usuarios, &sessions, "ana@x.mx", "caja-de-lapices").await;
+        let result = login(&usuarios, &sessions, "ana@x.mx", "caja-de-lapices").await;
 
-        assert_eq!(resultado.map(|_| ()), Err(LoginError::LockedOut));
+        assert_eq!(result.map(|_| ()), Err(LoginError::LockedOut));
     }
 
     #[tokio::test]
     async fn entrar_borra_los_fallos_anteriores() {
-        let (usuarios, sessions) = con_ana().await;
+        let (usuarios, sessions) = with_ana().await;
         for _ in 0..MAX_FAILED_ATTEMPTS - 1 {
             let _ = login(&usuarios, &sessions, "ana@x.mx", "caja-de-plumas").await;
         }
@@ -552,7 +552,7 @@ mod tests {
 
     #[tokio::test]
     async fn una_cookie_mal_formada_o_desconocida_no_es_nadie() {
-        let (usuarios, sessions) = con_ana().await;
+        let (usuarios, sessions) = with_ana().await;
         for cookie in ["", "basura", &"a".repeat(64)] {
             assert_eq!(
                 current_user(&usuarios, &sessions, cookie).await.unwrap(),
@@ -563,7 +563,7 @@ mod tests {
 
     #[tokio::test]
     async fn si_desactivan_al_usuario_su_sesion_deja_de_servir() {
-        let (usuarios, sessions) = con_ana().await;
+        let (usuarios, sessions) = with_ana().await;
         let (_, token) = login(&usuarios, &sessions, "ana@x.mx", "caja-de-lapices")
             .await
             .unwrap();
@@ -580,7 +580,7 @@ mod tests {
 
     #[tokio::test]
     async fn al_salir_la_cookie_deja_de_servir() {
-        let (usuarios, sessions) = con_ana().await;
+        let (usuarios, sessions) = with_ana().await;
         let (_, token) = login(&usuarios, &sessions, "ana@x.mx", "caja-de-lapices")
             .await
             .unwrap();

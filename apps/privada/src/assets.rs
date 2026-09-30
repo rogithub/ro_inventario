@@ -5,7 +5,7 @@ use axum::http::{StatusCode, header};
 use axum::response::{IntoResponse, Response};
 
 /// Ruta bajo /static/, tipo y contenido. Solo estos: ninguna ruta llega al disco.
-const ARCHIVOS: &[(&str, &str, &[u8])] = &[
+const ASSETS: &[(&str, &str, &[u8])] = &[
     (
         "bootstrap.min.css",
         "text/css",
@@ -33,15 +33,15 @@ const ARCHIVOS: &[(&str, &str, &[u8])] = &[
     ),
 ];
 
-pub async fn archivo(Path(ruta): Path<String>) -> Response {
-    match ARCHIVOS.iter().find(|(nombre, _, _)| *nombre == ruta) {
-        Some((_, tipo, contenido)) => (
+pub async fn serve(Path(path): Path<String>) -> Response {
+    match ASSETS.iter().find(|(name, _, _)| *name == path) {
+        Some((_, content_type, content)) => (
             [
-                (header::CONTENT_TYPE, *tipo),
+                (header::CONTENT_TYPE, *content_type),
                 // Un día: cambian solo al actualizar una versión, y eso llega con un deploy.
                 (header::CACHE_CONTROL, "public, max-age=86400"),
             ],
-            *contenido,
+            *content,
         )
             .into_response(),
         None => StatusCode::NOT_FOUND.into_response(),
@@ -55,18 +55,18 @@ mod tests {
 
     #[tokio::test]
     async fn los_archivos_estaticos_se_sirven_con_su_tipo() {
-        let respuesta = get(pool_sin_base(), "/static/htmx.min.js").await;
-        assert_eq!(respuesta.status(), StatusCode::OK);
-        assert_eq!(respuesta.headers()[header::CONTENT_TYPE], "text/javascript");
+        let response = get(unreachable_pool(), "/static/htmx.min.js").await;
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()[header::CONTENT_TYPE], "text/javascript");
 
-        let respuesta = get(pool_sin_base(), "/static/fonts/bootstrap-icons.woff2").await;
-        assert_eq!(respuesta.status(), StatusCode::OK);
-        assert_eq!(respuesta.headers()[header::CONTENT_TYPE], "font/woff2");
+        let response = get(unreachable_pool(), "/static/fonts/bootstrap-icons.woff2").await;
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()[header::CONTENT_TYPE], "font/woff2");
     }
 
     #[tokio::test]
     async fn un_archivo_que_no_existe_da_404() {
-        let respuesta = get(pool_sin_base(), "/static/../Cargo.toml").await;
-        assert_eq!(respuesta.status(), StatusCode::NOT_FOUND);
+        let response = get(unreachable_pool(), "/static/../Cargo.toml").await;
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 }

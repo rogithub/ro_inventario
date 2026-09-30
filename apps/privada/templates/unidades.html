@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block titulo %}Unidades de medida{% endblock %}
+{% block title %}Unidades de medida{% endblock %}
 
-{% block contenido %}
+{% block content %}
 <h1 class="h4">Unidades de medida</h1>
 {% block unidades %}
 <div id="unidades">
-  {% if puede_editar %}
+  {% if can_edit %}
   <form method="post" action="/unidades" hx-post="/unidades" hx-target="#unidades" hx-swap="outerHTML"
         class="row g-2 align-items-end mb-3">
     <div class="col-12 col-md-6">

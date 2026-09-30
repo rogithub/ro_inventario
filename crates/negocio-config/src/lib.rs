@@ -79,11 +79,11 @@ fn validate(config: &NegocioConfig) -> Result<(), ConfigError> {
 mod tests {
     use super::*;
 
-    const EJEMPLO_DEL_REPO: &str = include_str!("../../../negocio.ejemplo.toml");
+    const REPO_EXAMPLE: &str = include_str!("../../../negocio.ejemplo.toml");
 
     #[test]
     fn el_ejemplo_del_repo_es_valido() {
-        let config = parse_negocio_config(EJEMPLO_DEL_REPO).unwrap();
+        let config = parse_negocio_config(REPO_EXAMPLE).unwrap();
         assert_eq!(config.negocio.time_zone, "America/Cancun");
     }
 
@@ -98,8 +98,8 @@ mod tests {
 
     #[test]
     fn una_clave_mal_escrita_no_se_acepta() {
-        let texto = "[negocio]\nnombr = \"Papelería\"\ntime_zone = \"America/Cancun\"\n";
-        let error = parse_negocio_config(texto).unwrap_err();
+        let text = "[negocio]\nnombr = \"Papelería\"\ntime_zone = \"America/Cancun\"\n";
+        let error = parse_negocio_config(text).unwrap_err();
         assert!(
             matches!(error, ConfigError::Parse(ref m) if m.contains("nombr")),
             "{error}"
@@ -108,8 +108,8 @@ mod tests {
 
     #[test]
     fn un_nombre_vacio_no_se_acepta() {
-        let texto = "[negocio]\nnombre = \"  \"\ntime_zone = \"America/Cancun\"\n";
-        let error = parse_negocio_config(texto).unwrap_err();
+        let text = "[negocio]\nnombre = \"  \"\ntime_zone = \"America/Cancun\"\n";
+        let error = parse_negocio_config(text).unwrap_err();
         assert!(
             matches!(error, ConfigError::Invalid(ref m) if m.contains("nombre")),
             "{error}"
@@ -118,8 +118,8 @@ mod tests {
 
     #[test]
     fn una_zona_horaria_vacia_no_se_acepta() {
-        let texto = "[negocio]\nnombre = \"Papelería\"\ntime_zone = \"\"\n";
-        let error = parse_negocio_config(texto).unwrap_err();
+        let text = "[negocio]\nnombre = \"Papelería\"\ntime_zone = \"\"\n";
+        let error = parse_negocio_config(text).unwrap_err();
         assert!(
             matches!(error, ConfigError::Invalid(ref m) if m.contains("time_zone")),
             "{error}"

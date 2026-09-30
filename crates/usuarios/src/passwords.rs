@@ -15,8 +15,8 @@ pub struct PasswordHash(String);
 
 impl PasswordHash {
     /// Uno leído de la base.
-    pub fn from_stored(texto: String) -> Self {
-        Self(texto)
+    pub fn from_stored(text: String) -> Self {
+        Self(text)
     }
 
     pub fn as_str(&self) -> &str {
@@ -33,7 +33,7 @@ impl fmt::Debug for PasswordHash {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PasswordError {
-    MuyCorta,
+    TooShort,
     /// Falla de Argon2 o de la fuente de azar; no depende de lo que escribió el usuario.
     Hash(String),
 }
@@ -41,11 +41,11 @@ pub enum PasswordError {
 impl fmt::Display for PasswordError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MuyCorta => write!(
+            Self::TooShort => write!(
                 f,
                 "La contraseña debe tener al menos {MIN_PASSWORD_LENGTH} caracteres."
             ),
-            Self::Hash(detalle) => write!(f, "No se pudo proteger la contraseña: {detalle}"),
+            Self::Hash(detail) => write!(f, "No se pudo proteger la contraseña: {detail}"),
         }
     }
 }
@@ -55,7 +55,7 @@ impl std::error::Error for PasswordError {}
 /// Revisa la longitud y calcula el hash con una sal nueva.
 pub fn hash_password(password: &str) -> Result<PasswordHash, PasswordError> {
     if password.chars().count() < MIN_PASSWORD_LENGTH {
-        return Err(PasswordError::MuyCorta);
+        return Err(PasswordError::TooShort);
     }
     Argon2::default()
         .hash_password(password.as_bytes())
@@ -100,20 +100,20 @@ mod tests {
 
     #[test]
     fn una_contrasena_corta_no_se_acepta() {
-        assert_eq!(hash_password("123456789"), Err(PasswordError::MuyCorta));
+        assert_eq!(hash_password("123456789"), Err(PasswordError::TooShort));
         assert!(hash_password("1234567890").is_ok());
     }
 
     #[test]
     fn la_longitud_cuenta_letras_no_bytes() {
         // 9 letras con acento ocupan más de 10 bytes, pero siguen siendo 9.
-        assert_eq!(hash_password("ñáéíóúñáé"), Err(PasswordError::MuyCorta));
+        assert_eq!(hash_password("ñáéíóúñáé"), Err(PasswordError::TooShort));
     }
 
     #[test]
     fn un_hash_danado_no_deja_entrar() {
-        let danado = PasswordHash::from_stored("no-es-un-hash".into());
-        assert!(!verify_password("lo-que-sea", &danado));
+        let damaged = PasswordHash::from_stored("no-es-un-hash".into());
+        assert!(!verify_password("lo-que-sea", &damaged));
     }
 
     #[test]

@@ -36,16 +36,16 @@ mod tests {
     use axum::http::StatusCode;
     use db::PgPool;
 
-    async fn json(respuesta: axum::response::Response) -> serde_json::Value {
-        serde_json::from_str(&body_text(respuesta).await).unwrap()
+    async fn json(response: axum::response::Response) -> serde_json::Value {
+        serde_json::from_str(&body_text(response).await).unwrap()
     }
 
     #[sqlx::test(migrator = "db::MIGRATOR")]
     async fn health_responde_ok_con_la_version_y_la_base(pool: PgPool) {
-        let respuesta = get(pool, "/health").await;
-        assert_eq!(respuesta.status(), StatusCode::OK);
+        let response = get(pool, "/health").await;
+        assert_eq!(response.status(), StatusCode::OK);
 
-        let json = json(respuesta).await;
+        let json = json(response).await;
         assert_eq!(json["status"], "ok");
         assert_eq!(json["version"], VERSION);
         assert_eq!(json["db"], "ok");
@@ -53,10 +53,10 @@ mod tests {
 
     #[tokio::test]
     async fn health_responde_503_si_la_base_no_responde() {
-        let respuesta = get(pool_sin_base(), "/health").await;
-        assert_eq!(respuesta.status(), StatusCode::SERVICE_UNAVAILABLE);
+        let response = get(unreachable_pool(), "/health").await;
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 
-        let json = json(respuesta).await;
+        let json = json(response).await;
         assert_eq!(json["status"], "error");
         assert_eq!(json["version"], VERSION);
         assert_eq!(json["db"], "error");
@@ -64,8 +64,8 @@ mod tests {
 
     #[tokio::test]
     async fn cada_respuesta_lleva_su_id_de_peticion() {
-        let respuesta = get(pool_sin_base(), "/health").await;
-        let id = respuesta.headers().get("x-request-id");
+        let response = get(unreachable_pool(), "/health").await;
+        let id = response.headers().get("x-request-id");
         assert!(id.is_some_and(|v| !v.is_empty()), "falta x-request-id");
     }
 }

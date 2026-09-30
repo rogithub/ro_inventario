@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
 const PORT = Number(process.env.E2E_PORT ?? 5099);
 const baseURL = `http://localhost:${PORT}`;
 // La sesión del usuario de pruebas (E2E_USER / E2E_PASS), guardada por auth.setup.ts.
-export const SESION = '.auth/usuario.json';
+export const SESSION_FILE = '.auth/usuario.json';
 
 export default defineConfig({
   testDir: './tests',
@@ -28,7 +28,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Firefox'],
         viewport: { width: 1920, height: 1080 },
-        storageState: SESION,
+        storageState: SESSION_FILE,
       },
       dependencies: ['setup'],
     },
@@ -39,7 +39,7 @@ export default defineConfig({
         viewport: { width: 744, height: 1133 },
         deviceScaleFactor: 2,
         hasTouch: true,
-        storageState: SESION,
+        storageState: SESSION_FILE,
       },
       dependencies: ['setup'],
     },

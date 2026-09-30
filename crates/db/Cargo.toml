@@ -13,8 +13,8 @@ sqlx.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
-inventario = { workspace = true, features = ["pruebas"] }
-usuarios = { workspace = true, features = ["pruebas"] }
+inventario = { workspace = true, features = ["test-support"] }
+usuarios = { workspace = true, features = ["test-support"] }
 
 [lints]
 workspace = true

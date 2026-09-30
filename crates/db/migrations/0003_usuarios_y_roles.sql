@@ -22,18 +22,18 @@ CREATE TABLE usuarios (
     nombre         text        NOT NULL CHECK (btrim(nombre) <> ''),
     password_hash  text        NOT NULL,
     rol_id         uuid        NOT NULL REFERENCES roles,
-    desactivado_at timestamptz,
+    deactivated_at timestamptz,
     created_at     timestamptz NOT NULL DEFAULT now()
 );
 COMMENT ON TABLE usuarios IS
     'Personas que entran al sistema. Un usuario que se va se desactiva, no se borra: sus ventas conservan quién las hizo.';
 COMMENT ON COLUMN usuarios.email IS 'Con él se entra. Se guarda en minúsculas y sin espacios.';
 COMMENT ON COLUMN usuarios.password_hash IS 'Argon2id en formato PHC ($argon2id$v=19$...). Nunca la contraseña.';
-COMMENT ON COLUMN usuarios.desactivado_at IS 'Desde cuándo ya no puede entrar. NULL = activo.';
+COMMENT ON COLUMN usuarios.deactivated_at IS 'Desde cuándo ya no puede entrar. NULL = activo.';
 
 -- Datos base: los roles de arranque que sirven a cualquier negocio. Los propios de un negocio
 -- (p. ej. "Socia" de la papelería) llegan con sus datos. Deben coincidir con
--- roles_de_arranque() en crates/usuarios; una prueba en crates/db lo verifica.
+-- default_roles() en crates/usuarios; una prueba en crates/db lo verifica.
 INSERT INTO roles (nombre) VALUES ('Dueño'), ('Encargado'), ('Cajero');
 
 INSERT INTO roles_permisos (rol_id, permiso)

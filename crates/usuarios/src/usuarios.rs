@@ -13,21 +13,21 @@ use crate::permisos::{Permiso, Rol};
 pub struct Email(String);
 
 impl Email {
-    pub fn parse(texto: &str) -> Result<Self, UsuarioError> {
-        let email = texto.trim().to_lowercase();
-        let valido = match email.split_once('@') {
-            Some((nombre, dominio)) => {
-                !nombre.is_empty()
-                    && !dominio.is_empty()
-                    && !dominio.contains('@')
+    pub fn parse(text: &str) -> Result<Self, UsuarioError> {
+        let email = text.trim().to_lowercase();
+        let is_valid = match email.split_once('@') {
+            Some((local, domain)) => {
+                !local.is_empty()
+                    && !domain.is_empty()
+                    && !domain.contains('@')
                     && !email.contains(char::is_whitespace)
             }
             None => false,
         };
-        if valido {
+        if is_valid {
             Ok(Self(email))
         } else {
-            Err(UsuarioError::EmailInvalido)
+            Err(UsuarioError::InvalidEmail)
         }
     }
 
@@ -42,30 +42,30 @@ pub struct Usuario {
     pub nombre: String,
     pub rol: Rol,
     /// `false` si se desactivó: ya no puede hacer nada, pero sus ventas conservan quién las hizo.
-    pub activo: bool,
+    pub is_active: bool,
 }
 
 impl Usuario {
     pub fn can(&self, permiso: Permiso) -> bool {
-        self.activo && self.rol.can(permiso)
+        self.is_active && self.rol.can(permiso)
     }
 }
 
 /// Un usuario por crear, ya validado y con la contraseña convertida en hash.
 #[derive(Debug, Clone)]
-pub struct NuevoUsuario {
+pub struct NewUsuario {
     email: Email,
     nombre: String,
     rol: String,
     password_hash: PasswordHash,
 }
 
-impl NuevoUsuario {
+impl NewUsuario {
     pub fn new(email: &str, nombre: &str, rol: &str, password: &str) -> Result<Self, UsuarioError> {
         let email = Email::parse(email)?;
         let nombre = nombre.trim();
         if nombre.is_empty() {
-            return Err(UsuarioError::NombreVacio);
+            return Err(UsuarioError::EmptyNombre);
         }
         let password_hash = hash_password(password).map_err(UsuarioError::Password)?;
         Ok(Self {
@@ -96,22 +96,22 @@ impl NuevoUsuario {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UsuarioError {
-    EmailInvalido,
-    NombreVacio,
+    InvalidEmail,
+    EmptyNombre,
     Password(PasswordError),
-    EmailRepetido(String),
-    RolNoExiste(String),
+    DuplicateEmail(String),
+    RolNotFound(String),
     Repo(RepoError),
 }
 
 impl fmt::Display for UsuarioError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::EmailInvalido => write!(f, "El email no es válido."),
-            Self::NombreVacio => write!(f, "Escribe el nombre de la persona."),
+            Self::InvalidEmail => write!(f, "El email no es válido."),
+            Self::EmptyNombre => write!(f, "Escribe el nombre de la persona."),
             Self::Password(error) => write!(f, "{error}"),
-            Self::EmailRepetido(email) => write!(f, "Ya existe un usuario con el email {email}."),
-            Self::RolNoExiste(rol) => write!(f, "No existe el rol «{rol}»."),
+            Self::DuplicateEmail(email) => write!(f, "Ya existe un usuario con el email {email}."),
+            Self::RolNotFound(rol) => write!(f, "No existe el rol «{rol}»."),
             Self::Repo(_) => write!(f, "No se pudo guardar el usuario."),
         }
     }
@@ -125,11 +125,11 @@ impl From<RepoError> for UsuarioError {
     }
 }
 
-/// Dónde viven los usuarios y los roles. Lo implementa `db`; para pruebas, `en_memoria`.
+/// Dónde viven los usuarios y los roles. Lo implementa `db`; para pruebas, `in_memory`.
 pub trait UsuariosRepo {
     fn add(
         &self,
-        nuevo: NuevoUsuario,
+        new_usuario: NewUsuario,
     ) -> impl Future<Output = Result<Usuario, UsuarioError>> + Send;
 
     /// Para entrar: el usuario con el hash de su contraseña, o `None` si no existe.
@@ -139,46 +139,46 @@ pub trait UsuariosRepo {
     ) -> impl Future<Output = Result<Option<(Usuario, PasswordHash)>, RepoError>> + Send;
 }
 
-#[cfg(any(test, feature = "pruebas"))]
-pub mod en_memoria {
+#[cfg(any(test, feature = "test-support"))]
+pub mod in_memory {
     use std::sync::Mutex;
 
     use super::*;
-    use crate::permisos::roles_de_arranque;
+    use crate::permisos::default_roles;
 
-    pub struct UsuariosEnMemoria {
+    pub struct InMemoryUsuarios {
         roles: Vec<Rol>,
         usuarios: Mutex<Vec<(Usuario, PasswordHash)>>,
     }
 
     /// Con los roles de arranque, como una base recién migrada.
-    impl Default for UsuariosEnMemoria {
+    impl Default for InMemoryUsuarios {
         fn default() -> Self {
             Self {
-                roles: roles_de_arranque(),
+                roles: default_roles(),
                 usuarios: Mutex::default(),
             }
         }
     }
 
-    impl UsuariosRepo for UsuariosEnMemoria {
-        async fn add(&self, nuevo: NuevoUsuario) -> Result<Usuario, UsuarioError> {
+    impl UsuariosRepo for InMemoryUsuarios {
+        async fn add(&self, new_usuario: NewUsuario) -> Result<Usuario, UsuarioError> {
             let rol = self
                 .roles
                 .iter()
-                .find(|r| r.nombre == nuevo.rol)
-                .ok_or_else(|| UsuarioError::RolNoExiste(nuevo.rol.clone()))?;
+                .find(|r| r.nombre == new_usuario.rol)
+                .ok_or_else(|| UsuarioError::RolNotFound(new_usuario.rol.clone()))?;
             let mut usuarios = self.lock();
-            if usuarios.iter().any(|(u, _)| u.email == nuevo.email) {
-                return Err(UsuarioError::EmailRepetido(nuevo.email.0));
+            if usuarios.iter().any(|(u, _)| u.email == new_usuario.email) {
+                return Err(UsuarioError::DuplicateEmail(new_usuario.email.0));
             }
             let usuario = Usuario {
-                email: nuevo.email,
-                nombre: nuevo.nombre,
+                email: new_usuario.email,
+                nombre: new_usuario.nombre,
                 rol: rol.clone(),
-                activo: true,
+                is_active: true,
             };
-            usuarios.push((usuario.clone(), nuevo.password_hash));
+            usuarios.push((usuario.clone(), new_usuario.password_hash));
             Ok(usuario)
         }
 
@@ -190,12 +190,12 @@ pub mod en_memoria {
         }
     }
 
-    impl UsuariosEnMemoria {
-        /// Como poner `desactivado_at` en la base.
+    impl InMemoryUsuarios {
+        /// Como poner `deactivated_at` en la base.
         pub fn deactivate(&self, email: &Email) {
             for (usuario, _) in self.lock().iter_mut() {
                 if &usuario.email == email {
-                    usuario.activo = false;
+                    usuario.is_active = false;
                 }
             }
         }
@@ -209,20 +209,22 @@ pub mod en_memoria {
 
 /// Lo que toda implementación de `UsuariosRepo` debe cumplir. Corre contra la de memoria (aquí)
 /// y contra la de Postgres (en `db`), las dos empezando sin usuarios y con los roles de arranque.
-#[cfg(any(test, feature = "pruebas"))]
+#[cfg(any(test, feature = "test-support"))]
 #[allow(clippy::unwrap_used)] // código de pruebas
-pub mod contrato {
+pub mod contract {
     use std::collections::BTreeSet;
 
     use super::*;
     use crate::passwords::verify_password;
 
-    fn nuevo(email: &str, rol: &str) -> NuevoUsuario {
-        NuevoUsuario::new(email, "Ana López", rol, "caja-de-lapices").unwrap()
+    fn new_usuario(email: &str, rol: &str) -> NewUsuario {
+        NewUsuario::new(email, "Ana López", rol, "caja-de-lapices").unwrap()
     }
 
     pub async fn agregado_se_encuentra_por_email_sin_importar_mayusculas(repo: &impl UsuariosRepo) {
-        repo.add(nuevo("Ana@Papeleria.mx", "Cajero")).await.unwrap();
+        repo.add(new_usuario("Ana@Papeleria.mx", "Cajero"))
+            .await
+            .unwrap();
 
         let (usuario, hash) = repo
             .find_for_login(&Email::parse("ana@papeleria.mx").unwrap())
@@ -240,25 +242,27 @@ pub mod contrato {
                 Permiso::OperarCaja
             ])
         );
-        assert!(usuario.activo);
+        assert!(usuario.is_active);
         assert!(verify_password("caja-de-lapices", &hash));
     }
 
     pub async fn email_repetido_se_rechaza(repo: &impl UsuariosRepo) {
-        repo.add(nuevo("ana@papeleria.mx", "Cajero")).await.unwrap();
+        repo.add(new_usuario("ana@papeleria.mx", "Cajero"))
+            .await
+            .unwrap();
 
-        let resultado = repo.add(nuevo("ANA@papeleria.mx", "Dueño")).await;
+        let result = repo.add(new_usuario("ANA@papeleria.mx", "Dueño")).await;
 
         assert_eq!(
-            resultado,
-            Err(UsuarioError::EmailRepetido("ana@papeleria.mx".into()))
+            result,
+            Err(UsuarioError::DuplicateEmail("ana@papeleria.mx".into()))
         );
     }
 
     pub async fn rol_que_no_existe_se_rechaza(repo: &impl UsuariosRepo) {
-        let resultado = repo.add(nuevo("ana@papeleria.mx", "Jefa")).await;
+        let result = repo.add(new_usuario("ana@papeleria.mx", "Jefa")).await;
 
-        assert_eq!(resultado, Err(UsuarioError::RolNoExiste("Jefa".into())));
+        assert_eq!(result, Err(UsuarioError::RolNotFound("Jefa".into())));
         let email = Email::parse("ana@papeleria.mx").unwrap();
         assert!(repo.find_for_login(&email).await.unwrap().is_none());
     }
@@ -271,9 +275,9 @@ pub mod contrato {
 
 #[cfg(test)]
 mod tests {
-    use super::en_memoria::UsuariosEnMemoria;
+    use super::in_memory::InMemoryUsuarios;
     use super::*;
-    use crate::permisos::roles_de_arranque;
+    use crate::permisos::default_roles;
 
     #[test]
     fn el_email_se_guarda_sin_espacios_y_en_minusculas() {
@@ -285,11 +289,11 @@ mod tests {
 
     #[test]
     fn un_email_sin_arroba_o_sin_partes_no_es_valido() {
-        for texto in ["", "ana", "@papeleria.mx", "ana@", "ana @x.mx", "a@b@c"] {
+        for text in ["", "ana", "@papeleria.mx", "ana@", "ana @x.mx", "a@b@c"] {
             assert_eq!(
-                Email::parse(texto),
-                Err(UsuarioError::EmailInvalido),
-                "{texto:?}"
+                Email::parse(text),
+                Err(UsuarioError::InvalidEmail),
+                "{text:?}"
             );
         }
     }
@@ -297,37 +301,37 @@ mod tests {
     #[test]
     fn un_usuario_nuevo_necesita_nombre() {
         assert_eq!(
-            NuevoUsuario::new("ana@x.mx", "  ", "Cajero", "caja-de-lapices").map(|_| ()),
-            Err(UsuarioError::NombreVacio)
+            NewUsuario::new("ana@x.mx", "  ", "Cajero", "caja-de-lapices").map(|_| ()),
+            Err(UsuarioError::EmptyNombre)
         );
     }
 
     #[test]
     fn un_usuario_nuevo_con_contrasena_corta_no_se_acepta() {
         assert_eq!(
-            NuevoUsuario::new("ana@x.mx", "Ana", "Cajero", "corta").map(|_| ()),
-            Err(UsuarioError::Password(PasswordError::MuyCorta))
+            NewUsuario::new("ana@x.mx", "Ana", "Cajero", "corta").map(|_| ()),
+            Err(UsuarioError::Password(PasswordError::TooShort))
         );
     }
 
     #[test]
     fn un_usuario_nuevo_queda_limpio() {
-        let nuevo =
-            NuevoUsuario::new(" Ana@X.mx ", "  Ana López ", " Cajero ", "caja-de-lapices").unwrap();
-        assert_eq!(nuevo.email().as_str(), "ana@x.mx");
-        assert_eq!(nuevo.nombre(), "Ana López");
-        assert_eq!(nuevo.rol(), "Cajero");
+        let new_usuario =
+            NewUsuario::new(" Ana@X.mx ", "  Ana López ", " Cajero ", "caja-de-lapices").unwrap();
+        assert_eq!(new_usuario.email().as_str(), "ana@x.mx");
+        assert_eq!(new_usuario.nombre(), "Ana López");
+        assert_eq!(new_usuario.rol(), "Cajero");
     }
 
-    fn usuario(rol: &str, activo: bool) -> Usuario {
+    fn usuario(rol: &str, is_active: bool) -> Usuario {
         Usuario {
             email: Email::parse("ana@x.mx").unwrap(),
             nombre: "Ana".into(),
-            rol: roles_de_arranque()
+            rol: default_roles()
                 .into_iter()
                 .find(|r| r.nombre == rol)
                 .unwrap(),
-            activo,
+            is_active,
         }
     }
 
@@ -346,24 +350,24 @@ mod tests {
 
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_agregado_se_encuentra() {
-        contrato::agregado_se_encuentra_por_email_sin_importar_mayusculas(
-            &UsuariosEnMemoria::default(),
+        contract::agregado_se_encuentra_por_email_sin_importar_mayusculas(
+            &InMemoryUsuarios::default(),
         )
         .await;
     }
 
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_email_repetido() {
-        contrato::email_repetido_se_rechaza(&UsuariosEnMemoria::default()).await;
+        contract::email_repetido_se_rechaza(&InMemoryUsuarios::default()).await;
     }
 
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_rol_que_no_existe() {
-        contrato::rol_que_no_existe_se_rechaza(&UsuariosEnMemoria::default()).await;
+        contract::rol_que_no_existe_se_rechaza(&InMemoryUsuarios::default()).await;
     }
 
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_email_que_no_existe() {
-        contrato::email_que_no_existe_no_se_encuentra(&UsuariosEnMemoria::default()).await;
+        contract::email_que_no_existe_no_se_encuentra(&InMemoryUsuarios::default()).await;
     }
 }

@@ -7,12 +7,12 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use negocio_config::load_negocio_config;
-use privada::comandos::{USO_CREAR_USUARIO, parse_crear_usuario};
+use privada::commands::{CREATE_USUARIO_USAGE, parse_create_usuario};
 use privada::{VERSION, router};
 use tracing_subscriber::EnvFilter;
 
 /// Variables de entorno (capa 1: infraestructura y secretos).
-struct Entorno {
+struct Env {
     /// `DATABASE_URL`: obligatoria, sin valor por omisión. Lleva la contraseña: nunca va al log.
     database_url: String,
     /// `NEGOCIO_CONFIG`: ruta del archivo del negocio.
@@ -23,12 +23,12 @@ struct Entorno {
     logs_json: bool,
 }
 
-impl Entorno {
+impl Env {
     fn read() -> Result<Self, String> {
         let port = match std::env::var("PORT") {
-            Ok(texto) => texto
+            Ok(text) => text
                 .parse()
-                .map_err(|_| format!("PORT no es un número de puerto: {texto}"))?,
+                .map_err(|_| format!("PORT no es un número de puerto: {text}"))?,
             Err(_) => 5100,
         };
         let database_url =
@@ -63,9 +63,9 @@ async fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
         None => serve().await,
-        Some("crear-usuario") => crear_usuario(&args[1..]).await,
-        Some(otro) => {
-            eprintln!("comando desconocido: {otro}\n{USO_CREAR_USUARIO}");
+        Some("crear-usuario") => create_usuario(&args[1..]).await,
+        Some(other) => {
+            eprintln!("comando desconocido: {other}\n{CREATE_USUARIO_USAGE}");
             ExitCode::FAILURE
         }
     }
@@ -73,9 +73,9 @@ async fn main() -> ExitCode {
 
 /// `privada crear-usuario --email … --nombre … --rol …`. Aplica las migraciones antes, igual
 /// que al arrancar: en una base nueva, los roles de arranque ya existen.
-async fn crear_usuario(args: &[String]) -> ExitCode {
-    let datos = match parse_crear_usuario(args) {
-        Ok(datos) => datos,
+async fn create_usuario(args: &[String]) -> ExitCode {
+    let input = match parse_create_usuario(args) {
+        Ok(input) => input,
         Err(error) => {
             eprintln!("{error}");
             return ExitCode::FAILURE;
@@ -103,7 +103,7 @@ async fn crear_usuario(args: &[String]) -> ExitCode {
         eprintln!("falló una migración: {error}");
         return ExitCode::FAILURE;
     }
-    match privada::comandos::crear_usuario(&db::PgUsuarios::new(pool), &datos, &password).await {
+    match privada::commands::create_usuario(&db::PgUsuarios::new(pool), &input, &password).await {
         Ok(usuario) => {
             println!(
                 "Usuario creado: {} ({}).",
@@ -123,33 +123,33 @@ async fn crear_usuario(args: &[String]) -> ExitCode {
 /// la entrada: así se crea el usuario de pruebas sin escribir la contraseña en ningún lado.
 fn read_password() -> Result<String, String> {
     if std::io::stdin().is_terminal() {
-        let primera = rpassword::prompt_password("Contraseña: ").map_err(|e| e.to_string())?;
-        let segunda = rpassword::prompt_password("Repítela: ").map_err(|e| e.to_string())?;
-        if primera != segunda {
+        let first = rpassword::prompt_password("Contraseña: ").map_err(|e| e.to_string())?;
+        let second = rpassword::prompt_password("Repítela: ").map_err(|e| e.to_string())?;
+        if first != second {
             return Err("Las contraseñas no coinciden.".into());
         }
-        Ok(primera)
+        Ok(first)
     } else {
-        let mut linea = String::new();
+        let mut line = String::new();
         std::io::stdin()
-            .read_line(&mut linea)
+            .read_line(&mut line)
             .map_err(|e| e.to_string())?;
-        Ok(linea.trim_end_matches(['\n', '\r']).to_string())
+        Ok(line.trim_end_matches(['\n', '\r']).to_string())
     }
 }
 
 /// La aplicación web.
 async fn serve() -> ExitCode {
-    let entorno = match Entorno::read() {
-        Ok(entorno) => entorno,
+    let env = match Env::read() {
+        Ok(env) => env,
         Err(error) => {
             eprintln!("no se pudo arrancar: {error}");
             return ExitCode::FAILURE;
         }
     };
-    init_logs(entorno.logs_json);
+    init_logs(env.logs_json);
 
-    let config = match load_negocio_config(&entorno.negocio_config) {
+    let config = match load_negocio_config(&env.negocio_config) {
         Ok(config) => config,
         Err(error) => {
             tracing::error!(%error, "configuración inválida; la aplicación no arranca");
@@ -162,12 +162,12 @@ async fn serve() -> ExitCode {
         version = VERSION,
         negocio = %config.negocio.nombre,
         time_zone = %config.negocio.time_zone,
-        port = entorno.port,
+        port = env.port,
         "arrancando"
     );
 
     // El error de sqlx no incluye la URL ni la contraseña.
-    let pool = match db::connect(&entorno.database_url).await {
+    let pool = match db::connect(&env.database_url).await {
         Ok(pool) => pool,
         Err(error) => {
             tracing::error!(%error, "no se pudo conectar a la base; la aplicación no arranca");
@@ -180,7 +180,7 @@ async fn serve() -> ExitCode {
     }
     tracing::info!("base de datos al día");
 
-    let address = SocketAddr::from(([0, 0, 0, 0], entorno.port));
+    let address = SocketAddr::from(([0, 0, 0, 0], env.port));
     let listener = match tokio::net::TcpListener::bind(address).await {
         Ok(listener) => listener,
         Err(error) => {

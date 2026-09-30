@@ -26,7 +26,7 @@ fn repo_error(error: sqlx::Error) -> RepoError {
 
 impl SessionsRepo for PgSessions {
     async fn create(&self, token_hash: &TokenHash, email: &Email) -> Result<(), RepoError> {
-        let insertadas = sqlx::query!(
+        let inserted = sqlx::query!(
             "INSERT INTO sessions (token_hash, usuario_id) SELECT $1, id FROM usuarios WHERE email = $2",
             &token_hash.0[..],
             email.as_str()
@@ -35,7 +35,7 @@ impl SessionsRepo for PgSessions {
         .await
         .map_err(repo_error)?
         .rows_affected();
-        if insertadas == 1 {
+        if inserted == 1 {
             Ok(())
         } else {
             Err(RepoError(format!(
@@ -143,12 +143,12 @@ impl SessionsRepo for PgSessions {
 mod tests {
     use super::*;
     use crate::PgUsuarios;
-    use usuarios::sessions::{LOCKOUT, SESSION_DURATION, SessionToken, contrato};
-    use usuarios::usuarios::{NuevoUsuario, UsuariosRepo};
+    use usuarios::sessions::{LOCKOUT, SESSION_DURATION, SessionToken, contract};
+    use usuarios::usuarios::{NewUsuario, UsuariosRepo};
 
     #[sqlx::test]
     async fn cumple_el_contrato_sesion_creada(pool: PgPool) {
-        contrato::sesion_creada_se_encuentra_y_borrada_ya_no(
+        contract::sesion_creada_se_encuentra_y_borrada_ya_no(
             &PgUsuarios::new(pool.clone()),
             &PgSessions::new(pool),
         )
@@ -157,26 +157,26 @@ mod tests {
 
     #[sqlx::test]
     async fn cumple_el_contrato_huella_desconocida(pool: PgPool) {
-        contrato::huella_desconocida_no_se_encuentra(&PgSessions::new(pool)).await;
+        contract::huella_desconocida_no_se_encuentra(&PgSessions::new(pool)).await;
     }
 
     #[sqlx::test]
     async fn cumple_el_contrato_fallos(pool: PgPool) {
-        contrato::los_fallos_se_cuentan_por_email_y_se_borran(&PgSessions::new(pool)).await;
+        contract::los_fallos_se_cuentan_por_email_y_se_borran(&PgSessions::new(pool)).await;
     }
 
     #[sqlx::test]
     async fn cumple_el_contrato_purgar(pool: PgPool) {
-        contrato::purgar_no_borra_lo_vigente(
+        contract::purgar_no_borra_lo_vigente(
             &PgUsuarios::new(pool.clone()),
             &PgSessions::new(pool),
         )
         .await;
     }
 
-    async fn sesion_de_ana(pool: &PgPool) -> (Email, TokenHash) {
+    async fn ana_session(pool: &PgPool) -> (Email, TokenHash) {
         PgUsuarios::new(pool.clone())
-            .add(NuevoUsuario::new("ana@x.mx", "Ana", "Cajero", "caja-de-lapices").unwrap())
+            .add(NewUsuario::new("ana@x.mx", "Ana", "Cajero", "caja-de-lapices").unwrap())
             .await
             .unwrap();
         let email = Email::parse("ana@x.mx").unwrap();
@@ -190,7 +190,7 @@ mod tests {
 
     #[sqlx::test]
     async fn una_sesion_sin_usar_7_dias_ya_no_sirve_y_se_purga(pool: PgPool) {
-        let (_, token_hash) = sesion_de_ana(&pool).await;
+        let (_, token_hash) = ana_session(&pool).await;
         sqlx::query("UPDATE sessions SET last_used_at = now() - interval '7 days 1 minute'")
             .execute(&pool)
             .await
@@ -209,16 +209,16 @@ mod tests {
             .purge_expired(SESSION_DURATION, LOCKOUT)
             .await
             .unwrap();
-        let quedan: i64 = sqlx::query_scalar("SELECT count(*) FROM sessions")
+        let remaining: i64 = sqlx::query_scalar("SELECT count(*) FROM sessions")
             .fetch_one(&pool)
             .await
             .unwrap();
-        assert_eq!(quedan, 0);
+        assert_eq!(remaining, 0);
     }
 
     #[sqlx::test]
     async fn usar_la_sesion_la_renueva(pool: PgPool) {
-        let (_, token_hash) = sesion_de_ana(&pool).await;
+        let (_, token_hash) = ana_session(&pool).await;
         sqlx::query("UPDATE sessions SET last_used_at = now() - interval '6 days'")
             .execute(&pool)
             .await
@@ -230,12 +230,12 @@ mod tests {
             .unwrap()
             .unwrap();
 
-        let recien: bool =
+        let is_recent: bool =
             sqlx::query_scalar("SELECT last_used_at > now() - interval '1 minute' FROM sessions")
                 .fetch_one(&pool)
                 .await
                 .unwrap();
-        assert!(recien);
+        assert!(is_recent);
     }
 
     /// Sin esto, alguien sin sesión podría llenar la tabla con emails inventados mientras nadie
@@ -262,11 +262,11 @@ mod tests {
         )
         .await;
 
-        let quedan: Vec<String> = sqlx::query_scalar("SELECT email FROM failed_logins")
+        let remaining: Vec<String> = sqlx::query_scalar("SELECT email FROM failed_logins")
             .fetch_all(&pool)
             .await
             .unwrap();
-        assert_eq!(quedan, ["nuevo@x.mx"]);
+        assert_eq!(remaining, ["nuevo@x.mx"]);
     }
 
     #[sqlx::test]
