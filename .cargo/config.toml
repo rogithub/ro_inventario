@@ -1,0 +1,6 @@
+# Por omisión se compila con la foto de las consultas (.sqlx/), no contra la base: así compila
+# aunque la base de quien compila no tenga aún las migraciones nuevas (se aplican al arrancar).
+# Al escribir o cambiar una consulta: SQLX_OFFLINE=false (ver "Consultas SQL" en CLAUDE.md).
+# Una variable de entorno SQLX_OFFLINE ya definida manda sobre este valor.
+[env]
+SQLX_OFFLINE = "true"

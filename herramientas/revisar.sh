@@ -18,9 +18,8 @@ if [[ -z ${DATABASE_URL:-} ]]; then
     . herramientas/dev-env.sh
 fi
 
-# Como CI: se compila con la foto de las consultas (.sqlx/), no contra la base. El paso
-# "Consultas SQL al día" revisa que esa foto corresponda al esquema real.
-export SQLX_OFFLINE=true
+# Se compila con la foto de las consultas (.sqlx/, por .cargo/config.toml), no contra la base.
+# El paso "Consultas SQL al día" revisa que esa foto corresponda al esquema real.
 
 paso() { printf '\n== %s\n' "$1"; }
 
