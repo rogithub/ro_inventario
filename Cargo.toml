@@ -20,6 +20,9 @@ kernel = { path = "crates/kernel" }
 negocio-config = { path = "crates/negocio-config" }
 db = { path = "crates/db" }
 
+serde = { version = "1.0.229", features = ["derive"] }
+toml = "1.1.6"
+
 # Reglas para todos los crates (docs/decisiones/2026-09-29-formato-y-linters.md).
 # Cada crate las hereda con `[lints] workspace = true`.
 [workspace.lints.rust]

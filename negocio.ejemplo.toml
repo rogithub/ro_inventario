@@ -1,0 +1,8 @@
+# Ejemplo del archivo de configuración de un negocio (capa 2).
+# Los archivos reales viven con los manifests de cada instancia, no en este repo.
+# Una prueba carga este ejemplo: si deja de ser válido, CI falla.
+# Detalle: docs/decisiones/2026-09-29-capas-de-configuracion.md
+
+[negocio]
+nombre = "Papelería de ejemplo"
+time_zone = "America/Cancun"
