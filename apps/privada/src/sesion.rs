@@ -32,11 +32,18 @@ fn session_cookie(token: &str, max_age_secs: u64) -> String {
     format!("{COOKIE}={token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age={max_age_secs}")
 }
 
-/// A dónde ir después de entrar: solo rutas de este sitio. `//otro.com` o `https://…` van a `/`.
+/// A dónde ir después de entrar: solo rutas de este sitio. `//otro.com`, `https://…` o una ruta
+/// con caracteres raros van a `/`.
 pub fn safe_destination(siguiente: Option<&str>) -> &str {
     match siguiente {
+        // Sin espacios, controles ni `\`: el navegador los quita o los cambia por `/`, y
+        // "/\t/otro.com" terminaría siendo "//otro.com".
         Some(ruta)
-            if ruta.starts_with('/') && !ruta.starts_with("//") && !ruta.starts_with("/\\") =>
+            if ruta.starts_with('/')
+                && !ruta.starts_with("//")
+                && !ruta
+                    .chars()
+                    .any(|c| c.is_whitespace() || c.is_control() || c == '\\') =>
         {
             ruta
         }
@@ -235,6 +242,12 @@ mod tests {
         assert_eq!(safe_destination(Some("/\\otro.com")), "/");
         assert_eq!(safe_destination(Some("https://otro.com")), "/");
         assert_eq!(safe_destination(Some("unidades")), "/");
+        // El navegador quita tabuladores y saltos de línea de una URL: "/\t/otro.com" es "//otro.com".
+        assert_eq!(safe_destination(Some("/\t/otro.com")), "/");
+        assert_eq!(safe_destination(Some("/\n/otro.com")), "/");
+        assert_eq!(safe_destination(Some("/\r/otro.com")), "/");
+        assert_eq!(safe_destination(Some("/ /otro.com")), "/");
+        assert_eq!(safe_destination(Some("/a\\b")), "/");
     }
 
     #[test]
@@ -273,6 +286,19 @@ mod tests {
     async fn una_cookie_que_no_es_de_nadie_tambien_lleva_a_entrar(pool: PgPool) {
         let respuesta = get_con(pool, "/unidades", &format!("sesion={}", "a".repeat(64))).await;
         assert_eq!(respuesta.status(), StatusCode::SEE_OTHER);
+    }
+
+    #[tokio::test]
+    async fn si_la_base_falla_al_revisar_la_sesion_se_ve_el_id_para_reportarlo() {
+        let cookie = format!("sesion={}", "a".repeat(64));
+        let respuesta = get_con(pool_sin_base(), "/unidades", &cookie).await;
+        assert_eq!(respuesta.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+        let id = respuesta.headers()["x-request-id"]
+            .to_str()
+            .unwrap()
+            .to_string();
+        assert!(body_text(respuesta).await.contains(&id));
     }
 
     #[sqlx::test(migrator = "db::MIGRATOR")]

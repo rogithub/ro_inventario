@@ -242,12 +242,17 @@ mod tests {
         assert!(!html.contains("<td>Hoja</td>"));
     }
 
-    #[tokio::test]
-    async fn si_la_base_falla_se_ve_el_id_para_reportarlo() {
-        let cookie = format!("sesion={}", "a".repeat(64));
-        let respuesta = get_con(pool_sin_base(), "/unidades", &cookie).await;
-        assert_eq!(respuesta.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    #[sqlx::test(migrator = "db::MIGRATOR")]
+    async fn si_falla_la_lista_se_ve_el_id_para_reportarlo(pool: PgPool) {
+        let cookie = cookie(&pool, "ana@x.mx", "Dueño").await;
+        sqlx::query("DROP TABLE unidades_medida")
+            .execute(&pool)
+            .await
+            .unwrap();
 
+        let respuesta = get_con(pool, "/unidades", &cookie).await;
+
+        assert_eq!(respuesta.status(), StatusCode::INTERNAL_SERVER_ERROR);
         let id = respuesta.headers()["x-request-id"]
             .to_str()
             .unwrap()

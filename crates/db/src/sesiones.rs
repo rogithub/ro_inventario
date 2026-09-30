@@ -235,6 +235,37 @@ mod tests {
         assert!(recien);
     }
 
+    /// Sin esto, alguien sin sesión podría llenar la tabla con emails inventados mientras nadie
+    /// entre bien.
+    #[sqlx::test]
+    async fn un_intento_fallido_tambien_limpia_los_intentos_viejos(pool: PgPool) {
+        let sesiones = PgSesiones::new(pool.clone());
+        for _ in 0..3 {
+            sesiones
+                .record_failure(&Email::parse("viejo@x.mx").unwrap())
+                .await
+                .unwrap();
+        }
+        sqlx::query("UPDATE intentos_fallidos SET at = now() - interval '16 minutes'")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let _ = usuarios::sesiones::login(
+            &PgUsuarios::new(pool.clone()),
+            &sesiones,
+            "nuevo@x.mx",
+            "no-es-la-contrasena",
+        )
+        .await;
+
+        let quedan: Vec<String> = sqlx::query_scalar("SELECT email FROM intentos_fallidos")
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+        assert_eq!(quedan, ["nuevo@x.mx"]);
+    }
+
     #[sqlx::test]
     async fn los_fallos_de_hace_mas_de_15_minutos_no_cuentan(pool: PgPool) {
         let sesiones = PgSesiones::new(pool.clone());

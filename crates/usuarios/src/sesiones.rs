@@ -155,6 +155,8 @@ pub async fn login(
     };
     let Some(usuario) = usuario else {
         sesiones.record_failure(&email).await?;
+        // También al fallar: si no, la tabla crecería con emails inventados mientras nadie entre.
+        sesiones.purge_expired(DURACION_SESION, BLOQUEO).await?;
         return Err(LoginError::Invalido);
     };
     sesiones.clear_failures(&email).await?;
