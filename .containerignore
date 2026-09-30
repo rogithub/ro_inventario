@@ -1,0 +1,7 @@
+# Solo el código Rust entra al build.
+target
+e2e
+.git
+.github
+docs
+herramientas

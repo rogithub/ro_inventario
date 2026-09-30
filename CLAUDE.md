@@ -71,6 +71,7 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
 - **Variables de entorno de la aplicación:** `DATABASE_URL` (obligatoria; lleva la contraseña: nunca imprimirla ni ponerla en el log), `NEGOCIO_CONFIG` (ruta del `negocio.toml`; por omisión `negocio.toml`), `PORT` (por omisión 5100), `LOG_FORMAT` (`json` o legible), `RUST_LOG` (nivel; por omisión `info`).
 - **Migraciones:** `crates/db/migrations/NNNN_descripcion.sql`, numeradas y solo se agregan (una aplicada nunca se edita). Las pruebas con `#[sqlx::test]` reciben una base nueva por prueba.
 - **Pruebas E2E:** `. herramientas/dev-env.sh && cd e2e && npx playwright test` (Playwright arranca la aplicación en el puerto 5099 con el código actual; sin interfaz gráfica). Proyectos `escritorio-firefox` e `ipad-mini`. Primera vez: `cd e2e && npm ci && npx playwright install firefox chromium`.
+- **Imagen:** CI publica `ghcr.io/rogithub/ro_inventario/privada` (`latest` y el sha) en cada push a `main`, si pasaron las revisiones y los E2E. Para probarla aquí (arm64): `podman build -t localhost/ro_inventario/privada:dev -f Containerfile .` y correrla con `--network host`, `DATABASE_URL` en un `--env-file` temporal (nunca en la línea de comando) y el `negocio.toml` montado en la ruta que diga `NEGOCIO_CONFIG`. Corre como usuario 10001, con logs JSON y puerto 5100 por omisión.
 - *Pendientes:* consulta de logs de producción.
 
 **Reglas al correrlos:**
