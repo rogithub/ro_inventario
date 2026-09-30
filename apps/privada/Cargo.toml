@@ -8,10 +8,12 @@ publish.workspace = true
 [dependencies]
 kernel.workspace = true
 inventario.workspace = true
+usuarios.workspace = true
 negocio-config.workspace = true
 db.workspace = true
 serde.workspace = true
 askama.workspace = true
+rpassword.workspace = true
 tokio.workspace = true
 axum.workspace = true
 tower.workspace = true
@@ -23,6 +25,7 @@ tracing-subscriber.workspace = true
 http-body-util.workspace = true
 serde_json.workspace = true
 sqlx.workspace = true
+usuarios = { workspace = true, features = ["pruebas"] }
 
 [lints]
 workspace = true

@@ -1,5 +1,6 @@
 //! Aplicación privada (punto de venta): arma el router y sus piezas. Sin reglas del negocio.
 
+pub mod comandos;
 mod estaticos;
 mod health;
 mod unidades;

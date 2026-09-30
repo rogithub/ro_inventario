@@ -1,11 +1,13 @@
 //! Arranque de la aplicación privada: lee el entorno (capa 1), valida `negocio.toml` (capa 2),
 //! inicia los logs y atiende peticiones. Si la configuración no es válida, no arranca.
 
+use std::io::IsTerminal;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
 use negocio_config::load_negocio_config;
+use privada::comandos::{USO_CREAR_USUARIO, parse_crear_usuario};
 use privada::{VERSION, router};
 use tracing_subscriber::EnvFilter;
 
@@ -58,6 +60,86 @@ fn init_logs(json: bool) {
 
 #[tokio::main]
 async fn main() -> ExitCode {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    match args.first().map(String::as_str) {
+        None => serve().await,
+        Some("crear-usuario") => crear_usuario(&args[1..]).await,
+        Some(otro) => {
+            eprintln!("comando desconocido: {otro}\n{USO_CREAR_USUARIO}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+/// `privada crear-usuario --email … --nombre … --rol …`. Aplica las migraciones antes, igual
+/// que al arrancar: en una base nueva, los roles de arranque ya existen.
+async fn crear_usuario(args: &[String]) -> ExitCode {
+    let datos = match parse_crear_usuario(args) {
+        Ok(datos) => datos,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let Ok(database_url) = std::env::var("DATABASE_URL") else {
+        eprintln!("falta DATABASE_URL");
+        return ExitCode::FAILURE;
+    };
+    let contrasena = match read_password() {
+        Ok(contrasena) => contrasena,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let pool = match db::connect(&database_url).await {
+        Ok(pool) => pool,
+        Err(error) => {
+            eprintln!("no se pudo conectar a la base: {error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    if let Err(error) = db::run_migrations(&pool).await {
+        eprintln!("falló una migración: {error}");
+        return ExitCode::FAILURE;
+    }
+    match privada::comandos::crear_usuario(&db::PgUsuarios::new(pool), &datos, &contrasena).await {
+        Ok(usuario) => {
+            println!(
+                "Usuario creado: {} ({}).",
+                usuario.email.as_str(),
+                usuario.rol.nombre
+            );
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("{error}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+/// En una terminal, la pide dos veces sin mostrarla. Sin terminal (un script), lee una línea de
+/// la entrada: así se crea el usuario de pruebas sin escribir la contraseña en ningún lado.
+fn read_password() -> Result<String, String> {
+    if std::io::stdin().is_terminal() {
+        let primera = rpassword::prompt_password("Contraseña: ").map_err(|e| e.to_string())?;
+        let segunda = rpassword::prompt_password("Repítela: ").map_err(|e| e.to_string())?;
+        if primera != segunda {
+            return Err("Las contraseñas no coinciden.".into());
+        }
+        Ok(primera)
+    } else {
+        let mut linea = String::new();
+        std::io::stdin()
+            .read_line(&mut linea)
+            .map_err(|e| e.to_string())?;
+        Ok(linea.trim_end_matches(['\n', '\r']).to_string())
+    }
+}
+
+/// La aplicación web.
+async fn serve() -> ExitCode {
     let entorno = match Entorno::read() {
         Ok(entorno) => entorno,
         Err(error) => {

@@ -4,6 +4,7 @@ resolver = "3"
 members = [
     "crates/kernel",
     "crates/inventario",
+    "crates/usuarios",
     "crates/negocio-config",
     "crates/db",
     "apps/privada",
@@ -19,6 +20,7 @@ publish = false
 [workspace.dependencies]
 kernel = { path = "crates/kernel" }
 inventario = { path = "crates/inventario" }
+usuarios = { path = "crates/usuarios" }
 negocio-config = { path = "crates/negocio-config" }
 db = { path = "crates/db" }
 
@@ -36,6 +38,10 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
 http-body-util = "0.1.5"
 # Plantillas revisadas al compilar (docs/decisiones/2026-09-30-pantallas-del-servidor.md).
 askama = "0.16.1"
+
+# Contraseñas (Argon2id; la sal sale de getrandom) y pedirlas en la terminal sin mostrarlas.
+argon2 = "0.6.0"
+rpassword = "7.5.4"
 
 # Base de datos. Sin TLS: la conexión va dentro del cluster o a localhost.
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "postgres", "macros", "migrate"] }
