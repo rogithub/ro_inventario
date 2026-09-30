@@ -21,7 +21,7 @@ Lo que sí funcionó y se conserva: una base de desarrollo donde la IA puede esc
 | `docs/esquema.sql` | Esquema de referencia para leer, generado de la base con un script; CI revisa que esté al día. | Nadie: se genera |
 
 - **Al arrancar, la aplicación aplica las migraciones pendientes y después regenera las vistas.** Cada migración corre en su propia transacción, y las vistas en otra: si un paso falla, ese paso no deja nada a medias y la instancia no arranca (las migraciones anteriores a la que falló sí quedan aplicadas; por eso se prueban antes en CI). Deployar es suficiente: ya no hay SQL manual en producción. El dueño sigue decidiendo cuándo pasa, porque él hace el deploy.
-- **Una migración que ya llegó a `main` no se edita.** Un error se corrige con otra migración (no hay migraciones "de reversa").
+- **Una migración que ya llegó a `main` no se edita.** Un error se corrige con otra migración (no hay migraciones "de reversa"). **Excepción mientras la v2 no tenga producción:** una migración que solo se aplicó en bases de desarrollo se puede editar si el dueño lo acuerda; cada quien recrea su base con `herramientas/dev-db.sh` (así se editó la 0004 el 2026-09-30, al pasar sus nombres a inglés). Desde el primer deploy, la regla no tiene excepciones.
 - **Las consultas se verifican al compilar:** sqlx revisa cada consulta SQL contra el esquema, así que renombrar una columna sin actualizar sus consultas no compila.
 - **Lo derivado** (como el costo por promedio móvil) lo calcula la aplicación, no la base.
 - **Un negocio nuevo en producción** no trae usuario administrador por omisión: se crea con un comando de la aplicación que pide la contraseña sin mostrarla.
@@ -34,7 +34,7 @@ Lo que sí funcionó y se conserva: una base de desarrollo donde la IA puede esc
 | **Pruebas de integración** | Una base nueva y vacía por prueba, creada y borrada por `sqlx::test` | Las pruebas |
 | **Pruebas E2E** | La base de desarrollo, con la semilla | Playwright, con el usuario de pruebas |
 
-- **El usuario de pruebas de la IA** lo crea la semilla de desarrollo; su contraseña viene de una variable de entorno, nunca del repo. No existe en producción.
+- **El usuario de pruebas de la IA** lo crea `herramientas/dev-usuario-ia.sh` (cuando exista la semilla, será parte de ella) con `E2E_USER` y `E2E_PASS` del entorno, nunca del repo, y sin imprimirlos. En CI se crea uno con contraseña aleatoria en cada corrida. No existe en producción (actualizado 2026-09-30).
 - **Datos reales en desarrollo:** antes del corte, la herramienta `migracion-v1` lee una copia de la base de la versión uno y llena la base de desarrollo. Después del corte, la base de desarrollo se puede refrescar desde una copia de producción.
 
 ## Descartado
