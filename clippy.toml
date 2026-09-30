@@ -1,0 +1,3 @@
+# `unwrap` y `expect` están prohibidos en el código (Cargo.toml), pero se permiten en pruebas.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true

@@ -1,0 +1,5 @@
+# Misma versión de Rust en la máquina del dueño, en CI y en la imagen.
+# Actualizarla es un commit que se revisa.
+[toolchain]
+channel = "1.98.0"
+components = ["rustfmt", "clippy"]

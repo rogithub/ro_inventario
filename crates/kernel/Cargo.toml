@@ -1,0 +1,12 @@
+[package]
+name = "kernel"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+# Sin dependencias a propósito: el núcleo no conoce base de datos, web ni servicios externos.
+[dependencies]
+
+[lints]
+workspace = true

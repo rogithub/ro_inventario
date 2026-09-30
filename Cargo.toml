@@ -1,0 +1,30 @@
+# Workspace de ro_inventario. Estructura y reglas: docs/decisiones/2026-09-29-estructura-de-crates.md
+[workspace]
+resolver = "3"
+members = [
+    "crates/kernel",
+    "crates/negocio-config",
+    "crates/db",
+    "apps/privada",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+publish = false
+
+# Una sola versión de cada dependencia para todo el workspace.
+[workspace.dependencies]
+kernel = { path = "crates/kernel" }
+negocio-config = { path = "crates/negocio-config" }
+db = { path = "crates/db" }
+
+# Reglas para todos los crates (docs/decisiones/2026-09-29-formato-y-linters.md).
+# Cada crate las hereda con `[lints] workspace = true`.
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"

@@ -1,0 +1,14 @@
+[package]
+name = "privada"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+kernel.workspace = true
+negocio-config.workspace = true
+db.workspace = true
+
+[lints]
+workspace = true
