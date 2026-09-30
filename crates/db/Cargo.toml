@@ -8,11 +8,13 @@ publish.workspace = true
 [dependencies]
 kernel.workspace = true
 inventario.workspace = true
+usuarios.workspace = true
 sqlx.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
 inventario = { workspace = true, features = ["pruebas"] }
+usuarios = { workspace = true, features = ["pruebas"] }
 
 [lints]
 workspace = true

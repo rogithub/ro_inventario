@@ -1,0 +1,22 @@
+[package]
+name = "usuarios"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+# Área pura: sin base de datos, web ni red (docs/decisiones/2026-09-29-estructura-de-crates.md).
+# Argon2 es cálculo, no entrada/salida.
+[dependencies]
+kernel.workspace = true
+argon2.workspace = true
+
+[features]
+# Implementación en memoria y pruebas de contrato del repositorio, para este crate y para `db`.
+pruebas = []
+
+[dev-dependencies]
+tokio.workspace = true
+
+[lints]
+workspace = true
