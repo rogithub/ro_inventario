@@ -9,6 +9,17 @@ publish.workspace = true
 kernel.workspace = true
 negocio-config.workspace = true
 db.workspace = true
+serde.workspace = true
+tokio.workspace = true
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+http-body-util.workspace = true
+serde_json.workspace = true
 
 [lints]
 workspace = true

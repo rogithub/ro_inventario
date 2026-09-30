@@ -65,7 +65,10 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
 
 ## Comandos
 
-*Pendientes: se completan cuando exista el código.* Deben quedar aquí: compilar, correr cada aplicación en desarrollo, reconstruir la base de desarrollo, pruebas unitarias y de integración, E2E y consulta de logs.
+- **Revisar todo (lo mismo que CI):** `herramientas/revisar.sh` (formato, clippy, audit, pruebas; se detiene en la primera falla).
+- **Correr la aplicación privada en desarrollo:** `NEGOCIO_CONFIG=negocio.ejemplo.toml PORT=5100 cargo run -p privada` (agregar `LOG_FORMAT=json` para ver los logs como en producción). Probar: `curl localhost:5100/health`.
+- **Variables de entorno de la aplicación:** `NEGOCIO_CONFIG` (ruta del `negocio.toml`; por omisión `negocio.toml`), `PORT` (por omisión 5100), `LOG_FORMAT` (`json` o legible), `RUST_LOG` (nivel; por omisión `info`).
+- *Pendientes:* reconstruir la base de desarrollo, pruebas de integración contra Postgres, E2E y consulta de logs de producción.
 
 **Reglas al correrlos:**
 - **Verificar el código de salida**, no solo el resumen impreso: un "passed" puede venir con salida en error. Reportar fallas tal cual, con su salida.

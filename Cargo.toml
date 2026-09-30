@@ -22,6 +22,16 @@ db = { path = "crates/db" }
 
 serde = { version = "1.0.229", features = ["derive"] }
 toml = "1.1.6"
+serde_json = "1.0.151"
+
+# Web y logs (apps).
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros", "net", "signal"] }
+axum = "0.8.9"
+tower = "0.5.3"
+tower-http = { version = "0.7.1", features = ["request-id", "trace", "util"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+http-body-util = "0.1.5"
 
 # Reglas para todos los crates (docs/decisiones/2026-09-29-formato-y-linters.md).
 # Cada crate las hereda con `[lints] workspace = true`.
