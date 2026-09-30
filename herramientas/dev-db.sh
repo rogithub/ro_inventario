@@ -5,13 +5,16 @@
 # Las migraciones se aplican solas al arrancar la aplicación.
 #
 # Uso: herramientas/dev-db.sh
-# Requiere ~/secrets/ro_inventario_dev.env (chmod 600) con DEV_DB_PASSWORD=… (solo letras y números).
+# Requiere el secreto con DEV_DB_PASSWORD=… (solo letras y números, chmod 600): `.secretos/dev.env`
+# dentro del repo (ignorado por git y por el build de la imagen) o, si no existe,
+# ~/secrets/ro_inventario_dev.env.
 # La contraseña no se imprime ni aparece en la lista de procesos: va a psql por su entrada.
 
 set -euo pipefail
 
-SECRETO="$HOME/secrets/ro_inventario_dev.env"
-[[ -r $SECRETO ]] || { echo "falta $SECRETO con DEV_DB_PASSWORD=…" >&2; exit 1; }
+SECRETO="$(dirname "$0")/../.secretos/dev.env"
+[[ -r $SECRETO ]] || SECRETO="$HOME/secrets/ro_inventario_dev.env"
+[[ -r $SECRETO ]] || { echo "falta .secretos/dev.env (o ~/secrets/ro_inventario_dev.env) con DEV_DB_PASSWORD=…" >&2; exit 1; }
 # shellcheck disable=SC1090
 . "$SECRETO"
 [[ ${DEV_DB_PASSWORD:-} =~ ^[A-Za-z0-9]{16,}$ ]] || { echo "DEV_DB_PASSWORD debe tener 16+ letras o números" >&2; exit 1; }

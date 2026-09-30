@@ -65,7 +65,7 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
 
 ## Comandos
 
-- **Base de desarrollo (una vez, o para empezar de cero):** `herramientas/dev-db.sh` crea el usuario `ro_inventario` y la base `dev_ro_inventario` en el Postgres local (podman `postgres`, localhost:5432). Lee la contraseña de `~/secrets/ro_inventario_dev.env` (`DEV_DB_PASSWORD=…`, chmod 600) sin imprimirla. No toca `dev_inventario_papeleria`.
+- **Base de desarrollo (una vez, o para empezar de cero):** `herramientas/dev-db.sh` crea el usuario `ro_inventario` y la base `dev_ro_inventario` en el Postgres local (podman `postgres`, localhost:5432). Lee la contraseña (`DEV_DB_PASSWORD=…`, chmod 600) de `.secretos/dev.env` dentro del repo (ignorado por git y por la imagen) o, si no existe, de `~/secrets/ro_inventario_dev.env`, sin imprimirla. No toca `dev_inventario_papeleria`.
 - **Revisar todo (lo mismo que CI):** `herramientas/revisar.sh` (formato, clippy, audit, pruebas; se detiene en la primera falla). Si no hay `DATABASE_URL`, la arma desde el secreto.
 - **Correr la aplicación privada en desarrollo:** `. herramientas/dev-env.sh && NEGOCIO_CONFIG=negocio.ejemplo.toml PORT=5100 cargo run -p privada` (agregar `LOG_FORMAT=json` para ver los logs como en producción). Al arrancar aplica las migraciones pendientes. Probar: `curl localhost:5100/health`.
 - **Variables de entorno de la aplicación:** `DATABASE_URL` (obligatoria; lleva la contraseña: nunca imprimirla ni ponerla en el log), `NEGOCIO_CONFIG` (ruta del `negocio.toml`; por omisión `negocio.toml`), `PORT` (por omisión 5100), `LOG_FORMAT` (`json` o legible), `RUST_LOG` (nivel; por omisión `info`).
