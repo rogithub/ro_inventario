@@ -1,0 +1,43 @@
+# Revisiones en cada push: formato, clippy, audit y pruebas (docs/decisiones/2026-09-29-formato-y-linters.md).
+# Las mismas que corre herramientas/revisar.sh en la máquina del dueño.
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bajar el código
+        uses: actions/checkout@v4
+
+      # rustup viene en el runner y lee rust-toolchain.toml: instala la versión fijada.
+      - name: Instalar Rust
+        run: rustup show
+
+      - name: Caché de lo compilado
+        uses: Swatinem/rust-cache@v2
+
+      - name: Instalar cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      - name: Formato
+        run: cargo fmt --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Dependencias con vulnerabilidades conocidas
+        run: cargo audit
+
+      - name: Pruebas
+        run: cargo test
