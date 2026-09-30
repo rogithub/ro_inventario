@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM sesiones WHERE last_used_at <= now() - ($1::bigint * interval '1 second')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "308b4987f43e53a73d379c7751d45a8289dd3a7d6b1589d26825e09f91c70ebc"
+}

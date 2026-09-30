@@ -15,6 +15,16 @@
   <nav class="navbar bg-body-tertiary mb-3">
     <div class="container">
       <span class="navbar-brand">{{ negocio }}</span>
+      {% if let Some(nombre) = usuario_nombre %}
+      <div class="d-flex align-items-center gap-2">
+        <span class="navbar-text"><i class="bi bi-person-circle"></i> {{ nombre }}</span>
+        <form method="post" action="/logout" class="m-0">
+          <button type="submit" class="btn btn-outline-secondary" title="Salir" aria-label="Salir">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </form>
+      </div>
+      {% endif %}
     </div>
   </nav>
   <main class="container">

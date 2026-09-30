@@ -42,6 +42,9 @@ askama = "0.16.1"
 # Contraseñas (Argon2id; la sal sale de getrandom) y pedirlas en la terminal sin mostrarlas.
 argon2 = "0.6.0"
 rpassword = "7.5.4"
+# Sesiones: token aleatorio en la cookie; en la base, solo su huella SHA-256.
+getrandom = "0.4.3"
+sha2 = "0.11.0"
 
 # Base de datos. Sin TLS: la conexión va dentro del cluster o a localhost.
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "postgres", "macros", "migrate"] }

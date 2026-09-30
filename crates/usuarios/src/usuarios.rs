@@ -196,6 +196,15 @@ pub mod en_memoria {
     }
 
     impl UsuariosEnMemoria {
+        /// Como poner `desactivado_at` en la base.
+        pub fn deactivate(&self, email: &Email) {
+            for (usuario, _) in self.lock().iter_mut() {
+                if &usuario.email == email {
+                    usuario.activo = false;
+                }
+            }
+        }
+
         // Si una prueba falló con el candado tomado, los datos siguen sirviendo para las demás.
         fn lock(&self) -> std::sync::MutexGuard<'_, Vec<(Usuario, HashContrasena)>> {
             self.usuarios.lock().unwrap_or_else(|e| e.into_inner())

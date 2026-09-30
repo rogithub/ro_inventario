@@ -5,6 +5,8 @@ import { defineConfig, devices } from '@playwright/test';
 // Sin interfaz gráfica: los navegadores corren headless (kukulkan y CI no tienen pantalla).
 const PORT = Number(process.env.E2E_PORT ?? 5099);
 const baseURL = `http://localhost:${PORT}`;
+// La sesión del usuario de pruebas (E2E_USER / E2E_PASS), guardada por auth.setup.ts.
+export const SESION = '.auth/usuario.json';
 
 export default defineConfig({
   testDir: './tests',
@@ -19,9 +21,16 @@ export default defineConfig({
   // Chromium: WebKit en Linux ARM pide paquetes del sistema y aun así no es el Safari real;
   // lo que más importa del iPad es el ancho (744 px, entre los breakpoints sm y md).
   projects: [
+    // Entra una vez con el usuario de pruebas y guarda la sesión para los demás proyectos.
+    { name: 'setup', testMatch: /auth\.setup\.ts/ },
     {
       name: 'escritorio-firefox',
-      use: { ...devices['Desktop Firefox'], viewport: { width: 1920, height: 1080 } },
+      use: {
+        ...devices['Desktop Firefox'],
+        viewport: { width: 1920, height: 1080 },
+        storageState: SESION,
+      },
+      dependencies: ['setup'],
     },
     {
       name: 'ipad-mini',
@@ -30,7 +39,9 @@ export default defineConfig({
         viewport: { width: 744, height: 1133 },
         deviceScaleFactor: 2,
         hasTouch: true,
+        storageState: SESION,
       },
+      dependencies: ['setup'],
     },
   ],
   webServer: {

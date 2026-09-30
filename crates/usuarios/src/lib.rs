@@ -5,4 +5,5 @@
 
 pub mod contrasenas;
 pub mod permisos;
+pub mod sesiones;
 pub mod usuarios;

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO intentos_fallidos (email) VALUES ($1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cb7d974a14aef90b5069ab2012e1db53917a9bcf1a52406e031a0195c5e6e0a0"
+}

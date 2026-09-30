@@ -10,6 +10,8 @@ publish.workspace = true
 [dependencies]
 kernel.workspace = true
 argon2.workspace = true
+getrandom.workspace = true
+sha2.workspace = true
 
 [features]
 # Implementación en memoria y pruebas de contrato del repositorio, para este crate y para `db`.

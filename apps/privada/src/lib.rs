@@ -3,15 +3,17 @@
 pub mod comandos;
 mod estaticos;
 mod health;
+mod sesion;
 mod unidades;
 
 use std::sync::Arc;
 
 use axum::Router;
 use axum::http::{HeaderMap, Request, StatusCode};
-use axum::response::{Html, IntoResponse, Response};
-use axum::routing::get;
-use db::{PgPool, PgUnidadesMedida};
+use axum::middleware;
+use axum::response::{Html, IntoResponse, Redirect, Response};
+use axum::routing::{get, post};
+use db::{PgPool, PgSesiones, PgUnidadesMedida, PgUsuarios};
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
 use tracing::Level;
@@ -24,6 +26,8 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub struct AppState {
     pool: PgPool,
     unidades: PgUnidadesMedida,
+    usuarios: PgUsuarios,
+    sesiones: PgSesiones,
     /// Nombre del negocio (negocio.toml), para el título y la barra de las pantallas.
     negocio: Arc<str>,
 }
@@ -32,6 +36,8 @@ impl AppState {
     pub fn new(pool: PgPool, negocio: &str) -> Self {
         Self {
             unidades: PgUnidadesMedida::new(pool.clone()),
+            usuarios: PgUsuarios::new(pool.clone()),
+            sesiones: PgSesiones::new(pool.clone()),
             pool,
             negocio: negocio.into(),
         }
@@ -39,11 +45,22 @@ impl AppState {
 }
 
 /// Todas las rutas de la aplicación, con el id de petición y el log por petición.
+/// Todo pide sesión, salvo lo que se necesita antes de entrar.
 pub fn router(state: AppState) -> Router {
-    Router::new()
-        .route("/health", get(health::health))
+    let con_sesion = Router::new()
+        // Mientras no haya página de inicio.
+        .route("/", get(|| async { Redirect::to("/unidades") }))
         .route("/unidades", get(unidades::page).post(unidades::add))
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            sesion::require_session,
+        ));
+    Router::new()
+        .merge(con_sesion)
+        .route("/health", get(health::health))
         .route("/static/{*ruta}", get(estaticos::archivo))
+        .route("/login", get(sesion::login_page).post(sesion::login_submit))
+        .route("/logout", post(sesion::logout_submit))
         .with_state(state)
         .layer(
             tower::ServiceBuilder::new()
@@ -117,6 +134,32 @@ mod test_support {
 
     pub async fn get(pool: PgPool, uri: &str) -> Response {
         send(pool, Request::get(uri).body(Body::empty()).unwrap()).await
+    }
+
+    pub const CONTRASENA: &str = "caja-de-lapices";
+
+    /// Crea un usuario con ese rol, entra y regresa el encabezado Cookie de su sesión.
+    pub async fn cookie(pool: &PgPool, email: &str, rol: &str) -> String {
+        use usuarios::usuarios::{NuevoUsuario, UsuariosRepo};
+        let usuarios = PgUsuarios::new(pool.clone());
+        usuarios
+            .add(NuevoUsuario::new(email, "Ana López", rol, CONTRASENA).unwrap())
+            .await
+            .unwrap();
+        let (_, token) =
+            usuarios::sesiones::login(&usuarios, &PgSesiones::new(pool.clone()), email, CONTRASENA)
+                .await
+                .unwrap();
+        format!("sesion={}", token.as_str())
+    }
+
+    /// Un GET con la sesión de esa cookie.
+    pub async fn get_con(pool: PgPool, uri: &str, cookie: &str) -> Response {
+        let request = Request::get(uri)
+            .header("cookie", cookie)
+            .body(Body::empty())
+            .unwrap();
+        send(pool, request).await
     }
 
     pub async fn body_text(respuesta: Response) -> String {

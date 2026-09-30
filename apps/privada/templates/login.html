@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block titulo %}Entrar{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+  <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+    <h1 class="h4 mb-3">Entrar</h1>
+    <form method="post" action="/login">
+      <input type="hidden" name="siguiente" value="{{ siguiente }}">
+      {% if let Some(error) = error %}
+      <div class="alert alert-danger" role="alert">{{ error }}</div>
+      {% endif %}
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input id="email" name="email" type="email" value="{{ email }}" class="form-control"
+               autocomplete="username" required{% if email.is_empty() %} autofocus{% endif %}>
+      </div>
+      <div class="mb-3">
+        <label for="contrasena" class="form-label">Contraseña</label>
+        <input id="contrasena" name="contrasena" type="password" class="form-control"
+               autocomplete="current-password" required{% if !email.is_empty() %} autofocus{% endif %}>
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Entrar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

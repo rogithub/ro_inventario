@@ -7,7 +7,9 @@
 # cargo install sqlx-cli --version 0.9.0 --no-default-features --features postgres --locked) y la base de desarrollo
 # (herramientas/dev-db.sh): las pruebas de la base crean una base temporal por prueba.
 # Los E2E necesitan Node y los navegadores de Playwright (una vez:
-# cd e2e && npx playwright install firefox chromium). Corren sin interfaz gráfica.
+# cd e2e && npx playwright install firefox chromium), y el usuario de pruebas en la base
+# (una vez: herramientas/dev-usuario-ia.sh) con E2E_USER y E2E_PASS en el entorno.
+# En kukulkan: zsh -ic 'herramientas/revisar.sh'. Corren sin interfaz gráfica.
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -28,6 +30,10 @@ paso "Clippy";                                     cargo clippy --all-targets --
 paso "Dependencias con vulnerabilidades conocidas"; cargo audit
 paso "Consultas SQL al día";                       sqlx migrate run --source crates/db/migrations && SQLX_OFFLINE=false cargo sqlx prepare --workspace --check
 paso "Pruebas";                                    cargo test
+[[ -n ${E2E_USER:-} && -n ${E2E_PASS:-} ]] || {
+    echo "faltan E2E_USER y E2E_PASS para los E2E (en kukulkan: zsh -ic 'herramientas/revisar.sh')" >&2
+    exit 1
+}
 [[ -d e2e/node_modules ]] || (cd e2e && npm ci)
 paso "Tipos de las pruebas E2E";                   (cd e2e && npx tsc --noEmit)
 paso "Pruebas E2E";                                (cd e2e && npx playwright test)

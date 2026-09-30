@@ -108,6 +108,15 @@ jobs:
       - name: Compilar la aplicación
         run: cargo build -p privada
 
+      # Un usuario que solo existe en esta corrida, con una contraseña aleatoria enmascarada en el log.
+      - name: Crear el usuario de pruebas
+        run: |
+          E2E_PASS=$(openssl rand -hex 16)
+          echo "::add-mask::$E2E_PASS"
+          echo "E2E_USER=ia@ci.local" >> "$GITHUB_ENV"
+          echo "E2E_PASS=$E2E_PASS" >> "$GITHUB_ENV"
+          printf '%s\n' "$E2E_PASS" | target/debug/privada crear-usuario --email ia@ci.local --nombre "IA de pruebas" --rol Dueño
+
       - name: Instalar Node
         uses: actions/setup-node@v4
         with:

@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE sesiones s SET last_used_at = now()\n             FROM usuarios u\n             WHERE s.huella = $1\n               AND s.last_used_at > now() - ($2::bigint * interval '1 second')\n               AND u.id = s.usuario_id\n             RETURNING u.email",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "email",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "usuarios",
+            "name": "email"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Bytea",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a7c7b9a739d6c7f50c53e6c7a6d62a58b115013f134fe181a39b19e30d37cd9f"
+}
