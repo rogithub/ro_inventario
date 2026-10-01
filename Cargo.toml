@@ -47,7 +47,9 @@ getrandom = "0.4.3"
 sha2 = "0.11.0"
 
 # Base de datos. Sin TLS: la conexión va dentro del cluster o a localhost.
-sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "postgres", "macros", "migrate"] }
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "postgres", "macros", "migrate", "uuid"] }
+# Identificadores: las tablas usan uuid (gen_random_uuid() en la base); kernel lo reexporta.
+uuid = { version = "1.26.1", default-features = false, features = ["std"] }
 
 # Reglas para todos los crates (docs/decisiones/2026-09-29-formato-y-linters.md).
 # Cada crate las hereda con `[lints] workspace = true`.

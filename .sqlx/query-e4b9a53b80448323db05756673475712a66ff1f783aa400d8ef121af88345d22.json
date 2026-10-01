@@ -1,10 +1,21 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO categorias (nombre) VALUES ($1) RETURNING nombre",
+  "query": "INSERT INTO categorias (nombre) VALUES ($1) RETURNING id, nombre",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "categorias",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
         "name": "nombre",
         "type_info": "Text",
         "origin": {
@@ -21,8 +32,9 @@
       ]
     },
     "nullable": [
+      false,
       false
     ]
   },
-  "hash": "96ac6ea09592ae26f1f4e7ce700b36e4387226cb48254dbf43db24bb9e4cdcda"
+  "hash": "e4b9a53b80448323db05756673475712a66ff1f783aa400d8ef121af88345d22"
 }

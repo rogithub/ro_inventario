@@ -10,7 +10,7 @@ En la versión uno las reglas del negocio acabaron repartidas entre vistas SQL, 
 
 ```
 crates/
-  kernel/         tipos que comparten todas las áreas: Dinero, Cantidad, ids tipados, errores
+  kernel/         tipos que comparten todas las áreas: Dinero, Cantidad, Uuid, errores
   inventario/     área del negocio: productos, servicios y sus recetas, stock, costos
   ventas/         área del negocio: venta, formas de pago, comisiones
   compras/        …una por área, creada cuando se necesita
@@ -37,7 +37,7 @@ graph TD
   ventas --> kernel
 ```
 
-1. **Las áreas del negocio son puras.** `inventario`, `ventas`, etc. dependen solo de `kernel` y de otras áreas. No tienen como dependencia `sqlx`, `axum` ni ninguna librería de red o de base de datos: una consulta SQL o una respuesta HTTP en una regla del negocio **no compila**.
+1. **Las áreas del negocio son puras.** `inventario`, `ventas`, etc. dependen solo de `kernel` y de otras áreas. No tienen como dependencia `sqlx`, `axum` ni ninguna librería de red o de base de datos: una consulta SQL o una respuesta HTTP en una regla del negocio **no compila**. `kernel` solo depende de `uuid` y lo reexporta; cada área define los ids tipados de sus tablas (`CategoriaId(Uuid)` en `inventario`), porque el id es de quien es dueño de la tabla (2026-10-01).
 2. **Cada área define los traits que necesita** (`VentasRepo`, `TipoCambioProvider`…) y no sabe quién los implementa. Eso es la inversión de dependencias.
 3. **`db` y `mexico` implementan esos traits.** Así las áreas se prueban sin base de datos ni servicios externos. Dependen de las áreas, nunca al revés.
 4. **Las aplicaciones solo arman y conectan:** leen la configuración, eligen las implementaciones, registran rutas y muestran plantillas. Sin reglas del negocio.

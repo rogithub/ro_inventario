@@ -3,11 +3,16 @@
 use std::fmt;
 use std::future::Future;
 
-use kernel::RepoError;
 use kernel::nombres::MAX_NOMBRE_CATALOGO;
+use kernel::{RepoError, Uuid};
+
+/// El id de una unidad de medida: no se confunde con el de otra tabla.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct UnidadMedidaId(pub Uuid);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnidadMedida {
+    pub id: UnidadMedidaId,
     pub nombre: String,
     /// Si se puede vender en fracciones (1.5 metros) o solo en enteros (piezas).
     pub allows_fraction: bool,
@@ -113,7 +118,10 @@ pub mod in_memory {
             if unidades.iter().any(|u| u.nombre.to_lowercase() == key) {
                 return Err(UnidadMedidaError::DuplicateNombre(new_unidad.nombre));
             }
+            // Ids predecibles en memoria; Postgres los genera con gen_random_uuid().
+            let id = UnidadMedidaId(Uuid::from_u128(unidades.len() as u128 + 1));
             let unidad = UnidadMedida {
+                id,
                 nombre: new_unidad.nombre,
                 allows_fraction: new_unidad.allows_fraction,
             };
@@ -143,14 +151,27 @@ pub mod contract {
             .add(NewUnidadMedida::new("Cuartilla", true).unwrap())
             .await
             .unwrap();
-        assert_eq!(
-            added,
-            UnidadMedida {
-                nombre: "Cuartilla".into(),
-                allows_fraction: true
-            }
-        );
+        assert_eq!(added.nombre, "Cuartilla");
+        assert!(added.allows_fraction);
         assert!(repo.list().await.unwrap().contains(&added));
+    }
+
+    pub async fn agregada_trae_su_id_y_la_lista_lo_conserva(repo: &impl UnidadesMedidaRepo) {
+        let hoja = repo
+            .add(NewUnidadMedida::new("Hoja", false).unwrap())
+            .await
+            .unwrap();
+        let litro = repo
+            .add(NewUnidadMedida::new("Litro", true).unwrap())
+            .await
+            .unwrap();
+
+        assert_ne!(hoja.id, litro.id);
+        let list = repo.list().await.unwrap();
+        for added in [hoja, litro] {
+            let listed = list.iter().find(|u| u.nombre == added.nombre).unwrap();
+            assert_eq!(listed.id, added.id);
+        }
     }
 
     pub async fn nombre_repetido_se_rechaza_sin_importar_mayusculas(
@@ -292,5 +313,11 @@ mod tests {
             &InMemoryUnidadesMedida::default(),
         )
         .await;
+    }
+
+    #[tokio::test]
+    async fn en_memoria_cumple_el_contrato_trae_su_id() {
+        contract::agregada_trae_su_id_y_la_lista_lo_conserva(&InMemoryUnidadesMedida::default())
+            .await;
     }
 }

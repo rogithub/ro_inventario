@@ -1,10 +1,21 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO unidades_medida (nombre, allows_fraction) VALUES ($1, $2)\n             RETURNING nombre, allows_fraction",
+  "query": "SELECT id, nombre, allows_fraction FROM unidades_medida ORDER BY lower(nombre)",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "unidades_medida",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
         "name": "nombre",
         "type_info": "Text",
         "origin": {
@@ -15,7 +26,7 @@
         }
       },
       {
-        "ordinal": 1,
+        "ordinal": 2,
         "name": "allows_fraction",
         "type_info": "Bool",
         "origin": {
@@ -27,15 +38,13 @@
       }
     ],
     "parameters": {
-      "Left": [
-        "Text",
-        "Bool"
-      ]
+      "Left": []
     },
     "nullable": [
+      false,
       false,
       false
     ]
   },
-  "hash": "567a8741f6f1abb7aba1b5c75acfd75c4bcdebca2fa57bc0cbe440e8bbd36871"
+  "hash": "b70a557078b14ff9b9816921893140a14aaf88f7120ad136caeaf14a8f65f715"
 }

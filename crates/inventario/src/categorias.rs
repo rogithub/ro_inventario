@@ -3,11 +3,16 @@
 use std::fmt;
 use std::future::Future;
 
-use kernel::RepoError;
 use kernel::nombres::MAX_NOMBRE_CATALOGO;
+use kernel::{RepoError, Uuid};
+
+/// El id de una categoría: no se confunde con el de otra tabla.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct CategoriaId(pub Uuid);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Categoria {
+    pub id: CategoriaId,
     pub nombre: String,
 }
 
@@ -102,7 +107,10 @@ pub mod in_memory {
             if categorias.iter().any(|c| c.nombre.to_lowercase() == key) {
                 return Err(CategoriaError::DuplicateNombre(new_categoria.nombre));
             }
+            // Ids predecibles en memoria; Postgres los genera con gen_random_uuid().
+            let id = CategoriaId(Uuid::from_u128(categorias.len() as u128 + 1));
             let categoria = Categoria {
+                id,
                 nombre: new_categoria.nombre,
             };
             categorias.push(categoria.clone());
@@ -130,13 +138,23 @@ pub mod contract {
             .add(NewCategoria::new("Cuadernos").unwrap())
             .await
             .unwrap();
-        assert_eq!(
-            added,
-            Categoria {
-                nombre: "Cuadernos".into()
-            }
-        );
+        assert_eq!(added.nombre, "Cuadernos");
         assert!(repo.list().await.unwrap().contains(&added));
+    }
+
+    pub async fn agregada_trae_su_id_y_la_lista_lo_conserva(repo: &impl CategoriasRepo) {
+        let plumas = repo
+            .add(NewCategoria::new("Plumas").unwrap())
+            .await
+            .unwrap();
+        let hojas = repo.add(NewCategoria::new("Hojas").unwrap()).await.unwrap();
+
+        assert_ne!(plumas.id, hojas.id);
+        let list = repo.list().await.unwrap();
+        for added in [plumas, hojas] {
+            let listed = list.iter().find(|c| c.nombre == added.nombre).unwrap();
+            assert_eq!(listed.id, added.id);
+        }
     }
 
     pub async fn nombre_repetido_se_rechaza_sin_importar_mayusculas(repo: &impl CategoriasRepo) {
@@ -258,5 +276,10 @@ mod tests {
             &InMemoryCategorias::default(),
         )
         .await;
+    }
+
+    #[tokio::test]
+    async fn en_memoria_cumple_el_contrato_trae_su_id() {
+        contract::agregada_trae_su_id_y_la_lista_lo_conserva(&InMemoryCategorias::default()).await;
     }
 }

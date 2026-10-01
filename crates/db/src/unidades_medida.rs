@@ -1,5 +1,5 @@
 use inventario::unidades_medida::{
-    NewUnidadMedida, UnidadMedida, UnidadMedidaError, UnidadesMedidaRepo,
+    NewUnidadMedida, UnidadMedida, UnidadMedidaError, UnidadMedidaId, UnidadesMedidaRepo,
 };
 use kernel::RepoError;
 use sqlx::PgPool;
@@ -17,20 +17,26 @@ impl PgUnidadesMedida {
 
 impl UnidadesMedidaRepo for PgUnidadesMedida {
     async fn list(&self) -> Result<Vec<UnidadMedida>, RepoError> {
-        sqlx::query_as!(
-            UnidadMedida,
-            "SELECT nombre, allows_fraction FROM unidades_medida ORDER BY lower(nombre)"
+        let rows = sqlx::query!(
+            "SELECT id, nombre, allows_fraction FROM unidades_medida ORDER BY lower(nombre)"
         )
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| RepoError(e.to_string()))
+        .map_err(|e| RepoError(e.to_string()))?;
+        Ok(rows
+            .into_iter()
+            .map(|r| UnidadMedida {
+                id: UnidadMedidaId(r.id),
+                nombre: r.nombre,
+                allows_fraction: r.allows_fraction,
+            })
+            .collect())
     }
 
     async fn add(&self, new_unidad: NewUnidadMedida) -> Result<UnidadMedida, UnidadMedidaError> {
-        sqlx::query_as!(
-            UnidadMedida,
+        let row = sqlx::query!(
             "INSERT INTO unidades_medida (nombre, allows_fraction) VALUES ($1, $2)
-             RETURNING nombre, allows_fraction",
+             RETURNING id, nombre, allows_fraction",
             new_unidad.nombre(),
             new_unidad.allows_fraction()
         )
@@ -43,7 +49,12 @@ impl UnidadesMedidaRepo for PgUnidadesMedida {
                 }
                 _ => UnidadMedidaError::Repo(RepoError(e.to_string())),
             },
-        )
+        )?;
+        Ok(UnidadMedida {
+            id: UnidadMedidaId(row.id),
+            nombre: row.nombre,
+            allows_fraction: row.allows_fraction,
+        })
     }
 }
 
@@ -55,6 +66,11 @@ mod tests {
     #[sqlx::test]
     async fn cumple_el_contrato_agregada_aparece_en_la_lista(pool: PgPool) {
         contract::agregada_aparece_en_la_lista(&PgUnidadesMedida::new(pool)).await;
+    }
+
+    #[sqlx::test]
+    async fn cumple_el_contrato_trae_su_id(pool: PgPool) {
+        contract::agregada_trae_su_id_y_la_lista_lo_conserva(&PgUnidadesMedida::new(pool)).await;
     }
 
     #[sqlx::test]

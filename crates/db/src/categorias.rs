@@ -1,4 +1,6 @@
-use inventario::categorias::{Categoria, CategoriaError, CategoriasRepo, NewCategoria};
+use inventario::categorias::{
+    Categoria, CategoriaError, CategoriaId, CategoriasRepo, NewCategoria,
+};
 use kernel::RepoError;
 use sqlx::PgPool;
 
@@ -15,19 +17,22 @@ impl PgCategorias {
 
 impl CategoriasRepo for PgCategorias {
     async fn list(&self) -> Result<Vec<Categoria>, RepoError> {
-        sqlx::query_as!(
-            Categoria,
-            "SELECT nombre FROM categorias ORDER BY lower(nombre)"
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| RepoError(e.to_string()))
+        let rows = sqlx::query!("SELECT id, nombre FROM categorias ORDER BY lower(nombre)")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| RepoError(e.to_string()))?;
+        Ok(rows
+            .into_iter()
+            .map(|r| Categoria {
+                id: CategoriaId(r.id),
+                nombre: r.nombre,
+            })
+            .collect())
     }
 
     async fn add(&self, new_categoria: NewCategoria) -> Result<Categoria, CategoriaError> {
-        sqlx::query_as!(
-            Categoria,
-            "INSERT INTO categorias (nombre) VALUES ($1) RETURNING nombre",
+        let row = sqlx::query!(
+            "INSERT INTO categorias (nombre) VALUES ($1) RETURNING id, nombre",
             new_categoria.nombre()
         )
         .fetch_one(&self.pool)
@@ -39,7 +44,11 @@ impl CategoriasRepo for PgCategorias {
                 }
                 _ => CategoriaError::Repo(RepoError(e.to_string())),
             },
-        )
+        )?;
+        Ok(Categoria {
+            id: CategoriaId(row.id),
+            nombre: row.nombre,
+        })
     }
 }
 
@@ -51,6 +60,11 @@ mod tests {
     #[sqlx::test]
     async fn cumple_el_contrato_agregada_aparece_en_la_lista(pool: PgPool) {
         contract::agregada_aparece_en_la_lista(&PgCategorias::new(pool)).await;
+    }
+
+    #[sqlx::test]
+    async fn cumple_el_contrato_trae_su_id(pool: PgPool) {
+        contract::agregada_trae_su_id_y_la_lista_lo_conserva(&PgCategorias::new(pool)).await;
     }
 
     #[sqlx::test]
