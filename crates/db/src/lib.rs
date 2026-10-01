@@ -6,10 +6,12 @@
 pub use sqlx::PgPool;
 
 mod categorias;
+mod productos;
 mod sessions;
 mod unidades_medida;
 mod usuarios;
 pub use categorias::PgCategorias;
+pub use productos::PgProductos;
 pub use sessions::PgSessions;
 pub use unidades_medida::PgUnidadesMedida;
 pub use usuarios::PgUsuarios;

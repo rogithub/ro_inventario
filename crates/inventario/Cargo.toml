@@ -8,6 +8,9 @@ publish.workspace = true
 # Área pura: sin base de datos, web ni red (docs/decisiones/2026-09-29-estructura-de-crates.md).
 [dependencies]
 kernel.workspace = true
+# Para registrar quién hizo cada cambio (su email). Las áreas se conocen en un solo sentido:
+# usuarios no conoce inventario.
+usuarios.workspace = true
 
 [features]
 # Implementaciones en memoria y pruebas de contrato de los repositorios, para las pruebas de

@@ -2,9 +2,11 @@
 //! un servicio (diseño 01). Lo común con servicios y kits está en `articulos`.
 
 use std::fmt;
+use std::future::Future;
 
 use kernel::RepoError;
 use kernel::nombres::MAX_NOMBRE_CATALOGO;
+use usuarios::usuarios::Email;
 
 use crate::articulos::{ArticuloId, Nid, PrecioError, PrecioVenta};
 use crate::categorias::CategoriaId;
@@ -152,6 +154,8 @@ pub enum ProductoError {
     CategoriaNotFound,
     /// La unidad ya no existe.
     UnidadMedidaNotFound,
+    /// Quien lo da de alta ya no existe (su sesión es de un usuario que no está en la base).
+    UsuarioNotFound,
     Repo(RepoError),
 }
 
@@ -173,6 +177,7 @@ impl fmt::Display for ProductoError {
             Self::Precio(error) => error.fmt(f),
             Self::CategoriaNotFound => write!(f, "Esa categoría ya no existe. Recarga la página."),
             Self::UnidadMedidaNotFound => write!(f, "Esa unidad ya no existe. Recarga la página."),
+            Self::UsuarioNotFound => write!(f, "Tu sesión ya no es válida. Vuelve a entrar."),
             Self::Repo(_) => write!(f, "No se pudo guardar el producto."),
         }
     }
@@ -183,6 +188,30 @@ impl From<RepoError> for ProductoError {
         Self::Repo(error)
     }
 }
+
+/// Dónde viven los productos. Lo implementa `db`; para pruebas, `in_memory`.
+pub trait ProductosRepo {
+    /// Todos, en orden alfabético; los de nombre repetido, por NID.
+    fn list(&self) -> impl Future<Output = Result<Vec<Producto>, RepoError>> + Send;
+
+    /// Lo da de alta con un NID mayor que los anteriores (puede saltarse números: un alta que
+    /// falla en Postgres gasta el suyo) y anota quién. Si trae precio, ese precio también
+    /// queda en su historial.
+    fn add(
+        &self,
+        new_producto: NewProducto,
+        by: &Email,
+    ) -> impl Future<Output = Result<Producto, ProductoError>> + Send;
+}
+
+#[cfg(any(test, feature = "test-support"))]
+pub mod in_memory;
+
+/// Lo que toda implementación de `ProductosRepo` debe cumplir. Corre contra la de memoria
+/// (aquí) y contra la de Postgres (en `db`).
+#[cfg(any(test, feature = "test-support"))]
+#[allow(clippy::unwrap_used)] // código de pruebas
+pub mod contract;
 
 #[cfg(test)]
 mod tests;

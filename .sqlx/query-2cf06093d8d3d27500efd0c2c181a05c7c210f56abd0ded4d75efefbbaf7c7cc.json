@@ -1,0 +1,45 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO articulos\n                 (kind, nombre, categoria_id, unidad_medida_id, precio_venta, descripcion, updated_by)\n             VALUES ('producto', $1, $2, $3, $4, $5, $6)\n             RETURNING id, nid",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nid",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "nid"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "2cf06093d8d3d27500efd0c2c181a05c7c210f56abd0ded4d75efefbbaf7c7cc"
+}

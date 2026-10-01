@@ -30,7 +30,7 @@
 | Columna | Qué es |
 |---|---|
 | `id` | Identificador interno (UUID). |
-| `nid` | Número corto para buscarlo en caja y para la etiqueta; se asigna solo, consecutivo, único entre productos y servicios. Los NID de la versión uno se conservan al migrar. |
+| `nid` | Número corto para buscarlo en caja y para la etiqueta; se asigna solo, creciente y único entre productos y servicios; puede tener huecos (un alta que falla gasta su número, como en la v1). No es un folio que se audite: los artículos no se borran. *(Decidido el 2026-10-01.)* Los NID de la versión uno se conservan al migrar. |
 | `nombre` | Nombre del artículo. |
 | `kind` | `producto`, `servicio` o `kit`. Un producto tiene su renglón en `productos`; un servicio, en `servicios`; un kit, sus componentes en `kit_componentes` (diseño 03). |
 | `categoria_id` | Su categoría (obligatoria). |

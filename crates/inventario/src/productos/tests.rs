@@ -161,3 +161,66 @@ fn descripcion_marca_modelo_y_color_tienen_su_largo_maximo() {
         assert_eq!(NewProducto::new(with(&de_mas)), Err(error));
     }
 }
+
+/// Una categoría, una unidad y un usuario que la versión en memoria conoce.
+fn in_memory_repo() -> (in_memory::InMemoryProductos, contract::Setup) {
+    let setup = contract::Setup {
+        categoria: CategoriaId(Uuid::from_u128(1)),
+        unidad: UnidadMedidaId(Uuid::from_u128(2)),
+        by: Email::parse("ana@x.mx").unwrap(),
+    };
+    let repo = in_memory::InMemoryProductos::new(
+        vec![setup.categoria],
+        vec![setup.unidad],
+        vec![setup.by.clone()],
+    );
+    (repo, setup)
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_agregado_aparece_con_todos_sus_datos() {
+    let (repo, setup) = in_memory_repo();
+    contract::agregado_aparece_en_la_lista_con_todos_sus_datos(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_sin_precio_queda_por_llegar() {
+    let (repo, setup) = in_memory_repo();
+    contract::sin_precio_queda_por_llegar(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_nid_mayor() {
+    let (repo, setup) = in_memory_repo();
+    contract::cada_alta_recibe_un_nid_mayor_que_el_anterior(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_nombres_repetidos() {
+    let (repo, setup) = in_memory_repo();
+    contract::dos_productos_pueden_llamarse_igual_y_se_ordenan_por_nid(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_orden_como_postgres() {
+    let (repo, setup) = in_memory_repo();
+    contract::la_lista_ordena_como_postgres(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_categoria_que_no_existe() {
+    let (repo, setup) = in_memory_repo();
+    contract::con_una_categoria_que_no_existe_se_rechaza_sin_agregar_nada(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_unidad_que_no_existe() {
+    let (repo, setup) = in_memory_repo();
+    contract::con_una_unidad_que_no_existe_se_rechaza_sin_agregar_nada(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_usuario_que_no_existe() {
+    let (repo, setup) = in_memory_repo();
+    contract::con_un_usuario_que_no_existe_se_rechaza_sin_agregar_nada(&repo, &setup).await;
+}

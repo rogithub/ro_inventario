@@ -5,10 +5,10 @@
 ## Qué pasa
 El diseño 01 no cabe en un cambio de ~500 líneas. El dueño aprobó partirlo así:
 
-- [ ] **7a** Esquema y área, sin pantalla. Se partió en tres por tamaño:
+- [x] **7a** Esquema y área, sin pantalla. Se partió en tres por tamaño:
   - [x] **7a1** `rust_decimal`; migración 0007 (`articulos` con `kind` producto/servicio/kit, `productos`, `precios_historial`, `uuidv7()` como default en las tablas nuevas y en las existentes); pruebas del esquema; nota de decisión del UUID v7.
-  - [ ] **7a2** Tipos puros del área: `ArticuloId`, `Nid`, `PrecioVenta` (rechaza en lugar de redondear; siempre con 2 decimales) y `NewProducto` validado.
-  - [ ] **7a3** `ProductosRepo` (listar y agregar, con quién lo hizo), en memoria, contrato y `PgProductos`; el alta con precio escribe `precios_historial`.
+  - [x] **7a2** Tipos puros del área: `ArticuloId`, `Nid`, `PrecioVenta` (rechaza en lugar de redondear; siempre con 2 decimales) y `NewProducto` validado.
+  - [x] **7a3** `ProductosRepo` (listar y agregar, con quién lo hizo), en memoria, contrato y `PgProductos`; el alta con precio escribe `precios_historial`.
 - [ ] **7b** `/productos`: lista (búsqueda por nombre o NID, con un `Nid::parse` que rechace 0 y negativos; filtro por categoría) y alta con `editar_catalogo`. E2E en los dos anchos.
 - [ ] **7c** Editar (un cambio de precio escribe `precios_historial`) y descontinuar con motivo.
 - [ ] **7d** `tools/migracion-v1`: categorías, productos e historial de precios. Cuadra los conteos al correr y se detiene si no coinciden. **Al terminar, adelanta la secuencia del NID** (`setval(pg_get_serial_sequence('articulos', 'nid'), max(nid))`): si no, la primera alta después de migrar recibe el NID 1 y choca (revisor de 7a1); con su prueba. Cierra `migracion-v1-categorias` y `nombres-de-la-v1`.
