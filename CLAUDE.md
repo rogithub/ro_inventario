@@ -26,6 +26,7 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
    - `zsh -ic 'herramientas/revisar.sh'` con código de salida 0, y revisar las capturas de `ipad-mini` si se tocó una pantalla.
    - **El agente revisor** (`.claude/agents/revisor.md`): compara el cambio contra los diseños, las decisiones y este archivo, sin el contexto de quien lo escribió. Cada hallazgo se verifica antes de corregirlo (si es un bug, con una prueba que falle); los de criterio los decide el dueño. En el reporte va qué encontró y qué se hizo con cada cosa. Lo que no se resuelve en el paso va a `docs/pendientes/`.
 10. **Una sesión de Claude por paso,** abierta desde este repo. Lo que debe sobrevivir entre sesiones va en el repo (este archivo, `docs/`), no en la conversación.
+    - **Al sugerir cerrar la sesión,** si el trabajo sigue en la siguiente, el mensaje termina con el prompt para abrirla, listo para copiar en un bloque: qué paso o parte sigue, qué leer primero (la nota del plan en `docs/pendientes/`, el diseño) y lo que quedó pendiente de decidir. Lo que ya está en el repo se apunta, no se copia. Si no hay nada que enlazar, no va prompt.
 11. **Con el dueño:**
     - Las preguntas de diseño con matices, en texto normal y numeradas, no con formulario de opciones: sus matices son la información valiosa.
     - Cuando él tiene que correr algo: **un paso a la vez**, un comando por bloque, y esperar su salida antes del siguiente. No asumir rutas de su laptop: preferir rutas dentro del repo.
