@@ -97,6 +97,11 @@ fn request_span<B>(request: &Request<B>) -> tracing::Span {
     )
 }
 
+/// `true` si la petición la hizo htmx: se responde solo la sección que va a reemplazar.
+fn is_htmx(headers: &HeaderMap) -> bool {
+    headers.contains_key("hx-request")
+}
+
 /// Algo falló que no es culpa del usuario: el detalle va al log (con el id de la petición, por el
 /// span) y la pantalla solo muestra el id para reportarlo.
 fn internal_error(headers: &HeaderMap, error: &dyn std::fmt::Display) -> Response {

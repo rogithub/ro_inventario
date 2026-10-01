@@ -12,7 +12,7 @@ use serde::Deserialize;
 use usuarios::permisos::Permiso;
 use usuarios::usuarios::Usuario;
 
-use crate::{AppState, internal_error};
+use crate::{AppState, internal_error, is_htmx};
 
 #[derive(Template)]
 #[template(path = "unidades.html")]
@@ -91,10 +91,6 @@ pub async fn add(
             .await
         }
     }
-}
-
-fn is_htmx(headers: &HeaderMap) -> bool {
-    headers.contains_key("hx-request")
 }
 
 /// La lista con el formulario: completa, o solo la sección si la pidió htmx. Con error, 422.
