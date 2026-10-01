@@ -11,7 +11,7 @@
         class="row g-2 align-items-end mb-3">
     <div class="col-12 col-md-6">
       <label for="nombre" class="form-label">Nombre</label>
-      <input id="nombre" name="nombre" value="{{ nombre }}" maxlength="150" autocomplete="off" autofocus
+      <input id="nombre" name="nombre" value="{{ nombre }}" maxlength="150" autocomplete="off" {% if editing.is_none() %}autofocus{% endif %}
              class="form-control{% if error.is_some() %} is-invalid{% endif %}"
              {% if error.is_some() %}aria-describedby="nombre-error"{% endif %}>
     </div>
@@ -26,17 +26,53 @@
   </form>
   {% endif %}
 
+  {% if let Some(alert) = alert %}
+  <div class="alert alert-warning" role="alert">{{ alert }}</div>
+  {% endif %}
+
   {% if categorias.is_empty() %}
   <p class="text-body-secondary">Todavía no hay categorías.</p>
   {% else %}
-  <table class="table table-sm table-hover">
+  <table class="table table-sm table-hover align-middle">
     <thead>
-      <tr><th>Nombre</th></tr>
+      <tr><th>Nombre</th>{% if can_edit %}<th class="text-end"><span class="visually-hidden">Acciones</span></th>{% endif %}</tr>
     </thead>
     <tbody>
       {% for categoria in categorias %}
+      {% if let Some(editing) = editing %}{% if editing.is(categoria.id) %}
+      <tr>
+        <td colspan="2">
+          <form method="post" action="/categorias/{{ categoria.id }}" hx-post="/categorias/{{ categoria.id }}"
+                hx-target="#categorias" hx-swap="outerHTML" class="d-flex gap-2 align-items-start">
+            <div class="flex-grow-1">
+              <input name="nombre" value="{{ editing.nombre }}" maxlength="150" autocomplete="off" autofocus
+                     aria-label="Nuevo nombre de «{{ categoria.nombre }}»"
+                     class="form-control{% if editing.error.is_some() %} is-invalid{% endif %}">
+              {% if let Some(error) = editing.error %}<div class="invalid-feedback d-block">{{ error }}</div>{% endif %}
+            </div>
+            <button type="submit" class="btn btn-primary" title="Guardar" aria-label="Guardar">
+              <i class="bi bi-check-lg"></i>
+            </button>
+            <a href="/categorias" hx-get="/categorias" hx-target="#categorias" hx-swap="outerHTML"
+               class="btn btn-outline-secondary" title="Cancelar" aria-label="Cancelar">
+              <i class="bi bi-x-lg"></i>
+            </a>
+          </form>
+        </td>
+      </tr>
+      {% continue %}
+      {% endif %}{% endif %}
       <tr>
         <td>{{ categoria.nombre }}</td>
+        {% if can_edit %}
+        <td class="text-end">
+          <a href="/categorias?edit={{ categoria.id }}" hx-get="/categorias?edit={{ categoria.id }}"
+             hx-target="#categorias" hx-swap="outerHTML" class="btn btn-outline-secondary"
+             title="Renombrar" aria-label="Renombrar «{{ categoria.nombre }}»">
+            <i class="bi bi-pencil"></i>
+          </a>
+        </td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>

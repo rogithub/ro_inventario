@@ -54,6 +54,7 @@ pub fn router(state: AppState) -> Router {
         // Mientras no haya página de inicio.
         .route("/", get(|| async { Redirect::to("/unidades") }))
         .route("/categorias", get(categorias::page).post(categorias::add))
+        .route("/categorias/{id}", post(categorias::rename))
         .route(
             "/unidades",
             get(unidades_medida::page).post(unidades_medida::add),

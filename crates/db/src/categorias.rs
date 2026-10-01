@@ -50,6 +50,33 @@ impl CategoriasRepo for PgCategorias {
             nombre: row.nombre,
         })
     }
+
+    async fn rename(
+        &self,
+        id: CategoriaId,
+        new_categoria: NewCategoria,
+    ) -> Result<Categoria, CategoriaError> {
+        let row = sqlx::query!(
+            "UPDATE categorias SET nombre = $2 WHERE id = $1 RETURNING id, nombre",
+            id.0,
+            new_categoria.nombre()
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(
+            |e| match e.as_database_error().and_then(|d| d.constraint()) {
+                Some("categorias_nombre_unique") => {
+                    CategoriaError::DuplicateNombre(new_categoria.nombre().to_string())
+                }
+                _ => CategoriaError::Repo(RepoError(e.to_string())),
+            },
+        )?
+        .ok_or(CategoriaError::NotFound)?;
+        Ok(Categoria {
+            id: CategoriaId(row.id),
+            nombre: row.nombre,
+        })
+    }
 }
 
 #[cfg(test)]
@@ -65,6 +92,34 @@ mod tests {
     #[sqlx::test]
     async fn cumple_el_contrato_trae_su_id(pool: PgPool) {
         contract::agregada_trae_su_id_y_la_lista_lo_conserva(&PgCategorias::new(pool)).await;
+    }
+
+    #[sqlx::test]
+    async fn cumple_el_contrato_renombrar_cambia_el_nombre(pool: PgPool) {
+        contract::renombrar_cambia_el_nombre_y_conserva_el_id(&PgCategorias::new(pool)).await;
+    }
+
+    #[sqlx::test]
+    async fn cumple_el_contrato_renombrar_a_uno_que_ya_existe(pool: PgPool) {
+        contract::renombrar_a_un_nombre_que_ya_existe_se_rechaza(&PgCategorias::new(pool)).await;
+    }
+
+    #[sqlx::test]
+    async fn cumple_el_contrato_renombrar_solo_mayusculas(pool: PgPool) {
+        contract::renombrar_cambiando_solo_mayusculas_se_permite(&PgCategorias::new(pool)).await;
+    }
+
+    #[sqlx::test]
+    async fn cumple_el_contrato_renombrar_una_que_no_existe(pool: PgPool) {
+        contract::renombrar_una_que_no_existe_avisa(&PgCategorias::new(pool)).await;
+    }
+
+    #[sqlx::test]
+    async fn cumple_el_contrato_renombrar_una_que_no_existe_con_nombre_ocupado(pool: PgPool) {
+        contract::renombrar_una_que_no_existe_avisa_aunque_el_nombre_este_ocupado(
+            &PgCategorias::new(pool),
+        )
+        .await;
     }
 
     #[sqlx::test]

@@ -10,6 +10,19 @@ use kernel::{RepoError, Uuid};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CategoriaId(pub Uuid);
 
+impl CategoriaId {
+    /// El id escrito en una ruta o un formulario; `None` si no es un uuid.
+    pub fn parse(text: &str) -> Option<Self> {
+        Uuid::parse_str(text).ok().map(Self)
+    }
+}
+
+impl fmt::Display for CategoriaId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Categoria {
     pub id: CategoriaId,
@@ -49,6 +62,8 @@ pub enum CategoriaError {
     LongNombre,
     /// Ya hay una con ese nombre, sin importar mayúsculas ("cuadernos" choca con "Cuadernos").
     DuplicateNombre(String),
+    /// Al renombrar: ya no existe (alguien la cambió mientras tanto, o el id no es de ninguna).
+    NotFound,
     Repo(RepoError),
 }
 
@@ -61,6 +76,7 @@ impl fmt::Display for CategoriaError {
                 "El nombre no puede pasar de {MAX_NOMBRE_CATALOGO} caracteres."
             ),
             Self::DuplicateNombre(nombre) => write!(f, "Ya existe la categoría «{nombre}»."),
+            Self::NotFound => write!(f, "Esa categoría ya no existe. Recarga la página."),
             Self::Repo(_) => write!(f, "No se pudo guardar la categoría."),
         }
     }
@@ -79,6 +95,13 @@ pub trait CategoriasRepo {
 
     fn add(
         &self,
+        new_categoria: NewCategoria,
+    ) -> impl Future<Output = Result<Categoria, CategoriaError>> + Send;
+
+    /// Le pone otro nombre; el id no cambia. Cambiar solo mayúsculas ("plumas" → "Plumas") se vale.
+    fn rename(
+        &self,
+        id: CategoriaId,
         new_categoria: NewCategoria,
     ) -> impl Future<Output = Result<Categoria, CategoriaError>> + Send;
 }
@@ -115,6 +138,31 @@ pub mod in_memory {
             };
             categorias.push(categoria.clone());
             Ok(categoria)
+        }
+
+        async fn rename(
+            &self,
+            id: CategoriaId,
+            new_categoria: NewCategoria,
+        ) -> Result<Categoria, CategoriaError> {
+            let mut categorias = self.lock();
+            // Como Postgres: si el id no es de ninguna, no importa si el nombre está ocupado.
+            if !categorias.iter().any(|c| c.id == id) {
+                return Err(CategoriaError::NotFound);
+            }
+            let key = new_categoria.nombre().to_lowercase();
+            if categorias
+                .iter()
+                .any(|c| c.id != id && c.nombre.to_lowercase() == key)
+            {
+                return Err(CategoriaError::DuplicateNombre(new_categoria.nombre));
+            }
+            let categoria = categorias
+                .iter_mut()
+                .find(|c| c.id == id)
+                .ok_or(CategoriaError::NotFound)?;
+            categoria.nombre = new_categoria.nombre;
+            Ok(categoria.clone())
         }
     }
 
@@ -155,6 +203,81 @@ pub mod contract {
             let listed = list.iter().find(|c| c.nombre == added.nombre).unwrap();
             assert_eq!(listed.id, added.id);
         }
+    }
+
+    pub async fn renombrar_cambia_el_nombre_y_conserva_el_id(repo: &impl CategoriasRepo) {
+        let plumas = repo
+            .add(NewCategoria::new("Plumas").unwrap())
+            .await
+            .unwrap();
+
+        let renamed = repo
+            .rename(plumas.id, NewCategoria::new("Bolígrafos").unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(renamed.id, plumas.id);
+        assert_eq!(renamed.nombre, "Bolígrafos");
+        let list = repo.list().await.unwrap();
+        assert!(list.contains(&renamed));
+        assert!(!list.iter().any(|c| c.nombre == "Plumas"));
+    }
+
+    pub async fn renombrar_a_un_nombre_que_ya_existe_se_rechaza(repo: &impl CategoriasRepo) {
+        repo.add(NewCategoria::new("Plumas").unwrap())
+            .await
+            .unwrap();
+        let hojas = repo.add(NewCategoria::new("Hojas").unwrap()).await.unwrap();
+        let before = repo.list().await.unwrap();
+
+        let result = repo
+            .rename(hojas.id, NewCategoria::new("PLUMAS").unwrap())
+            .await;
+
+        assert_eq!(
+            result,
+            Err(CategoriaError::DuplicateNombre("PLUMAS".into()))
+        );
+        assert_eq!(repo.list().await.unwrap(), before, "no debe cambiar nada");
+    }
+
+    pub async fn renombrar_cambiando_solo_mayusculas_se_permite(repo: &impl CategoriasRepo) {
+        let plumas = repo
+            .add(NewCategoria::new("plumas").unwrap())
+            .await
+            .unwrap();
+
+        let renamed = repo
+            .rename(plumas.id, NewCategoria::new("Plumas").unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(renamed.nombre, "Plumas");
+    }
+
+    pub async fn renombrar_una_que_no_existe_avisa_aunque_el_nombre_este_ocupado(
+        repo: &impl CategoriasRepo,
+    ) {
+        repo.add(NewCategoria::new("Plumas").unwrap())
+            .await
+            .unwrap();
+        let nadie = CategoriaId(Uuid::from_u128(u128::MAX));
+
+        let result = repo
+            .rename(nadie, NewCategoria::new("Plumas").unwrap())
+            .await;
+
+        assert_eq!(result, Err(CategoriaError::NotFound));
+    }
+
+    pub async fn renombrar_una_que_no_existe_avisa(repo: &impl CategoriasRepo) {
+        let nadie = CategoriaId(Uuid::from_u128(u128::MAX));
+
+        let result = repo
+            .rename(nadie, NewCategoria::new("Plumas").unwrap())
+            .await;
+
+        assert_eq!(result, Err(CategoriaError::NotFound));
     }
 
     pub async fn nombre_repetido_se_rechaza_sin_importar_mayusculas(repo: &impl CategoriasRepo) {
@@ -281,5 +404,42 @@ mod tests {
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_trae_su_id() {
         contract::agregada_trae_su_id_y_la_lista_lo_conserva(&InMemoryCategorias::default()).await;
+    }
+
+    #[tokio::test]
+    async fn en_memoria_cumple_el_contrato_renombrar_cambia_el_nombre() {
+        contract::renombrar_cambia_el_nombre_y_conserva_el_id(&InMemoryCategorias::default()).await;
+    }
+
+    #[tokio::test]
+    async fn en_memoria_cumple_el_contrato_renombrar_a_uno_que_ya_existe() {
+        contract::renombrar_a_un_nombre_que_ya_existe_se_rechaza(&InMemoryCategorias::default())
+            .await;
+    }
+
+    #[tokio::test]
+    async fn en_memoria_cumple_el_contrato_renombrar_solo_mayusculas() {
+        contract::renombrar_cambiando_solo_mayusculas_se_permite(&InMemoryCategorias::default())
+            .await;
+    }
+
+    #[tokio::test]
+    async fn en_memoria_cumple_el_contrato_renombrar_una_que_no_existe() {
+        contract::renombrar_una_que_no_existe_avisa(&InMemoryCategorias::default()).await;
+    }
+
+    #[tokio::test]
+    async fn en_memoria_cumple_el_contrato_renombrar_una_que_no_existe_con_nombre_ocupado() {
+        contract::renombrar_una_que_no_existe_avisa_aunque_el_nombre_este_ocupado(
+            &InMemoryCategorias::default(),
+        )
+        .await;
+    }
+
+    #[test]
+    fn el_id_se_lee_de_su_texto_y_un_texto_que_no_es_id_no() {
+        let id = CategoriaId(Uuid::from_u128(7));
+        assert_eq!(CategoriaId::parse(&id.to_string()), Some(id));
+        assert_eq!(CategoriaId::parse("plumas"), None);
     }
 }

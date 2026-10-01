@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 // La base de desarrollo se comparte entre corridas y entre los dos navegadores: cada prueba usa
 // un nombre que no existe.
@@ -47,6 +47,62 @@ test('un nombre repetido no se agrega y conserva lo escrito', async ({ page }, t
 
   await expect(page.getByText(`Ya existe la categoría «${nombre.toLowerCase()}».`)).toBeVisible();
   await expect(page.getByLabel('Nombre')).toHaveValue(nombre.toLowerCase());
+});
+
+async function addCategoria(page: Page, nombre: string) {
+  await page.getByLabel('Nombre', { exact: true }).fill(nombre);
+  await page.getByRole('button', { name: 'Agregar categoría' }).click();
+  await expect(page.getByRole('cell', { name: nombre, exact: true })).toBeVisible();
+}
+
+test('renombrar una categoría cambia su nombre en la lista', async ({ page }, testInfo) => {
+  const nombre = newNombre(testInfo.project.name);
+  const renamed = `${nombre} renombrada`;
+  await addCategoria(page, nombre);
+
+  await page.getByRole('link', { name: `Renombrar «${nombre}»` }).click();
+  await expect(page.getByLabel(`Nuevo nombre de «${nombre}»`)).toBeFocused();
+  await page.getByLabel(`Nuevo nombre de «${nombre}»`).fill(renamed);
+  await page.getByRole('button', { name: 'Guardar' }).click();
+
+  await expect(page.getByRole('cell', { name: renamed, exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: nombre, exact: true })).toHaveCount(0);
+});
+
+test('cancelar el renombre deja el nombre como estaba', async ({ page }, testInfo) => {
+  const nombre = newNombre(testInfo.project.name);
+  await addCategoria(page, nombre);
+
+  await page.getByRole('link', { name: `Renombrar «${nombre}»` }).click();
+  await page.getByLabel(`Nuevo nombre de «${nombre}»`).fill('otro nombre');
+  await page.getByRole('link', { name: 'Cancelar' }).click();
+
+  await expect(page.getByRole('cell', { name: nombre, exact: true })).toBeVisible();
+  await expect(page.getByLabel(`Nuevo nombre de «${nombre}»`)).toHaveCount(0);
+});
+
+test('renombrar a un nombre que ya existe avisa en el renglón', async ({ page }, testInfo) => {
+  const nombre = newNombre(testInfo.project.name);
+  const otro = `${nombre} otra`;
+  await addCategoria(page, nombre);
+  await addCategoria(page, otro);
+
+  await page.getByRole('link', { name: `Renombrar «${otro}»` }).click();
+  await page.getByLabel(`Nuevo nombre de «${otro}»`).fill(nombre.toUpperCase());
+  await page.getByRole('button', { name: 'Guardar' }).click();
+
+  await expect(page.getByText(`Ya existe la categoría «${nombre.toUpperCase()}».`)).toBeVisible();
+  await expect(page.getByLabel(`Nuevo nombre de «${otro}»`)).toHaveValue(nombre.toUpperCase());
+});
+
+test('captura del renglón en modo renombrar', async ({ page }, testInfo) => {
+  const nombre = newNombre(testInfo.project.name);
+  await addCategoria(page, nombre);
+  await page.getByRole('link', { name: `Renombrar «${nombre}»` }).click();
+  await page.getByLabel(`Nuevo nombre de «${nombre}»`).fill('');
+  await page.getByRole('button', { name: 'Guardar' }).click();
+  await expect(page.getByText('Escribe el nombre de la categoría.')).toBeVisible();
+  await page.screenshot({ path: `capturas/${testInfo.project.name}/categorias-renombrar.png`, fullPage: true });
 });
 
 test('captura de la pantalla para revisarla', async ({ page }, testInfo) => {
