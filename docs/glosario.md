@@ -18,6 +18,7 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 ## Productos
 | Término | Qué es |
 |---|---|
+| `Catalogo` | Todo lo que el negocio ofrece y sus datos de apoyo: artículos, categorías, unidades, presentaciones. El permiso `editar_catalogo` lo cambia; el catálogo público lo muestra. |
 | `Articulo` | Lo que se vende en caja: un producto o un servicio. Tiene NID, nombre, categoría y precio. |
 | `Producto` | Artículo físico: se compra, lleva stock y se revende o se consume en un servicio. |
 | `NID` | Número corto del producto: se teclea en caja y se imprime en la etiqueta como código de barras. |

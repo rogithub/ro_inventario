@@ -74,6 +74,24 @@ mod tests {
         assert_eq!(total, 4);
     }
 
+    #[sqlx::test]
+    async fn la_base_rechaza_nombres_del_catalogo_de_mas_de_150_caracteres(pool: PgPool) {
+        let categoria = "INSERT INTO categorias (nombre) VALUES ($1)";
+        let unidad = "INSERT INTO unidades_medida (nombre, allows_fraction) VALUES ($1, false)";
+        for insert in [categoria, unidad] {
+            let largo = sqlx::query(insert)
+                .bind("ñ".repeat(151))
+                .execute(&pool)
+                .await;
+            assert!(largo.is_err(), "aceptó 151 caracteres: {insert}");
+            sqlx::query(insert)
+                .bind("ñ".repeat(150))
+                .execute(&pool)
+                .await
+                .unwrap();
+        }
+    }
+
     #[sqlx::test(migrations = false)]
     async fn una_base_viva_responde(pool: PgPool) {
         assert!(is_db_alive(&pool).await);

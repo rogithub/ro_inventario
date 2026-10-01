@@ -4,6 +4,7 @@ use std::fmt;
 use std::future::Future;
 
 use kernel::RepoError;
+use kernel::nombres::MAX_NOMBRE_CATALOGO;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnidadMedida {
@@ -20,11 +21,14 @@ pub struct NewUnidadMedida {
 }
 
 impl NewUnidadMedida {
-    /// Quita los espacios de las orillas del nombre; vacío no se acepta.
+    /// Quita los espacios de las orillas del nombre; vacío o de más de 150 caracteres no se acepta.
     pub fn new(nombre: &str, allows_fraction: bool) -> Result<Self, UnidadMedidaError> {
         let nombre = nombre.trim();
         if nombre.is_empty() {
             return Err(UnidadMedidaError::EmptyNombre);
+        }
+        if nombre.chars().count() > MAX_NOMBRE_CATALOGO {
+            return Err(UnidadMedidaError::LongNombre);
         }
         Ok(Self {
             nombre: nombre.to_string(),
@@ -44,6 +48,8 @@ impl NewUnidadMedida {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UnidadMedidaError {
     EmptyNombre,
+    /// Más de `MAX_NOMBRE_CATALOGO` caracteres.
+    LongNombre,
     /// Ya hay una con ese nombre, sin importar mayúsculas ("hoja" choca con "Hoja").
     DuplicateNombre(String),
     Repo(RepoError),
@@ -53,6 +59,10 @@ impl fmt::Display for UnidadMedidaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::EmptyNombre => write!(f, "Escribe el nombre de la unidad."),
+            Self::LongNombre => write!(
+                f,
+                "El nombre no puede pasar de {MAX_NOMBRE_CATALOGO} caracteres."
+            ),
             Self::DuplicateNombre(nombre) => write!(f, "Ya existe la unidad «{nombre}»."),
             Self::Repo(_) => write!(f, "No se pudo guardar la unidad."),
         }
@@ -90,7 +100,7 @@ pub mod in_memory {
     impl UnidadesMedidaRepo for InMemoryUnidadesMedida {
         async fn list(&self) -> Result<Vec<UnidadMedida>, RepoError> {
             let mut unidades = self.lock().clone();
-            unidades.sort_by_key(|u| u.nombre.to_lowercase());
+            unidades.sort_by_key(|u| kernel::nombres::sort_key(&u.nombre));
             Ok(unidades)
         }
 
@@ -180,6 +190,35 @@ pub mod contract {
         sorted.sort_by_key(|n| n.to_lowercase());
         assert_eq!(nombres, sorted);
     }
+
+    /// Como Postgres con la collation `en_US.utf8` (desarrollo, CI y producción): sin importar
+    /// mayúsculas ni acentos, la ñ como n, y sin contar espacios ni signos.
+    pub async fn la_lista_ordena_como_postgres_acentos_espacios_y_signos(
+        repo: &impl UnidadesMedidaRepo,
+    ) {
+        let esperado = [
+            "albumes", "Álbumes", "alfa", "cob", "co-op", "coop", "Hojas a", "Hoja z", "ñandú",
+            "nube", "Útiles",
+        ];
+        for nombre in [
+            "Útiles", "Hoja z", "coop", "ñandú", "alfa", "co-op", "Álbumes", "nube", "Hojas a",
+            "cob", "albumes",
+        ] {
+            repo.add(NewUnidadMedida::new(nombre, false).unwrap())
+                .await
+                .unwrap();
+        }
+
+        let nombres: Vec<String> = repo
+            .list()
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|u| u.nombre)
+            .filter(|n| esperado.contains(&n.as_str()))
+            .collect();
+        assert_eq!(nombres, esperado);
+    }
 }
 
 #[cfg(test)]
@@ -206,6 +245,29 @@ mod tests {
         );
     }
 
+    #[test]
+    fn un_nombre_de_150_caracteres_se_acepta_aunque_lleve_enies() {
+        let nombre = "ñ".repeat(150);
+        assert_eq!(
+            NewUnidadMedida::new(&nombre, false).unwrap().nombre(),
+            nombre
+        );
+    }
+
+    #[test]
+    fn un_nombre_de_151_caracteres_no_se_acepta() {
+        assert_eq!(
+            NewUnidadMedida::new(&"a".repeat(151), false),
+            Err(UnidadMedidaError::LongNombre)
+        );
+    }
+
+    #[test]
+    fn los_espacios_de_las_orillas_no_cuentan_para_el_largo() {
+        let nombre = format!("  {}  ", "a".repeat(150));
+        assert!(NewUnidadMedida::new(&nombre, false).is_ok());
+    }
+
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_agregada_aparece_en_la_lista() {
         contract::agregada_aparece_en_la_lista(&InMemoryUnidadesMedida::default()).await;
@@ -222,5 +284,13 @@ mod tests {
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_orden_alfabetico() {
         contract::la_lista_va_en_orden_alfabetico(&InMemoryUnidadesMedida::default()).await;
+    }
+
+    #[tokio::test]
+    async fn en_memoria_cumple_el_contrato_orden_como_postgres() {
+        contract::la_lista_ordena_como_postgres_acentos_espacios_y_signos(
+            &InMemoryUnidadesMedida::default(),
+        )
+        .await;
     }
 }

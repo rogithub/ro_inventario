@@ -60,6 +60,12 @@ mod tests {
     }
 
     #[sqlx::test]
+    async fn cumple_el_contrato_orden_como_postgres(pool: PgPool) {
+        contract::la_lista_ordena_como_postgres_acentos_espacios_y_signos(&PgCategorias::new(pool))
+            .await;
+    }
+
+    #[sqlx::test]
     async fn cumple_el_contrato_orden_alfabetico(pool: PgPool) {
         contract::la_lista_va_en_orden_alfabetico(&PgCategorias::new(pool)).await;
     }

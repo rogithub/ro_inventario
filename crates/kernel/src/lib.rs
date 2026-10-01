@@ -5,6 +5,8 @@
 // El dinero y las cantidades son `Decimal`, nunca flotantes (docs/decisiones/2026-09-29-formato-y-linters.md).
 #![deny(clippy::float_arithmetic)]
 
+pub mod nombres;
+
 /// Falla de la infraestructura detrás de un repositorio (la base no responde, se cortó la conexión).
 /// No es culpa del usuario: el detalle va al log y la pantalla muestra el id de la petición.
 #[derive(Debug, Clone, PartialEq, Eq)]

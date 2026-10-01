@@ -208,6 +208,21 @@ mod tests {
     }
 
     #[sqlx::test(migrator = "db::MIGRATOR")]
+    async fn un_nombre_de_mas_de_150_caracteres_regresa_422_con_el_mensaje(pool: PgPool) {
+        let cookie = cookie(&pool, "ana@x.mx", "Dueño").await;
+        let form = format!("nombre={}", "a".repeat(151));
+
+        let response = send(pool, post(&cookie, &form, true)).await;
+
+        assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert!(
+            body_text(response)
+                .await
+                .contains("El nombre no puede pasar de 150 caracteres.")
+        );
+    }
+
+    #[sqlx::test(migrator = "db::MIGRATOR")]
     async fn un_nombre_repetido_regresa_422_y_conserva_lo_escrito(pool: PgPool) {
         let cookie = cookie(&pool, "ana@x.mx", "Dueño").await;
         let response = send(pool, post(&cookie, "nombre=pieza&allows_fraction=on", true)).await;

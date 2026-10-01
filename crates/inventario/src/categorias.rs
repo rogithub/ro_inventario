@@ -4,6 +4,7 @@ use std::fmt;
 use std::future::Future;
 
 use kernel::RepoError;
+use kernel::nombres::MAX_NOMBRE_CATALOGO;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Categoria {
@@ -17,11 +18,14 @@ pub struct NewCategoria {
 }
 
 impl NewCategoria {
-    /// Quita los espacios de las orillas del nombre; vacío no se acepta.
+    /// Quita los espacios de las orillas del nombre; vacío o de más de 150 caracteres no se acepta.
     pub fn new(nombre: &str) -> Result<Self, CategoriaError> {
         let nombre = nombre.trim();
         if nombre.is_empty() {
             return Err(CategoriaError::EmptyNombre);
+        }
+        if nombre.chars().count() > MAX_NOMBRE_CATALOGO {
+            return Err(CategoriaError::LongNombre);
         }
         Ok(Self {
             nombre: nombre.to_string(),
@@ -36,6 +40,8 @@ impl NewCategoria {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CategoriaError {
     EmptyNombre,
+    /// Más de `MAX_NOMBRE_CATALOGO` caracteres.
+    LongNombre,
     /// Ya hay una con ese nombre, sin importar mayúsculas ("cuadernos" choca con "Cuadernos").
     DuplicateNombre(String),
     Repo(RepoError),
@@ -45,6 +51,10 @@ impl fmt::Display for CategoriaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::EmptyNombre => write!(f, "Escribe el nombre de la categoría."),
+            Self::LongNombre => write!(
+                f,
+                "El nombre no puede pasar de {MAX_NOMBRE_CATALOGO} caracteres."
+            ),
             Self::DuplicateNombre(nombre) => write!(f, "Ya existe la categoría «{nombre}»."),
             Self::Repo(_) => write!(f, "No se pudo guardar la categoría."),
         }
@@ -82,7 +92,7 @@ pub mod in_memory {
     impl CategoriasRepo for InMemoryCategorias {
         async fn list(&self) -> Result<Vec<Categoria>, RepoError> {
             let mut categorias = self.lock().clone();
-            categorias.sort_by_key(|c| c.nombre.to_lowercase());
+            categorias.sort_by_key(|c| kernel::nombres::sort_key(&c.nombre));
             Ok(categorias)
         }
 
@@ -158,6 +168,33 @@ pub mod contract {
             .collect();
         assert_eq!(nombres, ["alfa", "Media", "Zeta"]);
     }
+
+    /// Como Postgres con la collation `en_US.utf8` (desarrollo, CI y producción): sin importar
+    /// mayúsculas ni acentos, la ñ como n, y sin contar espacios ni signos.
+    pub async fn la_lista_ordena_como_postgres_acentos_espacios_y_signos(
+        repo: &impl CategoriasRepo,
+    ) {
+        let esperado = [
+            "albumes", "Álbumes", "alfa", "cob", "co-op", "coop", "Hojas a", "Hoja z", "ñandú",
+            "nube", "Útiles",
+        ];
+        for nombre in [
+            "Útiles", "Hoja z", "coop", "ñandú", "alfa", "co-op", "Álbumes", "nube", "Hojas a",
+            "cob", "albumes",
+        ] {
+            repo.add(NewCategoria::new(nombre).unwrap()).await.unwrap();
+        }
+
+        let nombres: Vec<String> = repo
+            .list()
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|c| c.nombre)
+            .filter(|n| esperado.contains(&n.as_str()))
+            .collect();
+        assert_eq!(nombres, esperado);
+    }
 }
 
 #[cfg(test)]
@@ -177,6 +214,26 @@ mod tests {
         assert_eq!(NewCategoria::new("   "), Err(CategoriaError::EmptyNombre));
     }
 
+    #[test]
+    fn un_nombre_de_150_caracteres_se_acepta_aunque_lleve_enies() {
+        let nombre = "ñ".repeat(150);
+        assert_eq!(NewCategoria::new(&nombre).unwrap().nombre(), nombre);
+    }
+
+    #[test]
+    fn un_nombre_de_151_caracteres_no_se_acepta() {
+        assert_eq!(
+            NewCategoria::new(&"a".repeat(151)),
+            Err(CategoriaError::LongNombre)
+        );
+    }
+
+    #[test]
+    fn los_espacios_de_las_orillas_no_cuentan_para_el_largo() {
+        let nombre = format!("  {}  ", "a".repeat(150));
+        assert!(NewCategoria::new(&nombre).is_ok());
+    }
+
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_agregada_aparece_en_la_lista() {
         contract::agregada_aparece_en_la_lista(&InMemoryCategorias::default()).await;
@@ -193,5 +250,13 @@ mod tests {
     #[tokio::test]
     async fn en_memoria_cumple_el_contrato_orden_alfabetico() {
         contract::la_lista_va_en_orden_alfabetico(&InMemoryCategorias::default()).await;
+    }
+
+    #[tokio::test]
+    async fn en_memoria_cumple_el_contrato_orden_como_postgres() {
+        contract::la_lista_ordena_como_postgres_acentos_espacios_y_signos(
+            &InMemoryCategorias::default(),
+        )
+        .await;
     }
 }
