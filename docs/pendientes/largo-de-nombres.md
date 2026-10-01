@@ -11,4 +11,8 @@ Solo lo puede provocar alguien con `editar_catalogo`, así que el riesgo es bajo
 ## Decisión del dueño (2026-10-01)
 **150 caracteres para todos los nombres del catálogo.** Se valida en el `New…` del área, que devuelve su error con mensaje (422 en la pantalla), y con el mismo `CHECK` en la migración. El paso 6b lo aplica a categorías y a unidades de medida y borra esta nota. Los catálogos que vengan después (artículos, proveedores…) nacen con el tope.
 
-Pendiente de comprobar contra la copia de la v1: que ningún nombre real pase de 150. Si alguno pasa, se platica antes de migrarlo.
+**Comprobado contra la copia de la v1** (`herramientas/v1.sh`, 2026-10-01): ningún nombre pasa de 150.
+- Productos: 2,336, el más largo de 68 caracteres; el 99 % tiene 54 o menos.
+- Categorías: 275, la más larga de 29.
+- Unidades: 5, la más larga de 9.
+- Presentaciones: 4, la más larga de 20.

@@ -54,7 +54,7 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
 | Producción (v2) | Postgres del cluster | **Nada.** Nunca conectarse. Solo la aplicación la cambia, al hacer deploy |
 | Producción (v1) `inventario_papeleria` | `192.168.0.10:30432` | **Nada.** Solo el dueño saca copias con `pg_dump` |
 | Desarrollo (v2) `dev_ro_inventario` | Postgres de kukulkan (podman, `localhost:5432`) | Leer y escribir; reconstruirla con el script de desarrollo |
-| Copia de la v1 `dev_inventario_papeleria` | mismo Postgres de kukulkan | Leer, como origen de `tools/migracion-v1` |
+| Copia de la v1 `dev_inventario_papeleria` | mismo Postgres de kukulkan | Leer con `herramientas/v1.sh`, para decidir con datos reales y como origen de `tools/migracion-v1` |
 | Pruebas de integración | bases temporales de `sqlx::test` | Las crean y borran las pruebas |
 
 - **Un hook lo hace cumplir:** `~/.claude/hooks/bloquear-produccion.sh` (configurado en `~/.claude/settings.json`, a nivel usuario, para todos los proyectos) rechaza cualquier comando que combine un cliente de Postgres con `192.168.0.10`/`30432`, y cualquier mención de `live_restore`. Si bloquea algo legítimo, se platica con el dueño; no se esquiva.
@@ -75,6 +75,7 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
 ## Comandos
 
 - **Base de desarrollo (una vez, o para empezar de cero):** `herramientas/dev-db.sh` crea el usuario `ro_inventario` y la base `dev_ro_inventario` en el Postgres local (podman `postgres`, localhost:5432). Lee la contraseña (`DEV_DB_PASSWORD=…`, chmod 600) de `.secretos/dev.env` dentro del repo (ignorado por git y por la imagen) o, si no existe, de `~/secrets/ro_inventario_dev.env`, sin imprimirla. No toca `dev_inventario_papeleria`.
+- **Consultar la copia de la v1:** `herramientas/v1.sh "SELECT …"` (solo SQL, sin comandos de psql), como `ro_inventario`, que ahí solo puede leer. Los permisos los da `herramientas/dev-v1-lectura.sh`; refrescar la copia los borra, así que se corre otra vez después de cada refresco. Antes de decidir algo del negocio (largos, reglas, casos raros), consultar los datos reales de la v1.
 - **Revisar todo (lo mismo que CI):** `zsh -ic 'herramientas/revisar.sh'`: formato, clippy, audit, consultas SQL, pruebas y E2E; se detiene en la primera falla. El `zsh -ic` trae `E2E_USER`/`E2E_PASS` del perfil. Si no hay `DATABASE_URL`, la arma desde el secreto.
 - **Correr la aplicación privada en desarrollo:** `. herramientas/dev-env.sh && NEGOCIO_CONFIG=negocio.ejemplo.toml PORT=5100 cargo run -p privada` (agregar `LOG_FORMAT=json` para ver los logs como en producción). Al arrancar aplica las migraciones pendientes. Probar: `curl localhost:5100/health`.
 - **Crear un usuario:** `. herramientas/dev-env.sh && cargo run -p privada -- crear-usuario --email … --nombre … --rol Dueño` (roles de arranque: Dueño, Encargado, Cajero). Pide la contraseña dos veces sin mostrarla; sin terminal, la lee de la entrada. En producción: el mismo comando dentro del pod (`privada crear-usuario …`). No hay usuario por omisión.

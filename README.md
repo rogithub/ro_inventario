@@ -48,6 +48,12 @@ Crea el usuario `ro_inventario` y la base `dev_ro_inventario` desde cero:
 herramientas/dev-db.sh
 ```
 
+Para consultar la copia de la v1 (`dev_inventario_papeleria`, si la tienes en el mismo Postgres), dale a `ro_inventario` permiso de solo lectura. Se corre otra vez cada vez que se refresca la copia:
+
+```sh
+herramientas/dev-v1-lectura.sh
+```
+
 ### 5. Tu usuario para entrar
 Pide la contraseña dos veces sin mostrarla. Al correr, también aplica las migraciones.
 

@@ -32,4 +32,5 @@ Qué se haría. Si hay que decidir algo, la pregunta para el dueño.
 | [El orden alfabético con acentos no es igual en memoria que en Postgres](orden-con-acentos.md) | por decidir |
 | [Los nombres del catálogo no tienen largo máximo](largo-de-nombres.md) | paso 6b (decidido: 150) |
 | [Migrar las categorías desde la v1](migracion-v1-categorias.md) | con artículos |
+| [Los nombres de la v1 vienen en mayúsculas y algunos con dobles espacios](nombres-de-la-v1.md) | con artículos |
 | [Herramienta para consultar los logs de producción](logs-de-produccion.md) | con la v2 en producción |
