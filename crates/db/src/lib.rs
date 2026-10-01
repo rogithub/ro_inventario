@@ -38,6 +38,9 @@ pub async fn is_db_alive(pool: &PgPool) -> bool {
 }
 
 #[cfg(test)]
+mod articulos_schema_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

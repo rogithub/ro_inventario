@@ -1,6 +1,6 @@
 # Diseño 01 — Productos e inventario
 
-**Estado:** propuesta para revisión del dueño. Todavía no es SQL: primero se acuerda el modelo, después se escribe la migración. Los servicios tienen su propio diseño: [03 — Servicios](03-servicios.md).
+**Estado:** aprobado. El esquema de artículos, productos e historial de precios está en la migración 0007; lo demás se escribe en su parte del paso 7 (`docs/pendientes/paso-7-productos.md`). Los servicios tienen su propio diseño: [03 — Servicios](03-servicios.md).
 
 ## Lo que ya se decidió (2026-09-29)
 - **Kárdex único:** todo lo que mueve inventario escribe renglones en una sola tabla de movimientos. El stock y el costo salen de ahí.
@@ -10,6 +10,10 @@
 - **Códigos de barras en su propia tabla**, apuntando al producto o a una de sus presentaciones.
 - **Un artículo se descontinúa, no se borra**, y queda anotado por qué (el proveedor ya no lo vende, ya no se resurte).
 - **Categorías:** cada producto conserva su categoría original; las que queden sin artículos no se migran. El intento de recategorizar con IA se abandonó y no se toma en cuenta.
+- **Dinero y cantidades con `Decimal`** (`rust_decimal`): precios de venta con 2 decimales (`numeric(12,2)`), cantidades y factores con 3, costo unitario con 6. Lo que se cobra se redondea una sola vez, en el servidor. *(Decidido el 2026-10-01.)*
+- **Ids:** UUID v7 para los nuevos; los artículos de la v1 conservan su uuid y su NID ([decisión](../decisiones/2026-10-01-uuid-v7.md)).
+- **Los nombres de la v1 se migran tal cual,** en mayúsculas; lo que se capture se guarda como se escriba. Los dobles espacios sí se juntan al migrar. *(Decidido el 2026-10-01.)*
+- **El nombre de un artículo se puede repetir:** la v1 tiene 38 repetidos y los duplicados se corrigen fusionando (diseño 02), no con un choque al guardar. *(2026-10-01.)*
 - **Las presentaciones son para vender por mayoreo:** paquetes más grandes con precio de descuento, para los clientes que empiezan a preguntar por volumen (la mayoría compra por pieza).
 
 ## Datos de la versión uno que guiaron el diseño
@@ -30,11 +34,11 @@
 | `kind` | `producto`, `servicio` o `kit`. Un producto tiene su renglón en `productos`; un servicio, en `servicios`; un kit, sus componentes en `kit_componentes` (diseño 03). |
 | `categoria_id` | Su categoría (obligatoria). |
 | `unidad_medida_id` | Unidad en que se vende: para un producto es su **unidad base** (en ella se cuenta el stock y se calcula el costo: pieza, hoja, metro…); para un servicio, en qué se cobra (hoja, hora, página…). |
-| `precio_venta` | Precio actual de una unidad. |
+| `precio_venta` | Precio actual de una unidad, mayor que cero. Vacío = no tiene precio fijo: un producto por llegar, un kit (vale lo que sumen sus partidas) o un servicio de precio libre. |
 | `descripcion` | Texto para el catálogo; opcional. |
 | `descontinuado_at` | Cuándo se descontinuó. Vacío = se sigue manejando. Un descontinuado no se ofrece en caja ni en el catálogo, y no aparece en los reportes de resurtido; su historia se conserva. |
 | `motivo_descontinuado` | Por qué ya no se maneja ("el proveedor ya no lo vende"). Obligatorio al descontinuar. |
-| `created_at`, `updated_at`, `updated_by` | Auditoría. |
+| `created_at`, `updated_at`, `updated_by` | Auditoría. `updated_by` vacío = migrado de la v1. |
 
 ### `productos` (lo propio de lo físico)
 | Columna | Qué es |

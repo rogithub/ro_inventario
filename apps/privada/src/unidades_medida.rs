@@ -256,7 +256,7 @@ mod tests {
     #[sqlx::test(migrator = "db::MIGRATOR")]
     async fn si_falla_la_lista_se_ve_el_id_para_reportarlo(pool: PgPool) {
         let cookie = cookie(&pool, "ana@x.mx", "Dueño").await;
-        sqlx::query("DROP TABLE unidades_medida")
+        sqlx::query("DROP TABLE unidades_medida CASCADE")
             .execute(&pool)
             .await
             .unwrap();
