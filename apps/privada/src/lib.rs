@@ -4,6 +4,7 @@ mod assets;
 mod categorias;
 pub mod commands;
 mod health;
+mod productos;
 mod session;
 mod unidades_medida;
 
@@ -14,7 +15,7 @@ use axum::http::{HeaderMap, Request, StatusCode};
 use axum::middleware;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{get, post};
-use db::{PgCategorias, PgPool, PgSessions, PgUnidadesMedida, PgUsuarios};
+use db::{PgCategorias, PgPool, PgProductos, PgSessions, PgUnidadesMedida, PgUsuarios};
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
 use tracing::Level;
@@ -27,6 +28,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub struct AppState {
     pool: PgPool,
     categorias: PgCategorias,
+    productos: PgProductos,
     unidades_medida: PgUnidadesMedida,
     usuarios: PgUsuarios,
     sessions: PgSessions,
@@ -38,6 +40,7 @@ impl AppState {
     pub fn new(pool: PgPool, negocio: &str) -> Self {
         Self {
             categorias: PgCategorias::new(pool.clone()),
+            productos: PgProductos::new(pool.clone()),
             unidades_medida: PgUnidadesMedida::new(pool.clone()),
             usuarios: PgUsuarios::new(pool.clone()),
             sessions: PgSessions::new(pool.clone()),
@@ -55,6 +58,7 @@ pub fn router(state: AppState) -> Router {
         .route("/", get(|| async { Redirect::to("/unidades") }))
         .route("/categorias", get(categorias::page).post(categorias::add))
         .route("/categorias/{id}", post(categorias::rename))
+        .route("/productos", get(productos::page))
         .route(
             "/unidades",
             get(unidades_medida::page).post(unidades_medida::add),
@@ -103,8 +107,10 @@ fn request_span<B>(request: &Request<B>) -> tracing::Span {
 }
 
 /// `true` si la petición la hizo htmx: se responde solo la sección que va a reemplazar.
+/// Al volver atrás a una página que htmx no guardó, la pide de nuevo con su encabezado, pero
+/// necesita la página completa.
 fn is_htmx(headers: &HeaderMap) -> bool {
-    headers.contains_key("hx-request")
+    headers.contains_key("hx-request") && !headers.contains_key("hx-history-restore-request")
 }
 
 /// Algo falló que no es culpa del usuario: el detalle va al log (con el id de la petición, por el

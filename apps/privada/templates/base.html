@@ -13,10 +13,11 @@
 </head>
 <body>
   <nav class="navbar bg-body-tertiary mb-3">
-    <div class="container">
+    <div class="container-lg">
       <span class="navbar-brand">{{ negocio }}</span>
       {% if let Some(nombre) = usuario_nombre %}
       <div class="navbar-nav flex-row gap-3 me-auto">
+        <a class="nav-link" href="/productos">Productos</a>
         <a class="nav-link" href="/categorias">Categorías</a>
         <a class="nav-link" href="/unidades">Unidades</a>
       </div>
@@ -32,7 +33,7 @@
       {% endif %}
     </div>
   </nav>
-  <main class="container">
+  <main class="container-lg">
     {% block content %}{% endblock %}
   </main>
 </body>

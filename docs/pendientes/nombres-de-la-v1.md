@@ -17,4 +17,4 @@ Preguntas para el dueño, antes de migrar artículos:
 
 ## Decisiones del dueño (2026-10-01)
 1. **Dobles espacios:** se juntan en uno al migrar los nombres de la v1.
-2. **Mayúsculas:** sigue abierta.
+2. **Mayúsculas:** los nombres de la v1 se migran tal cual, en mayúsculas; lo que se capture se guarda como se escriba (decidido en el plan del paso 7, ver `paso-7-productos.md` y el diseño 01).

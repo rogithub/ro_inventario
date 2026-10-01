@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Productos{% endblock %}
+
+{% block content %}
+<h1 class="h4">Productos</h1>
+{# Busca mientras se escribe; la URL guarda la búsqueda para recargar o volver atrás. Sin JavaScript, Enter. #}
+<form method="get" action="/productos" role="search" class="row g-2 mb-3"
+      hx-get="/productos" hx-trigger="input delay:300ms, change, submit"
+      hx-target="#results" hx-swap="innerHTML" hx-push-url="true">
+  <div class="col-12 col-md">
+    <label for="q" class="visually-hidden">Buscar por nombre o NID</label>
+    <input id="q" name="q" type="search" value="{{ q }}" placeholder="Buscar por nombre o NID"
+           autocomplete="off" autofocus class="form-control">
+  </div>
+  <div class="col-12 col-md-4">
+    <label for="categoria" class="visually-hidden">Categoría</label>
+    <select id="categoria" name="categoria" class="form-select">
+      <option value="">Todas las categorías</option>
+      {% for c in categorias %}
+      <option value="{{ c.id }}"{% if is_selected(c.id) %} selected{% endif %}>{{ c.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <noscript><div class="col-auto"><button type="submit" class="btn btn-primary">Buscar</button></div></noscript>
+</form>
+{# El contenedor no se reemplaza, solo su contenido: si una búsqueda falla, el error queda adentro
+   y la siguiente tecla sigue encontrando dónde pintar. #}
+<div id="results">
+{% block results %}
+  {% if results.rows.is_empty() %}
+  <p class="text-body-secondary">{% if results.is_filtered %}Ningún producto coincide con la búsqueda.{% else %}Todavía no hay productos.{% endif %}</p>
+  {% else %}
+  {% if let Some(notice) = results.notice %}
+  <p class="small text-body-secondary">{{ notice }}</p>
+  {% endif %}
+  <table class="table table-sm table-hover align-middle">
+    <thead>
+      <tr><th class="text-end">NID</th><th>Nombre</th><th class="text-end">Precio</th></tr>
+    </thead>
+    <tbody>
+      {% for r in results.rows %}
+      <tr>
+        <td class="text-end font-monospace">{{ r.producto.nid }}</td>
+        <td>{{ r.producto.nombre }}<div class="small text-body-secondary">{{ r.categoria }}</div></td>
+        <td class="text-end text-nowrap">{% if let Some(precio) = r.producto.precio_venta %}${{ precio.value() }}{% else %}<span class="badge text-bg-warning">Sin precio</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+{% endblock %}
+</div>
+{% endblock %}
