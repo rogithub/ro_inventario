@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Categorías{% endblock %}
+
+{% block content %}
+<h1 class="h4">Categorías</h1>
+{% block categorias %}
+<div id="categorias">
+  {% if can_edit %}
+  <form method="post" action="/categorias" hx-post="/categorias" hx-target="#categorias" hx-swap="outerHTML"
+        class="row g-2 align-items-end mb-3">
+    <div class="col-12 col-md-6">
+      <label for="nombre" class="form-label">Nombre</label>
+      <input id="nombre" name="nombre" value="{{ nombre }}" autocomplete="off" autofocus
+             class="form-control{% if error.is_some() %} is-invalid{% endif %}"
+             {% if error.is_some() %}aria-describedby="nombre-error"{% endif %}>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary" title="Agregar categoría" aria-label="Agregar categoría">
+        <i class="bi bi-plus-lg"></i><span class="d-none d-lg-inline"> Agregar</span>
+      </button>
+    </div>
+    {% if let Some(error) = error %}
+    <div class="col-12 mt-0"><div id="nombre-error" class="invalid-feedback d-block">{{ error }}</div></div>
+    {% endif %}
+  </form>
+  {% endif %}
+
+  {% if categorias.is_empty() %}
+  <p class="text-body-secondary">Todavía no hay categorías.</p>
+  {% else %}
+  <table class="table table-sm table-hover">
+    <thead>
+      <tr><th>Nombre</th></tr>
+    </thead>
+    <tbody>
+      {% for categoria in categorias %}
+      <tr>
+        <td>{{ categoria.nombre }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}
+{% endblock %}

@@ -16,8 +16,13 @@
     <div class="container">
       <span class="navbar-brand">{{ negocio }}</span>
       {% if let Some(nombre) = usuario_nombre %}
+      <div class="navbar-nav flex-row gap-3 me-auto">
+        <a class="nav-link" href="/categorias">Categorías</a>
+        <a class="nav-link" href="/unidades">Unidades</a>
+      </div>
       <div class="d-flex align-items-center gap-2">
-        <span class="navbar-text"><i class="bi bi-person-circle"></i> {{ nombre }}</span>
+        {# En pantallas angostas (iPad mini) solo el ícono, para que la barra quepa en un renglón. #}
+        <span class="navbar-text" title="{{ nombre }}"><i class="bi bi-person-circle"></i><span class="d-none d-lg-inline"> {{ nombre }}</span></span>
         <form method="post" action="/logout" class="m-0">
           <button type="submit" class="btn btn-outline-secondary" title="Salir" aria-label="Salir">
             <i class="bi bi-box-arrow-right"></i>

@@ -1,6 +1,7 @@
 //! Aplicación privada (punto de venta): arma el router y sus piezas. Sin reglas del negocio.
 
 mod assets;
+mod categorias;
 pub mod commands;
 mod health;
 mod session;
@@ -13,7 +14,7 @@ use axum::http::{HeaderMap, Request, StatusCode};
 use axum::middleware;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{get, post};
-use db::{PgPool, PgSessions, PgUnidadesMedida, PgUsuarios};
+use db::{PgCategorias, PgPool, PgSessions, PgUnidadesMedida, PgUsuarios};
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
 use tracing::Level;
@@ -25,6 +26,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 #[derive(Clone)]
 pub struct AppState {
     pool: PgPool,
+    categorias: PgCategorias,
     unidades_medida: PgUnidadesMedida,
     usuarios: PgUsuarios,
     sessions: PgSessions,
@@ -35,6 +37,7 @@ pub struct AppState {
 impl AppState {
     pub fn new(pool: PgPool, negocio: &str) -> Self {
         Self {
+            categorias: PgCategorias::new(pool.clone()),
             unidades_medida: PgUnidadesMedida::new(pool.clone()),
             usuarios: PgUsuarios::new(pool.clone()),
             sessions: PgSessions::new(pool.clone()),
@@ -50,6 +53,7 @@ pub fn router(state: AppState) -> Router {
     let protected = Router::new()
         // Mientras no haya página de inicio.
         .route("/", get(|| async { Redirect::to("/unidades") }))
+        .route("/categorias", get(categorias::page).post(categorias::add))
         .route(
             "/unidades",
             get(unidades_medida::page).post(unidades_medida::add),

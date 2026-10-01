@@ -3,4 +3,5 @@
 //! Pura: no depende de la base de datos, de la web ni de la red. Define los repositorios que
 //! necesita como traits; `db` los implementa.
 
+pub mod categorias;
 pub mod unidades_medida;
