@@ -14,3 +14,7 @@
 Preguntas para el dueño, antes de migrar artículos:
 1. ¿La v2 junta los espacios interiores repetidos en uno al guardar cualquier nombre (regla del área, igual que quitar las orillas)?
 2. ¿Los nombres se migran tal cual, en mayúsculas, o se pasan a otra forma (por ejemplo, solo la primera letra en mayúscula)? Pasarlos rompería siglas y marcas ("IMSS", "ISSSTE"); quizá convenga dejarlos y decidir solo para los nuevos.
+
+## Decisiones del dueño (2026-10-01)
+1. **Dobles espacios:** se juntan en uno al migrar los nombres de la v1.
+2. **Mayúsculas:** sigue abierta.
