@@ -7,10 +7,15 @@ use usuarios::usuarios::{NewUsuario, UsuariosRepo};
 use super::*;
 use crate::{PgCategorias, PgUnidadesMedida, PgUsuarios};
 
-/// La categoría Plumas, la unidad Pieza de la migración y la usuaria Ana.
+/// Las categorías Plumas y Cuadernos, la unidad Pieza de la migración y la usuaria Ana.
 async fn setup(pool: &PgPool) -> Setup {
-    let categoria = PgCategorias::new(pool.clone())
+    let categorias = PgCategorias::new(pool.clone());
+    let categoria = categorias
         .add(NewCategoria::new("Plumas").unwrap())
+        .await
+        .unwrap();
+    let otra_categoria = categorias
+        .add(NewCategoria::new("Cuadernos").unwrap())
         .await
         .unwrap();
     let pieza = PgUnidadesMedida::new(pool.clone())
@@ -26,6 +31,7 @@ async fn setup(pool: &PgPool) -> Setup {
         .unwrap();
     Setup {
         categoria: categoria.id,
+        otra_categoria: otra_categoria.id,
         unidad: pieza.id,
         by: ana.email,
     }
@@ -203,8 +209,9 @@ async fn un_usuario_desactivado_no_puede_dar_de_alta(pool: PgPool) {
 #[sqlx::test]
 async fn un_alta_rechazada_no_deja_nada_en_ninguna_tabla(pool: PgPool) {
     let setup = setup(&pool).await;
-    let otra_categoria = Setup {
+    let sin_categoria = Setup {
         categoria: CategoriaId(kernel::Uuid::from_u128(u128::MAX)),
+        otra_categoria: setup.otra_categoria,
         unidad: setup.unidad,
         by: setup.by.clone(),
     };
@@ -212,7 +219,7 @@ async fn un_alta_rechazada_no_deja_nada_en_ninguna_tabla(pool: PgPool) {
     let nadie = Email::parse("nadie@x.mx").unwrap();
 
     assert!(
-        repo.add(pluma(&otra_categoria, "12"), &setup.by)
+        repo.add(pluma(&sin_categoria, "12"), &setup.by)
             .await
             .is_err()
     );
@@ -226,4 +233,64 @@ async fn un_alta_rechazada_no_deja_nada_en_ninguna_tabla(pool: PgPool) {
     .await
     .unwrap();
     assert_eq!((articulos, productos, historial), (0, 0, 0));
+}
+
+#[sqlx::test]
+async fn cumple_el_contrato_busqueda_palabras(pool: PgPool) {
+    let setup = setup(&pool).await;
+    contract::se_busca_por_todas_las_palabras_en_cualquier_orden_y_sin_mayusculas(
+        &PgProductos::new(pool),
+        &setup,
+    )
+    .await;
+}
+
+#[sqlx::test]
+async fn cumple_el_contrato_busqueda_acentos(pool: PgPool) {
+    let setup = setup(&pool).await;
+    contract::se_busca_sin_importar_acentos_y_la_enie_cuenta_como_n(
+        &PgProductos::new(pool),
+        &setup,
+    )
+    .await;
+}
+
+#[sqlx::test]
+async fn cumple_el_contrato_busqueda_nid_primero(pool: PgPool) {
+    let setup = setup(&pool).await;
+    contract::el_nid_buscado_va_primero_y_tambien_salen_los_nombres_con_ese_numero(
+        &PgProductos::new(pool),
+        &setup,
+    )
+    .await;
+}
+
+#[sqlx::test]
+async fn cumple_el_contrato_busqueda_sin_busqueda(pool: PgPool) {
+    let setup = setup(&pool).await;
+    contract::sin_busqueda_salen_todos_en_el_orden_de_la_lista(&PgProductos::new(pool), &setup)
+        .await;
+}
+
+#[sqlx::test]
+async fn cumple_el_contrato_busqueda_por_categoria(pool: PgPool) {
+    let setup = setup(&pool).await;
+    contract::se_puede_filtrar_por_categoria_con_o_sin_busqueda(&PgProductos::new(pool), &setup)
+        .await;
+}
+
+#[sqlx::test]
+async fn cumple_el_contrato_busqueda_limite(pool: PgPool) {
+    let setup = setup(&pool).await;
+    contract::el_limite_corta_los_resultados_pero_el_total_los_cuenta_todos(
+        &PgProductos::new(pool),
+        &setup,
+    )
+    .await;
+}
+
+#[sqlx::test]
+async fn cumple_el_contrato_busqueda_signos(pool: PgPool) {
+    let setup = setup(&pool).await;
+    contract::los_signos_se_buscan_tal_cual(&PgProductos::new(pool), &setup).await;
 }

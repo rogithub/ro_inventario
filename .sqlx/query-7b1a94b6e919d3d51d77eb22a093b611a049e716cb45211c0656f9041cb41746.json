@@ -1,0 +1,146 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT a.id, a.nid, a.nombre, a.categoria_id, a.unidad_medida_id, a.precio_venta,\n                      a.descripcion, p.marca, p.modelo, p.color, count(*) OVER () AS \"total!\"\n               FROM articulos a\n               JOIN productos p ON p.articulo_id = a.id\n               WHERE ($2::uuid IS NULL OR a.categoria_id = $2)\n                 AND (a.nid = $3\n                      OR NOT EXISTS (\n                          SELECT 1 FROM unnest($1::text[]) AS w(patron)\n                          WHERE unaccent(lower(a.nombre))\n                                NOT LIKE '%' || unaccent(lower(w.patron)) || '%'))\n               ORDER BY a.nid IS NOT DISTINCT FROM $3 DESC, lower(a.nombre), a.nid\n               LIMIT $4",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nid",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "nid"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "categoria_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "categoria_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "unidad_medida_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "unidad_medida_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "precio_venta",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "precio_venta"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "marca",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "productos",
+            "name": "marca"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "modelo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "productos",
+            "name": "modelo"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "color",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "productos",
+            "name": "color"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "total!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "TextArray",
+        "Uuid",
+        "Int4",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "7b1a94b6e919d3d51d77eb22a093b611a049e716cb45211c0656f9041cb41746"
+}

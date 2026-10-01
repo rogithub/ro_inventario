@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 
 use kernel::Uuid;
+use kernel::nombres::fold_for_search;
 
 use super::*;
 
@@ -38,6 +39,35 @@ impl ProductosRepo for InMemoryProductos {
         let mut productos = self.lock().clone();
         productos.sort_by_key(|p| (kernel::nombres::sort_key(&p.nombre), p.nid));
         Ok(productos)
+    }
+
+    /// Compara con `fold_for_search`: una aproximación de `unaccent(lower(…))` de Postgres.
+    async fn search(
+        &self,
+        search_query: &SearchQuery,
+        categoria: Option<CategoriaId>,
+        limit: u32,
+    ) -> Result<SearchResults, RepoError> {
+        let words: Vec<String> = search_query
+            .words()
+            .iter()
+            .map(|p| fold_for_search(p))
+            .collect();
+        let mut productos: Vec<Producto> = self
+            .list()
+            .await?
+            .into_iter()
+            .filter(|p| categoria.is_none_or(|c| p.categoria_id == c))
+            .filter(|p| {
+                let nombre = fold_for_search(&p.nombre);
+                Some(p.nid) == search_query.nid() || words.iter().all(|w| nombre.contains(w))
+            })
+            .collect();
+        // Estable: después del NID buscado, quedan en el orden de `list`.
+        productos.sort_by_key(|p| Some(p.nid) != search_query.nid());
+        let total = productos.len() as u64;
+        productos.truncate(limit as usize);
+        Ok(SearchResults { productos, total })
     }
 
     async fn add(&self, new: NewProducto, by: &Email) -> Result<Producto, ProductoError> {

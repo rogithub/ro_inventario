@@ -162,15 +162,16 @@ fn descripcion_marca_modelo_y_color_tienen_su_largo_maximo() {
     }
 }
 
-/// Una categoría, una unidad y un usuario que la versión en memoria conoce.
+/// Dos categorías, una unidad y un usuario que la versión en memoria conoce.
 fn in_memory_repo() -> (in_memory::InMemoryProductos, contract::Setup) {
     let setup = contract::Setup {
         categoria: CategoriaId(Uuid::from_u128(1)),
+        otra_categoria: CategoriaId(Uuid::from_u128(3)),
         unidad: UnidadMedidaId(Uuid::from_u128(2)),
         by: Email::parse("ana@x.mx").unwrap(),
     };
     let repo = in_memory::InMemoryProductos::new(
-        vec![setup.categoria],
+        vec![setup.categoria, setup.otra_categoria],
         vec![setup.unidad],
         vec![setup.by.clone()],
     );
@@ -223,4 +224,48 @@ async fn en_memoria_cumple_el_contrato_unidad_que_no_existe() {
 async fn en_memoria_cumple_el_contrato_usuario_que_no_existe() {
     let (repo, setup) = in_memory_repo();
     contract::con_un_usuario_que_no_existe_se_rechaza_sin_agregar_nada(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_busqueda_palabras() {
+    let (repo, setup) = in_memory_repo();
+    contract::se_busca_por_todas_las_palabras_en_cualquier_orden_y_sin_mayusculas(&repo, &setup)
+        .await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_busqueda_acentos() {
+    let (repo, setup) = in_memory_repo();
+    contract::se_busca_sin_importar_acentos_y_la_enie_cuenta_como_n(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_busqueda_nid_primero() {
+    let (repo, setup) = in_memory_repo();
+    contract::el_nid_buscado_va_primero_y_tambien_salen_los_nombres_con_ese_numero(&repo, &setup)
+        .await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_busqueda_sin_busqueda() {
+    let (repo, setup) = in_memory_repo();
+    contract::sin_busqueda_salen_todos_en_el_orden_de_la_lista(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_busqueda_por_categoria() {
+    let (repo, setup) = in_memory_repo();
+    contract::se_puede_filtrar_por_categoria_con_o_sin_busqueda(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_busqueda_limite() {
+    let (repo, setup) = in_memory_repo();
+    contract::el_limite_corta_los_resultados_pero_el_total_los_cuenta_todos(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_busqueda_signos() {
+    let (repo, setup) = in_memory_repo();
+    contract::los_signos_se_buscan_tal_cual(&repo, &setup).await;
 }

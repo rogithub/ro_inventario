@@ -68,3 +68,23 @@ fn el_precio_se_guarda_con_dos_decimales() {
     assert_eq!(precio("12.5000").unwrap().value().to_string(), "12.50");
     assert_eq!(precio("12").unwrap().value().to_string(), "12.00");
 }
+
+#[test]
+fn un_nid_escrito_con_digitos_se_lee() {
+    assert_eq!(Nid::parse("40"), Some(Nid(40)));
+    assert_eq!(Nid::parse(" 2337 "), Some(Nid(2337)));
+}
+
+#[test]
+fn un_nid_en_cero_o_negativo_no_es_nid() {
+    for text in ["0", "000", "-5", "+5"] {
+        assert_eq!(Nid::parse(text), None, "«{text}»");
+    }
+}
+
+#[test]
+fn un_texto_o_un_numero_que_no_cabe_no_es_nid() {
+    for text in ["", "lapiz", "40a", "4.0", "2147483648"] {
+        assert_eq!(Nid::parse(text), None, "«{text}»");
+    }
+}

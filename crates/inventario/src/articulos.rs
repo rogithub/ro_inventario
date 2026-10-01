@@ -25,6 +25,19 @@ impl fmt::Display for ArticuloId {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Nid(pub i32);
 
+impl Nid {
+    /// El NID escrito en un buscador o una ruta; `None` si no es un número entero mayor que cero
+    /// (los NID empiezan en 1) o no cabe en la columna.
+    pub fn parse(text: &str) -> Option<Self> {
+        let text = text.trim();
+        // `i32::from_str` acepta un "+" al frente; un NID solo lleva dígitos.
+        if !text.bytes().all(|b| b.is_ascii_digit()) {
+            return None;
+        }
+        text.parse().ok().filter(|nid| *nid > 0).map(Self)
+    }
+}
+
 impl fmt::Display for Nid {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)

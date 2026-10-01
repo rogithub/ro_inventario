@@ -1,6 +1,8 @@
 //! Productos: los artículos físicos, que se compran, llevan stock y se revenden o se consumen en
 //! un servicio (diseño 01). Lo común con servicios y kits está en `articulos`.
 
+pub mod search;
+
 use std::fmt;
 use std::future::Future;
 
@@ -11,6 +13,7 @@ use usuarios::usuarios::Email;
 use crate::articulos::{ArticuloId, Nid, PrecioError, PrecioVenta};
 use crate::categorias::CategoriaId;
 use crate::unidades_medida::UnidadMedidaId;
+use search::{SearchQuery, SearchResults};
 
 /// Largos máximos, en caracteres, de los textos opcionales (decididos por el dueño el 2026-10-01;
 /// en la v1 lo más largo es 92 en color y 286 en descripción). La base los repite con un `CHECK`.
@@ -193,6 +196,16 @@ impl From<RepoError> for ProductoError {
 pub trait ProductosRepo {
     /// Todos, en orden alfabético; los de nombre repetido, por NID.
     fn list(&self) -> impl Future<Output = Result<Vec<Producto>, RepoError>> + Send;
+
+    /// Los que coinciden con la búsqueda (sin importar mayúsculas ni acentos; la ñ cuenta como n)
+    /// y, si se da, son de esa categoría. Primero el del NID buscado; luego, en el orden de
+    /// `list`. Regresa hasta `limit` y cuántos coinciden en total.
+    fn search(
+        &self,
+        search_query: &SearchQuery,
+        categoria: Option<CategoriaId>,
+        limit: u32,
+    ) -> impl Future<Output = Result<SearchResults, RepoError>> + Send;
 
     /// Lo da de alta con un NID mayor que los anteriores (puede saltarse números: un alta que
     /// falla en Postgres gasta el suyo) y anota quién. Si trae precio, ese precio también

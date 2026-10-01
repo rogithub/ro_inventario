@@ -1,5 +1,6 @@
 use inventario::articulos::{ArticuloId, Nid, PrecioVenta};
 use inventario::categorias::CategoriaId;
+use inventario::productos::search::{SearchQuery, SearchResults};
 use inventario::productos::{NewProducto, Producto, ProductoError, ProductosRepo};
 use inventario::unidades_medida::UnidadMedidaId;
 use kernel::{Decimal, RepoError};
@@ -27,6 +28,18 @@ fn precio_from_db(precio: Option<Decimal>) -> Result<Option<PrecioVenta>, RepoEr
     precio
         .map(|p| PrecioVenta::new(p).map_err(|e| RepoError(format!("precio {p} en la base: {e}"))))
         .transpose()
+}
+
+/// Lo escrito se busca tal cual: `%`, `_` y `\` no son comodines de `LIKE` (su escape es `\`).
+fn escape_like(text: &str) -> String {
+    let mut escaped = String::with_capacity(text.len());
+    for c in text.chars() {
+        if matches!(c, '%' | '_' | '\\') {
+            escaped.push('\\');
+        }
+        escaped.push(c);
+    }
+    escaped
 }
 
 impl ProductosRepo for PgProductos {
@@ -57,6 +70,62 @@ impl ProductosRepo for PgProductos {
                 })
             })
             .collect()
+    }
+
+    /// Una sola consulta: cada palabra debe aparecer en `unaccent(lower(nombre))`; el NID buscado
+    /// coincide aunque el nombre no, y va primero. El total sale de la misma consulta (`OVER ()`).
+    async fn search(
+        &self,
+        search_query: &SearchQuery,
+        categoria: Option<CategoriaId>,
+        limit: u32,
+    ) -> Result<SearchResults, RepoError> {
+        let patterns: Vec<String> = search_query
+            .words()
+            .iter()
+            .map(|p| escape_like(p))
+            .collect();
+        let rows = sqlx::query!(
+            r#"SELECT a.id, a.nid, a.nombre, a.categoria_id, a.unidad_medida_id, a.precio_venta,
+                      a.descripcion, p.marca, p.modelo, p.color, count(*) OVER () AS "total!"
+               FROM articulos a
+               JOIN productos p ON p.articulo_id = a.id
+               WHERE ($2::uuid IS NULL OR a.categoria_id = $2)
+                 AND (a.nid = $3
+                      OR NOT EXISTS (
+                          SELECT 1 FROM unnest($1::text[]) AS w(patron)
+                          WHERE unaccent(lower(a.nombre))
+                                NOT LIKE '%' || unaccent(lower(w.patron)) || '%'))
+               ORDER BY a.nid IS NOT DISTINCT FROM $3 DESC, lower(a.nombre), a.nid
+               LIMIT $4"#,
+            &patterns,
+            categoria.map(|c| c.0),
+            search_query.nid().map(|n| n.0),
+            i64::from(limit)
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(repo_error)?;
+        // Sin rows no hay de dónde leer el total: ninguno coincidió.
+        let total = rows.first().map_or(0, |r| r.total.unsigned_abs());
+        let productos = rows
+            .into_iter()
+            .map(|r| {
+                Ok(Producto {
+                    id: ArticuloId(r.id),
+                    nid: Nid(r.nid),
+                    nombre: r.nombre,
+                    categoria_id: CategoriaId(r.categoria_id),
+                    unidad_medida_id: UnidadMedidaId(r.unidad_medida_id),
+                    precio_venta: precio_from_db(r.precio_venta)?,
+                    descripcion: r.descripcion,
+                    marca: r.marca,
+                    modelo: r.modelo,
+                    color: r.color,
+                })
+            })
+            .collect::<Result<_, RepoError>>()?;
+        Ok(SearchResults { productos, total })
     }
 
     /// Todo en una transacción: el artículo, su renglón de producto y su primer precio.

@@ -32,4 +32,5 @@ Qué se haría. Si hay que decidir algo, la pregunta para el dueño.
 | [Paso 7: artículos y productos, en cinco partes](paso-7-productos.md) | durante el paso 7 |
 | [Migrar las categorías desde la v1](migracion-v1-categorias.md) | con artículos |
 | [Los nombres de la v1 vienen en mayúsculas y algunos con dobles espacios](nombres-de-la-v1.md) | con artículos |
+| [La base de producción debe ser del usuario de la aplicación](base-de-produccion.md) | antes del primer deploy |
 | [Herramienta para consultar los logs de producción](logs-de-produccion.md) | con la v2 en producción |

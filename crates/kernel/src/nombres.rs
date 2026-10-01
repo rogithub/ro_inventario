@@ -20,6 +20,13 @@ pub fn sort_key(nombre: &str) -> (String, String) {
     (base, lower)
 }
 
+/// El texto como lo compara una búsqueda: en minúsculas y sin acentos («Piña» queda «pina»).
+/// Misma aproximación que `sort_key`, para las implementaciones en memoria: en Postgres la
+/// búsqueda usa `unaccent(lower(…))`, que es la verdad.
+pub fn fold_for_search(text: &str) -> String {
+    text.to_lowercase().chars().map(without_accent).collect()
+}
+
 fn without_accent(c: char) -> char {
     match c {
         'á' | 'à' | 'ä' | 'â' => 'a',
@@ -62,6 +69,11 @@ mod tests {
             sorted(&["Hoja z", "coop", "Hojas a", "co-op", "cob"]),
             ["cob", "co-op", "coop", "Hojas a", "Hoja z"]
         );
+    }
+
+    #[test]
+    fn para_buscar_se_quitan_mayusculas_y_acentos_y_la_enie_queda_como_n() {
+        assert_eq!(fold_for_search("PIÑA Lápiz Ü"), "pina lapiz u");
     }
 
     #[test]
