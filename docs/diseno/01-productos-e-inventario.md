@@ -7,6 +7,7 @@
 - **Artículo, producto y servicio:** todo lo que se vende en caja es un **artículo** (NID, nombre, categoría, precio). Un artículo es **producto** (lo físico que se compra y se revende, o se consume en un servicio; lleva stock), **servicio** (lo que se hace) o **kit** (se vende como varias partidas juntas); servicios y kits en el diseño 03. Lo común vive en `articulos`; lo propio, en `productos` o `servicios`. *(Cambio del 2026-09-29: antes era una sola tabla con un campo de tipo, y hubo un tercer tipo, kit.)*
 - **Una categoría por artículo.**
 - **Los nombres del catálogo tienen hasta 150 caracteres** (categorías, unidades, artículos, presentaciones y los catálogos que vengan después): el área lo valida con su mensaje (`kernel::nombres::MAX_NOMBRE_CATALOGO`) y la tabla lo repite con un `CHECK`. El nombre más largo de la v1 tiene 68. *(Decidido el 2026-10-01.)*
+- **Largos de los textos opcionales:** descripción hasta 1,000 caracteres; marca y color, 150; modelo, 200. En la v1 lo más largo es 92 en color y 286 en descripción. Como los nombres: el área lo valida con su mensaje y la tabla lo repite con un `CHECK`. *(Decidido el 2026-10-01.)*
 - **Códigos de barras en su propia tabla**, apuntando al producto o a una de sus presentaciones.
 - **Un artículo se descontinúa, no se borra**, y queda anotado por qué (el proveedor ya no lo vende, ya no se resurte).
 - **Categorías:** cada producto conserva su categoría original; las que queden sin artículos no se migran. El intento de recategorizar con IA se abandonó y no se toma en cuenta.

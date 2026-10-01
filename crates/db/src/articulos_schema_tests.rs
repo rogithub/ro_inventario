@@ -229,3 +229,44 @@ async fn dos_articulos_pueden_llamarse_igual(pool: PgPool) {
         .await
         .unwrap();
 }
+
+#[sqlx::test]
+async fn la_base_rechaza_descripcion_marca_modelo_y_color_de_mas(pool: PgPool) {
+    let pluma = insert_articulo(&pool, "producto", "Pluma azul", None)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO productos (articulo_id) VALUES ($1)")
+        .bind(pluma)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let casos = [
+        ("UPDATE articulos SET descripcion = $2 WHERE id = $1", 1000),
+        (
+            "UPDATE productos SET marca = $2 WHERE articulo_id = $1",
+            150,
+        ),
+        (
+            "UPDATE productos SET modelo = $2 WHERE articulo_id = $1",
+            200,
+        ),
+        (
+            "UPDATE productos SET color = $2 WHERE articulo_id = $1",
+            150,
+        ),
+    ];
+    for (update, max) in casos {
+        let de_mas = sqlx::query(update)
+            .bind(pluma)
+            .bind("ñ".repeat(max + 1))
+            .execute(&pool)
+            .await;
+        assert!(de_mas.is_err(), "aceptó {} en: {update}", max + 1);
+        sqlx::query(update)
+            .bind(pluma)
+            .bind("ñ".repeat(max))
+            .execute(&pool)
+            .await
+            .unwrap();
+    }
+}
