@@ -6,6 +6,7 @@ Sistema de inventario y punto de venta para negocios chicos en México, en Rust.
 - [`VISION.md`](VISION.md): qué es y por qué.
 - [`docs/decisiones/`](docs/decisiones/README.md): cada decisión de diseño, con lo descartado. Si una propuesta contradice una decisión vigente, se platica antes; no se ignora.
 - [`docs/glosario.md`](docs/glosario.md): las palabras del negocio.
+- [`docs/pendientes/`](docs/pendientes/README.md): lo que salió en pasos anteriores y quedó por resolver.
 
 ---
 
@@ -23,7 +24,7 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
 8. **La IA hace los commits locales; el dueño hace el `push` a `main` y los deploys.** El `push` es la puerta: dispara CI y la imagen. La IA hace el commit cuando el dueño aprueba el paso, con `git add` de los archivos que tocó (nunca a ciegas) y Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`), descripción en español.
 9. **Al cerrar un paso,** antes de reportar:
    - `zsh -ic 'herramientas/revisar.sh'` con código de salida 0, y revisar las capturas de `ipad-mini` si se tocó una pantalla.
-   - **El agente revisor** (`.claude/agents/revisor.md`): compara el cambio contra los diseños, las decisiones y este archivo, sin el contexto de quien lo escribió. Cada hallazgo se verifica antes de corregirlo (si es un bug, con una prueba que falle); los de criterio los decide el dueño. En el reporte va qué encontró y qué se hizo con cada cosa.
+   - **El agente revisor** (`.claude/agents/revisor.md`): compara el cambio contra los diseños, las decisiones y este archivo, sin el contexto de quien lo escribió. Cada hallazgo se verifica antes de corregirlo (si es un bug, con una prueba que falle); los de criterio los decide el dueño. En el reporte va qué encontró y qué se hizo con cada cosa. Lo que no se resuelve en el paso va a `docs/pendientes/`.
 10. **Una sesión de Claude por paso,** abierta desde este repo. Lo que debe sobrevivir entre sesiones va en el repo (este archivo, `docs/`), no en la conversación.
 11. **Con el dueño:**
     - Las preguntas de diseño con matices, en texto normal y numeradas, no con formulario de opciones: sus matices son la información valiosa.
@@ -65,7 +66,7 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
 ## Logs de producción (solo lectura)
 
 - La IA **consulta los logs antes de pedirle un error al dueño.**
-- Herramienta: `herramientas/logs.sh` *(pendiente de crear)*. Mientras tanto, la de la versión uno: `/home/ro/code/inventario_papeleria/herramientas/logs-prod.sh`.
+- Herramienta: `herramientas/logs.sh` *(pendiente: [`docs/pendientes/logs-de-produccion.md`](docs/pendientes/logs-de-produccion.md))*. Mientras tanto, la de la versión uno: `/home/ro/code/inventario_papeleria/herramientas/logs-prod.sh`.
 - Token de Grafana con rol Viewer en `~/secrets/grafana.env` (nunca imprimirlo).
 - Cada error mostrado al usuario trae un id de petición: buscar por ese campo.
 
@@ -83,7 +84,6 @@ El dueño diseña; la IA implementa. El dueño revisa a velocidad humana, así q
 - **Pantallas:** plantillas askama en `apps/privada/templates/` + htmx + Bootstrap, servidos desde el binario (`apps/privada/static/LEEME.md`). Decisión: `docs/decisiones/2026-09-30-pantallas-del-servidor.md`. Las capturas de los E2E quedan en `e2e/capturas/<proyecto>/` (no se versionan): revisar las de `ipad-mini` al tocar una pantalla.
 - **Pruebas E2E:** `zsh -ic '. herramientas/dev-env.sh && cd e2e && npx playwright test'` (necesitan `E2E_USER`/`E2E_PASS`; el usuario se crea una vez con `zsh -ic 'herramientas/dev-usuario-ia.sh'`, que no imprime las credenciales). El proyecto `setup` entra una vez y guarda la sesión en `e2e/.auth/` (Playwright arranca la aplicación en el puerto 5099 con el código actual; sin interfaz gráfica). Proyectos `escritorio-firefox` e `ipad-mini`. Primera vez: `cd e2e && npm ci && npx playwright install firefox chromium`.
 - **Imagen:** CI publica `ghcr.io/rogithub/ro_inventario/privada` (`latest` y el sha) en cada push a `main`, si pasaron las revisiones y los E2E. Para probarla aquí (arm64): `podman build -t localhost/ro_inventario/privada:dev -f Containerfile .` y correrla con `--network host`, `DATABASE_URL` en un `--env-file` temporal (nunca en la línea de comando) y el `negocio.toml` montado en la ruta que diga `NEGOCIO_CONFIG`. Corre como usuario 10001, con logs JSON y puerto 5100 por omisión.
-- *Pendientes:* consulta de logs de producción.
 
 **Reglas al correrlos:**
 - **Verificar el código de salida**, no solo el resumen impreso: un "passed" puede venir con salida en error. Reportar fallas tal cual, con su salida.
