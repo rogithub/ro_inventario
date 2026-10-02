@@ -1,8 +1,5 @@
-import { expect, type Page, test } from '@playwright/test';
-
-// La base de desarrollo se comparte entre corridas y entre los dos navegadores: cada prueba usa
-// un nombre que no existe.
-const newNombre = (project: string) => `E2E ${project} ${Date.now()}`;
+import { expect, test } from '@playwright/test';
+import { addCategoria, newNombre } from './support';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/categorias');
@@ -48,12 +45,6 @@ test('un nombre repetido no se agrega y conserva lo escrito', async ({ page }, t
   await expect(page.getByText(`Ya existe la categoría «${nombre.toLowerCase()}».`)).toBeVisible();
   await expect(page.getByLabel('Nombre')).toHaveValue(nombre.toLowerCase());
 });
-
-async function addCategoria(page: Page, nombre: string) {
-  await page.getByLabel('Nombre', { exact: true }).fill(nombre);
-  await page.getByRole('button', { name: 'Agregar categoría' }).click();
-  await expect(page.getByRole('cell', { name: nombre, exact: true })).toBeVisible();
-}
 
 test('renombrar una categoría cambia su nombre en la lista', async ({ page }, testInfo) => {
   const nombre = newNombre(testInfo.project.name);

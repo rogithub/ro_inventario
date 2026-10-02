@@ -1,8 +1,5 @@
 import { expect, test } from '@playwright/test';
-
-// La base de desarrollo se comparte entre corridas y entre los dos navegadores: cada prueba usa
-// un nombre que no existe.
-const newNombre = (project: string) => `E2E ${project} ${Date.now()}`;
+import { newNombre } from './support';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/unidades');

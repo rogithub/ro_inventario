@@ -1,15 +1,5 @@
-import { expect, type Page, test } from '@playwright/test';
-
-// La base de desarrollo se comparte entre corridas y entre los dos navegadores: cada prueba usa
-// una categoría y un nombre que no existen.
-const stamp = (project: string) => `${project} ${Date.now()}`;
-
-async function addCategoria(page: Page, nombre: string) {
-  await page.goto('/categorias');
-  await page.getByLabel('Nombre', { exact: true }).fill(nombre);
-  await page.getByRole('button', { name: 'Agregar categoría' }).click();
-  await expect(page.getByRole('cell', { name: nombre, exact: true })).toBeVisible();
-}
+import { expect, test } from '@playwright/test';
+import { addCategoria, newNombre, stamp } from './support';
 
 test('se llega al alta desde la lista de productos', async ({ page }) => {
   await page.goto('/productos');
@@ -22,7 +12,7 @@ test('se llega al alta desde la lista de productos', async ({ page }) => {
 });
 
 test('agregar un producto deja el formulario vacío con el aviso del NID y la misma categoría', async ({ page }, testInfo) => {
-  const categoria = `E2E ${stamp(testInfo.project.name)}`;
+  const categoria = newNombre(testInfo.project.name);
   const nombre = `PLUMA ${stamp(testInfo.project.name)}`;
   await addCategoria(page, categoria);
   await page.goto('/productos/nuevo');

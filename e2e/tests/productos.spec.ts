@@ -1,28 +1,8 @@
 import { expect, type Page, test } from '@playwright/test';
+import { addCategoria, addProducto, stamp } from './support';
 
-// La base de desarrollo se comparte entre corridas y entre los dos navegadores: cada producto
-// lleva un sello que no existe, y las búsquedas lo incluyen para encontrar solo los de la prueba.
-const stamp = (project: string) => `${project} ${Date.now()}`;
-
-async function addCategoria(page: Page, nombre: string) {
-  await page.goto('/categorias');
-  await page.getByLabel('Nombre', { exact: true }).fill(nombre);
-  await page.getByRole('button', { name: 'Agregar categoría' }).click();
-  await expect(page.getByRole('cell', { name: nombre, exact: true })).toBeVisible();
-}
-
-/** Lo da de alta desde la pantalla y regresa el NID del aviso. */
-async function addProducto(page: Page, nombre: string, categoria: string): Promise<string> {
-  await page.goto('/productos/nuevo');
-  await page.getByLabel('Nombre').fill(nombre);
-  await page.getByLabel('Categoría').selectOption({ label: categoria });
-  await page.getByRole('button', { name: 'Guardar producto' }).click();
-  const aviso = page.getByRole('status');
-  await expect(aviso).toContainText(`«${nombre}»`);
-  const nid = (await aviso.textContent())?.match(/NID (\d+)/)?.[1];
-  expect(nid).toBeDefined();
-  return nid ?? '';
-}
+// Cada producto lleva un sello que no existe (ver `support`), y las búsquedas lo incluyen para
+// encontrar solo los de la prueba.
 
 /** Escribe en el buscador de /productos y espera a que la dirección lleve la búsqueda. */
 async function search(page: Page, text: string) {
