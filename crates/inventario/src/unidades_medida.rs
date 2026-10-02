@@ -10,6 +10,19 @@ use kernel::{RepoError, Uuid};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct UnidadMedidaId(pub Uuid);
 
+impl UnidadMedidaId {
+    /// El id escrito en un formulario; `None` si no es un uuid.
+    pub fn parse(text: &str) -> Option<Self> {
+        Uuid::parse_str(text).ok().map(Self)
+    }
+}
+
+impl fmt::Display for UnidadMedidaId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnidadMedida {
     pub id: UnidadMedidaId,

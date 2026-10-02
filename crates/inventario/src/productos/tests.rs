@@ -5,7 +5,7 @@ use super::*;
 fn fields(nombre: &str) -> ProductoFields<'_> {
     ProductoFields {
         nombre,
-        categoria_id: CategoriaId(Uuid::from_u128(1)),
+        categoria_id: Some(CategoriaId(Uuid::from_u128(1))),
         unidad_medida_id: UnidadMedidaId(Uuid::from_u128(2)),
         precio_venta: "",
         descripcion: "",
@@ -73,6 +73,17 @@ fn un_nombre_de_150_caracteres_se_acepta_y_de_151_no() {
         NewProducto::new(fields(&"a".repeat(151))),
         Err(ProductoError::LongNombre)
     );
+}
+
+#[test]
+fn sin_categoria_pide_elegirla() {
+    let result = NewProducto::new(ProductoFields {
+        categoria_id: None,
+        ..fields("PLUMA")
+    });
+
+    assert_eq!(result, Err(ProductoError::MissingCategoria));
+    assert_eq!(result.unwrap_err().to_string(), "Elige la categoría.");
 }
 
 #[test]

@@ -40,7 +40,7 @@ async fn setup(pool: &PgPool) -> Setup {
 fn pluma(setup: &Setup, precio: &str) -> NewProducto {
     NewProducto::new(ProductoFields {
         nombre: "PLUMA AZUL",
-        categoria_id: setup.categoria,
+        categoria_id: Some(setup.categoria),
         unidad_medida_id: setup.unidad,
         precio_venta: precio,
         descripcion: "",

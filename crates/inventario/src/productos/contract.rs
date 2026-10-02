@@ -13,7 +13,7 @@ pub struct Setup {
 fn new_producto(setup: &Setup, nombre: &str, precio: &str) -> NewProducto {
     NewProducto::new(ProductoFields {
         nombre,
-        categoria_id: setup.categoria,
+        categoria_id: Some(setup.categoria),
         unidad_medida_id: setup.unidad,
         precio_venta: precio,
         descripcion: "",
@@ -30,7 +30,7 @@ pub async fn agregado_aparece_en_la_lista_con_todos_sus_datos(
 ) {
     let new = NewProducto::new(ProductoFields {
         nombre: "PLUMA AZUL",
-        categoria_id: setup.categoria,
+        categoria_id: Some(setup.categoria),
         unidad_medida_id: setup.unidad,
         precio_venta: "12.50",
         descripcion: "Punto mediano",

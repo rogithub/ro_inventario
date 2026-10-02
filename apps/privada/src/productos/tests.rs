@@ -38,7 +38,7 @@ async fn producto(pool: &PgPool, nombre: &str, categoria_nombre: &str, precio: &
         .unwrap();
     let new = NewProducto::new(ProductoFields {
         nombre,
-        categoria_id,
+        categoria_id: Some(categoria_id),
         unidad_medida_id: pieza.id,
         precio_venta: precio,
         descripcion: "",

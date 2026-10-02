@@ -42,7 +42,8 @@ pub struct Producto {
 #[derive(Debug, Clone, Copy)]
 pub struct ProductoFields<'a> {
     pub nombre: &'a str,
-    pub categoria_id: CategoriaId,
+    /// `None` = no se eligió.
+    pub categoria_id: Option<CategoriaId>,
     pub unidad_medida_id: UnidadMedidaId,
     /// Vacío = sin precio todavía.
     pub precio_venta: &'a str,
@@ -77,13 +78,14 @@ impl NewProducto {
         if nombre.chars().count() > MAX_NOMBRE_CATALOGO {
             return Err(ProductoError::LongNombre);
         }
+        let categoria_id = fields.categoria_id.ok_or(ProductoError::MissingCategoria)?;
         let precio_venta = match fields.precio_venta.trim() {
             "" => None,
             text => Some(PrecioVenta::parse(text).map_err(ProductoError::Precio)?),
         };
         Ok(Self {
             nombre: nombre.to_string(),
-            categoria_id: fields.categoria_id,
+            categoria_id,
             unidad_medida_id: fields.unidad_medida_id,
             precio_venta,
             descripcion: optional(
@@ -153,6 +155,8 @@ pub enum ProductoError {
     LongModelo,
     LongColor,
     Precio(PrecioError),
+    /// No se eligió categoría.
+    MissingCategoria,
     /// La categoría ya no existe (alguien la cambió mientras tanto, o el id no es de ninguna).
     CategoriaNotFound,
     /// La unidad ya no existe.
@@ -178,6 +182,7 @@ impl fmt::Display for ProductoError {
             Self::LongModelo => write!(f, "El modelo no puede pasar de {MAX_MODELO} caracteres."),
             Self::LongColor => write!(f, "El color no puede pasar de {MAX_COLOR} caracteres."),
             Self::Precio(error) => error.fmt(f),
+            Self::MissingCategoria => write!(f, "Elige la categoría."),
             Self::CategoriaNotFound => write!(f, "Esa categoría ya no existe. Recarga la página."),
             Self::UnidadMedidaNotFound => write!(f, "Esa unidad ya no existe. Recarga la página."),
             Self::UsuarioNotFound => write!(f, "Tu sesión ya no es válida. Vuelve a entrar."),
