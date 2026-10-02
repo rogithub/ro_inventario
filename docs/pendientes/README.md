@@ -33,5 +33,6 @@ Qué se haría. Si hay que decidir algo, la pregunta para el dueño.
 | [Mostrar los productos parecidos antes de dar de alta uno nuevo](productos-parecidos.md) | con compras |
 | [Migrar las categorías desde la v1](migracion-v1-categorias.md) | con artículos |
 | [Los nombres de la v1 vienen en mayúsculas y algunos con dobles espacios](nombres-de-la-v1.md) | con artículos |
+| [Los E2E dejan datos en la base de desarrollo, y crecen sin tope](datos-e2e-en-desarrollo.md) | cuando estorben, o antes de compras |
 | [La base de producción debe ser del usuario de la aplicación](base-de-produccion.md) | antes del primer deploy |
 | [Herramienta para consultar los logs de producción](logs-de-produccion.md) | con la v2 en producción |
