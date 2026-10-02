@@ -1,4 +1,8 @@
-//! Pantalla de productos: la lista, con búsqueda por nombre o NID y filtro por categoría.
+//! Pantalla de productos: la lista, con búsqueda por nombre o NID y filtro por categoría. El alta
+//! está en `nuevo`.
+
+mod form;
+pub mod nuevo;
 
 use askama::Template;
 use axum::Extension;
@@ -9,6 +13,7 @@ use inventario::categorias::{Categoria, CategoriaId, CategoriasRepo};
 use inventario::productos::search::{MAX_RESULTS, SearchQuery};
 use inventario::productos::{Producto, ProductosRepo};
 use serde::Deserialize;
+use usuarios::permisos::Permiso;
 use usuarios::usuarios::Usuario;
 
 use crate::{AppState, internal_error, is_htmx};
@@ -18,6 +23,8 @@ use crate::{AppState, internal_error, is_htmx};
 struct ProductosPage<'a> {
     negocio: &'a str,
     usuario_nombre: Option<&'a str>,
+    /// Sin `editar_catalogo`, el botón de alta no aparece (y el servidor la rechaza igual).
+    can_edit: bool,
     /// Lo escrito en el buscador, para dejarlo ahí.
     q: &'a str,
     categoria: Option<CategoriaId>,
@@ -110,6 +117,7 @@ pub async fn page(
         ProductosPage {
             negocio: &state.negocio,
             usuario_nombre: Some(&usuario.nombre),
+            can_edit: usuario.can(Permiso::EditarCatalogo),
             q: &query.q,
             categoria,
             categorias,

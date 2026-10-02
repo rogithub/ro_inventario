@@ -1,0 +1,81 @@
+{# El formulario de un producto. Recibe `form` (ProductoFormView, en apps/privada/src/productos/form.rs);
+   se reusa desde compras con otra `action`. htmx reemplaza todo el contenedor. #}
+{% macro text_field(name, label, value, error, maxlength) %}
+<label for="{{ name }}" class="form-label">{{ label }}</label>
+<input id="{{ name }}" name="{{ name }}" value="{{ value }}" maxlength="{{ maxlength }}" autocomplete="off"
+       class="form-control{% if error.is_some() %} is-invalid{% endif %}"
+       {% if error.is_some() %}aria-describedby="{{ name }}-error"{% endif %}>
+{% if let Some(error) = error %}<div id="{{ name }}-error" class="invalid-feedback">{{ error }}</div>{% endif %}
+{% endmacro %}
+<div id="producto-form">
+  {% if let Some(added) = form.added %}
+  <div class="alert alert-success" role="status">{{ added }}</div>
+  {% endif %}
+  {% if let Some(general) = form.errors.general %}
+  <div class="alert alert-danger" role="alert">{{ general }}</div>
+  {% endif %}
+  <form method="post" action="{{ form.action }}" hx-post="{{ form.action }}" hx-target="#producto-form"
+        hx-swap="outerHTML" class="row g-2">
+    <div class="col-12">
+      <label for="nombre" class="form-label">Nombre</label>
+      <input id="nombre" name="nombre" value="{{ form.values.nombre }}" maxlength="150" autocomplete="off" autofocus
+             class="form-control{% if form.errors.nombre.is_some() %} is-invalid{% endif %}"
+             {% if form.errors.nombre.is_some() %}aria-describedby="nombre-error"{% endif %}>
+      {% if let Some(error) = form.errors.nombre %}<div id="nombre-error" class="invalid-feedback">{{ error }}</div>{% endif %}
+    </div>
+    <div class="col-12 col-sm-6 col-lg-4">
+      <label for="categoria" class="form-label">Categoría</label>
+      <select id="categoria" name="categoria"
+              class="form-select{% if form.errors.categoria.is_some() %} is-invalid{% endif %}"
+              {% if form.errors.categoria.is_some() %}aria-describedby="categoria-error"{% endif %}>
+        <option value="">Elige…</option>
+        {% for c in form.categorias %}
+        <option value="{{ c.id }}"{% if form.is_categoria(c.id) %} selected{% endif %}>{{ c.nombre }}</option>
+        {% endfor %}
+      </select>
+      {% if let Some(error) = form.errors.categoria %}<div id="categoria-error" class="invalid-feedback">{{ error }}</div>{% endif %}
+    </div>
+    <div class="col-6 col-sm-3 col-lg-2">
+      <label for="unidad" class="form-label">Unidad</label>
+      <select id="unidad" name="unidad"
+              class="form-select{% if form.errors.unidad.is_some() %} is-invalid{% endif %}"
+              {% if form.errors.unidad.is_some() %}aria-describedby="unidad-error"{% endif %}>
+        {% for u in form.unidades %}
+        <option value="{{ u.id }}"{% if form.is_unidad(u.id) %} selected{% endif %}>{{ u.nombre }}</option>
+        {% endfor %}
+      </select>
+      {% if let Some(error) = form.errors.unidad %}<div id="unidad-error" class="invalid-feedback">{{ error }}</div>{% endif %}
+    </div>
+    <div class="col-6 col-sm-3 col-lg-2">
+      <label for="precio" class="form-label">Precio de venta</label>
+      {# Texto y no number: el servidor valida (no redondea) y el teclado del iPad sale numérico igual. #}
+      <div class="input-group has-validation">
+        <span class="input-group-text">$</span>
+        <input id="precio" name="precio" value="{{ form.values.precio }}" inputmode="decimal" placeholder="Sin precio"
+               autocomplete="off" class="form-control{% if form.errors.precio.is_some() %} is-invalid{% endif %}"
+               {% if form.errors.precio.is_some() %}aria-describedby="precio-error"{% endif %}>
+        {% if let Some(error) = form.errors.precio %}<div id="precio-error" class="invalid-feedback">{{ error }}</div>{% endif %}
+      </div>
+    </div>
+    <details class="col-12 mt-3"{% if form.is_more_open() %} open{% endif %}>
+      <summary>Más datos</summary>
+      <div class="row g-2 mt-1">
+        <div class="col-12 col-sm-4">{% call text_field("marca", "Marca", form.values.marca, form.errors.marca, 150) %}{% endcall %}</div>
+        <div class="col-12 col-sm-4">{% call text_field("modelo", "Modelo", form.values.modelo, form.errors.modelo, 200) %}{% endcall %}</div>
+        <div class="col-12 col-sm-4">{% call text_field("color", "Color", form.values.color, form.errors.color, 150) %}{% endcall %}</div>
+        <div class="col-12">
+          <label for="descripcion" class="form-label">Descripción</label>
+          <textarea id="descripcion" name="descripcion" rows="3" maxlength="1000"
+                    class="form-control{% if form.errors.descripcion.is_some() %} is-invalid{% endif %}"
+                    {% if form.errors.descripcion.is_some() %}aria-describedby="descripcion-error"{% endif %}>{{ form.values.descripcion }}</textarea>
+          {% if let Some(error) = form.errors.descripcion %}<div id="descripcion-error" class="invalid-feedback">{{ error }}</div>{% endif %}
+        </div>
+      </div>
+    </details>
+    <div class="col-12 mt-3">
+      <button type="submit" class="btn btn-primary" title="Guardar producto" aria-label="Guardar producto">
+        <i class="bi bi-check-lg"></i> Guardar
+      </button>
+    </div>
+  </form>
+</div>

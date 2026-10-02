@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-// La búsqueda con productos se prueba al tener el alta en pantalla (parte 7b2); aquí, lo que no
+// La búsqueda con productos creados desde la pantalla va en la parte 7b2b; aquí, lo que no
 // depende de que existan.
 
 test.beforeEach(async ({ page }) => {

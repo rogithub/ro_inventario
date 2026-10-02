@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo producto{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3">
+  <a href="/productos" class="btn btn-outline-secondary" title="Volver a productos" aria-label="Volver a productos">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h1 class="h4 m-0">Nuevo producto</h1>
+</div>
+{% block form %}{% include "productos/form.html" %}{% endblock %}
+{% endblock %}

@@ -3,7 +3,14 @@
 {% block title %}Productos{% endblock %}
 
 {% block content %}
-<h1 class="h4">Productos</h1>
+<div class="d-flex align-items-center justify-content-between mb-2">
+  <h1 class="h4 m-0">Productos</h1>
+  {% if can_edit %}
+  <a href="/productos/nuevo" class="btn btn-primary" title="Nuevo producto" aria-label="Nuevo producto">
+    <i class="bi bi-plus-lg"></i><span class="d-none d-lg-inline"> Nuevo</span>
+  </a>
+  {% endif %}
+</div>
 {# Busca mientras se escribe; la URL guarda la búsqueda para recargar o volver atrás. Sin JavaScript, Enter. #}
 <form method="get" action="/productos" role="search" class="row g-2 mb-3"
       hx-get="/productos" hx-trigger="input delay:300ms, change, submit"

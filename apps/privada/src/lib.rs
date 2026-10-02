@@ -58,7 +58,11 @@ pub fn router(state: AppState) -> Router {
         .route("/", get(|| async { Redirect::to("/unidades") }))
         .route("/categorias", get(categorias::page).post(categorias::add))
         .route("/categorias/{id}", post(categorias::rename))
-        .route("/productos", get(productos::page))
+        .route(
+            "/productos",
+            get(productos::page).post(productos::nuevo::add),
+        )
+        .route("/productos/nuevo", get(productos::nuevo::page))
         .route(
             "/unidades",
             get(unidades_medida::page).post(unidades_medida::add),
