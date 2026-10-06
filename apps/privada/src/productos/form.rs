@@ -117,13 +117,13 @@ impl FieldErrors {
 /// Lo que pinta el parcial.
 pub struct ProductoFormView {
     /// A dónde se manda.
-    pub action: &'static str,
+    pub action: String,
     pub categorias: Vec<Categoria>,
     pub unidades: Vec<UnidadMedida>,
     pub values: ProductoForm,
     pub errors: FieldErrors,
-    /// El aviso del alta que se acaba de hacer.
-    pub added: Option<String>,
+    /// El aviso de lo que se acaba de guardar.
+    pub notice: Option<String>,
 }
 
 impl ProductoFormView {

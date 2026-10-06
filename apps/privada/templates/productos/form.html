@@ -8,8 +8,8 @@
 {% if let Some(error) = error %}<div id="{{ name }}-error" class="invalid-feedback">{{ error }}</div>{% endif %}
 {% endmacro %}
 <div id="producto-form">
-  {% if let Some(added) = form.added %}
-  <div class="alert alert-success" role="status">{{ added }}</div>
+  {% if let Some(notice) = form.notice %}
+  <div class="alert alert-success" role="status">{{ notice }}</div>
   {% endif %}
   {% if let Some(general) = form.errors.general %}
   <div class="alert alert-danger" role="alert">{{ general }}</div>

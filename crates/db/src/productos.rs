@@ -3,7 +3,7 @@ use inventario::categorias::CategoriaId;
 use inventario::productos::search::{SearchQuery, SearchResults};
 use inventario::productos::{NewProducto, Producto, ProductoError, ProductosRepo};
 use inventario::unidades_medida::UnidadMedidaId;
-use kernel::{Decimal, RepoError};
+use kernel::{Decimal, RepoError, Uuid};
 use sqlx::PgPool;
 use usuarios::usuarios::Email;
 
@@ -40,6 +40,31 @@ fn escape_like(text: &str) -> String {
         escaped.push(c);
     }
     escaped
+}
+
+/// El id de quien hace el cambio. Un desactivado ya no puede hacer nada, aunque su sesión siguiera
+/// abierta.
+async fn active_usuario_id(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    by: &Email,
+) -> Result<Uuid, ProductoError> {
+    sqlx::query_scalar!(
+        "SELECT id FROM usuarios WHERE email = $1 AND deactivated_at IS NULL",
+        by.as_str()
+    )
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(repo_error)?
+    .ok_or(ProductoError::UsuarioNotFound)
+}
+
+/// Al escribir en `articulos`: una categoría o unidad que ya no existe tiene su propio error.
+fn articulo_error(error: sqlx::Error) -> ProductoError {
+    match error.as_database_error().and_then(|d| d.constraint()) {
+        Some("articulos_categoria_id_fkey") => ProductoError::CategoriaNotFound,
+        Some("articulos_unidad_medida_id_fkey") => ProductoError::UnidadMedidaNotFound,
+        _ => ProductoError::Repo(repo_error(error)),
+    }
 }
 
 impl ProductosRepo for PgProductos {
@@ -131,15 +156,7 @@ impl ProductosRepo for PgProductos {
     /// Todo en una transacción: el artículo, su renglón de producto y su primer precio.
     async fn add(&self, new: NewProducto, by: &Email) -> Result<Producto, ProductoError> {
         let mut tx = self.pool.begin().await.map_err(repo_error)?;
-        let usuario_id = sqlx::query_scalar!(
-            // Un desactivado ya no puede hacer nada, aunque su sesión siguiera abierta.
-            "SELECT id FROM usuarios WHERE email = $1 AND deactivated_at IS NULL",
-            by.as_str()
-        )
-        .fetch_optional(&mut *tx)
-        .await
-        .map_err(repo_error)?
-        .ok_or(ProductoError::UsuarioNotFound)?;
+        let usuario_id = active_usuario_id(&mut tx, by).await?;
         let precio = new.precio_venta().map(|p| p.value());
 
         let row = sqlx::query!(
@@ -156,13 +173,7 @@ impl ProductosRepo for PgProductos {
         )
         .fetch_one(&mut *tx)
         .await
-        .map_err(
-            |e| match e.as_database_error().and_then(|d| d.constraint()) {
-                Some("articulos_categoria_id_fkey") => ProductoError::CategoriaNotFound,
-                Some("articulos_unidad_medida_id_fkey") => ProductoError::UnidadMedidaNotFound,
-                _ => ProductoError::Repo(repo_error(e)),
-            },
-        )?;
+        .map_err(articulo_error)?;
 
         sqlx::query!(
             "INSERT INTO productos (articulo_id, marca, modelo, color) VALUES ($1, $2, $3, $4)",

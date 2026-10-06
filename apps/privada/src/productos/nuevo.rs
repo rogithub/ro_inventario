@@ -129,12 +129,12 @@ async fn show(
         StatusCode::OK
     };
     let form = ProductoFormView {
-        action: "/productos",
+        action: "/productos".to_string(),
         categorias,
         unidades,
         values,
         errors: error.map(FieldErrors::from_error).unwrap_or_default(),
-        added,
+        notice: added,
     };
     let html = if is_htmx(headers) {
         AddProductoSection { form }.render()
