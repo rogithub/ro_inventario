@@ -8,7 +8,6 @@ use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::{Extension, Form};
 use inventario::articulos::Nid;
 use inventario::categorias::CategoriasRepo;
-use inventario::productos::search::SearchQuery;
 use inventario::productos::{NewProducto, Producto, ProductoError, ProductosRepo};
 use inventario::unidades_medida::UnidadesMedidaRepo;
 use kernel::RepoError;
@@ -135,6 +134,7 @@ async fn show(
         values,
         errors: error.map(FieldErrors::from_error).unwrap_or_default(),
         notice: added,
+        autofocus: true,
     };
     let html = if is_htmx(headers) {
         AddProductoSection { form }.render()
@@ -154,11 +154,7 @@ async fn show(
 
 /// El aviso del alta con ese NID (sin JavaScript, el formulario lo recibe en la dirección).
 async fn added_notice(state: &AppState, nid: Nid) -> Result<Option<String>, RepoError> {
-    let found = state
-        .productos
-        .search(&SearchQuery::new(&nid.to_string()), None, 1)
-        .await?;
-    Ok(found.productos.iter().find(|p| p.nid == nid).map(notice))
+    Ok(state.productos.get_by_nid(nid).await?.as_ref().map(notice))
 }
 
 fn notice(producto: &Producto) -> String {

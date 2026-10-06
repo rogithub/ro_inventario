@@ -1,5 +1,5 @@
 {# El formulario de un producto. Recibe `form` (ProductoFormView, en apps/privada/src/productos/form.rs);
-   se reusa desde compras con otra `action`. htmx reemplaza todo el contenedor. #}
+   se reusa en la edición y desde compras, con otra `action`. htmx reemplaza todo el contenedor. #}
 {% macro text_field(name, label, value, error, maxlength) %}
 <label for="{{ name }}" class="form-label">{{ label }}</label>
 <input id="{{ name }}" name="{{ name }}" value="{{ value }}" maxlength="{{ maxlength }}" autocomplete="off"
@@ -18,7 +18,7 @@
         hx-swap="outerHTML" class="row g-2">
     <div class="col-12">
       <label for="nombre" class="form-label">Nombre</label>
-      <input id="nombre" name="nombre" value="{{ form.values.nombre }}" maxlength="150" autocomplete="off" autofocus
+      <input id="nombre" name="nombre" value="{{ form.values.nombre }}" maxlength="150" autocomplete="off"{% if form.autofocus %} autofocus{% endif %}
              class="form-control{% if form.errors.nombre.is_some() %} is-invalid{% endif %}"
              {% if form.errors.nombre.is_some() %}aria-describedby="nombre-error"{% endif %}>
       {% if let Some(error) = form.errors.nombre %}<div id="nombre-error" class="invalid-feedback">{{ error }}</div>{% endif %}

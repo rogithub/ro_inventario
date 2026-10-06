@@ -1,8 +1,8 @@
-//! El formulario de un producto (plantilla parcial `productos/form.html`): lo usa el alta del
-//! catálogo y lo va a usar el alta desde compras, con otra `action`.
+//! El formulario de un producto (plantilla parcial `productos/form.html`): lo usan el alta y la
+//! edición del catálogo, y lo va a usar el alta desde compras, con otra `action`.
 
 use inventario::categorias::{Categoria, CategoriaId};
-use inventario::productos::{ProductoError, ProductoFields};
+use inventario::productos::{Producto, ProductoError, ProductoFields};
 use inventario::unidades_medida::{UnidadMedida, UnidadMedidaId};
 use serde::Deserialize;
 
@@ -56,6 +56,25 @@ impl ProductoForm {
     }
 }
 
+impl From<&Producto> for ProductoForm {
+    /// Sus datos actuales, para editarlo.
+    fn from(producto: &Producto) -> Self {
+        Self {
+            nombre: producto.nombre.clone(),
+            categoria: producto.categoria_id.to_string(),
+            unidad: producto.unidad_medida_id.to_string(),
+            precio: producto
+                .precio_venta
+                .map(|p| p.value().to_string())
+                .unwrap_or_default(),
+            descripcion: producto.descripcion.clone().unwrap_or_default(),
+            marca: producto.marca.clone().unwrap_or_default(),
+            modelo: producto.modelo.clone().unwrap_or_default(),
+            color: producto.color.clone().unwrap_or_default(),
+        }
+    }
+}
+
 /// El mensaje junto al campo que lo causó; el que no es de un campo va arriba (`general`).
 #[derive(Default)]
 pub struct FieldErrors {
@@ -71,6 +90,34 @@ pub struct FieldErrors {
 }
 
 impl FieldErrors {
+    /// Sin ningún error. Desestructura todo: un campo nuevo no compila hasta contarlo aquí.
+    pub fn is_empty(&self) -> bool {
+        let Self {
+            nombre,
+            categoria,
+            unidad,
+            precio,
+            descripcion,
+            marca,
+            modelo,
+            color,
+            general,
+        } = self;
+        [
+            nombre,
+            categoria,
+            unidad,
+            precio,
+            descripcion,
+            marca,
+            modelo,
+            color,
+            general,
+        ]
+        .iter()
+        .all(|error| error.is_none())
+    }
+
     pub fn from_error(error: &ProductoError) -> Self {
         let message = Some(error.to_string());
         match error {
@@ -126,6 +173,9 @@ pub struct ProductoFormView {
     pub errors: FieldErrors,
     /// El aviso de lo que se acaba de guardar.
     pub notice: Option<String>,
+    /// El cursor empieza en el nombre. En el alta sí; al editar no, porque en el iPad abriría el
+    /// teclado sobre el formulario.
+    pub autofocus: bool,
 }
 
 impl ProductoFormView {

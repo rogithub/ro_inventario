@@ -49,7 +49,7 @@
       {% for r in results.rows %}
       <tr>
         <td class="text-end font-monospace">{{ r.producto.nid }}</td>
-        <td>{{ r.producto.nombre }}<div class="small text-body-secondary">{{ r.categoria }}</div></td>
+        <td>{% if results.can_edit %}<a href="{{ results.search.url(format!("/productos/{}", r.producto.nid)) }}">{{ r.producto.nombre }}</a>{% else %}{{ r.producto.nombre }}{% endif %}<div class="small text-body-secondary">{{ r.categoria }}</div></td>
         <td class="text-end text-nowrap">{% if let Some(precio) = r.producto.precio_venta %}${{ precio.value() }}{% else %}<span class="badge text-bg-warning">Sin precio</span>{% endif %}</td>
       </tr>
       {% endfor %}

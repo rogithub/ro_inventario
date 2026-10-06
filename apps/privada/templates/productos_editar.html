@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Editar NID {{ nid }}{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3">
+  {# Regresa a la lista con la búsqueda de donde se llegó. #}
+  <a href="{{ search.url("/productos") }}"
+     class="btn btn-outline-secondary" title="Volver a productos" aria-label="Volver a productos">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h1 class="h4 m-0">Editar NID {{ nid }}</h1>
+</div>
+{% block form %}{% include "productos/form.html" %}{% endblock %}
+{% endblock %}

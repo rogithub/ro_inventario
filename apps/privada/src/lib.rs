@@ -69,6 +69,10 @@ pub fn router(state: AppState) -> Router {
         )
         .route("/productos/nuevo", get(productos::nuevo::page))
         .route(
+            "/productos/{nid}",
+            get(productos::editar::page).post(productos::editar::update),
+        )
+        .route(
             "/unidades",
             get(unidades_medida::page).post(unidades_medida::add),
         )

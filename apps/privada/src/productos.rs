@@ -1,6 +1,7 @@
 //! Pantalla de productos: la lista, con búsqueda por nombre o NID y filtro por categoría. El alta
-//! está en `nuevo`.
+//! está en `nuevo`; la edición, en `editar`.
 
+pub mod editar;
 mod form;
 pub mod nuevo;
 
@@ -52,6 +53,45 @@ struct SearchResults {
     notice: Option<String>,
     /// Hay búsqueda o filtro: una lista vacía es "no coincide", no "no hay".
     is_filtered: bool,
+    /// Con `editar_catalogo`, cada nombre lleva a su edición.
+    can_edit: bool,
+    /// La búsqueda, para que la edición regrese a ella.
+    search: ListSearch,
+}
+
+/// La búsqueda de la lista, para llevarla a la edición de un producto y regresar con ella.
+#[derive(Default)]
+pub struct ListSearch {
+    pub q: String,
+    pub categoria: Option<CategoriaId>,
+}
+
+impl ListSearch {
+    /// La dirección con la búsqueda agregada (`/productos?q=pluma%20az&categoria=…`); sin búsqueda,
+    /// tal cual. `path` puede traer ya su `?`.
+    pub fn url(&self, path: impl AsRef<str>) -> String {
+        let path = path.as_ref();
+        let mut params = Vec::new();
+        if !self.q.is_empty() {
+            params.push(format!("q={}", encode(&self.q)));
+        }
+        if let Some(categoria) = self.categoria {
+            params.push(format!("categoria={categoria}"));
+        }
+        if params.is_empty() {
+            return path.to_string();
+        }
+        let separator = if path.contains('?') { '&' } else { '?' };
+        format!("{path}{separator}{}", params.join("&"))
+    }
+}
+
+/// Para un valor dentro de la dirección: todo lo que no es letra, número o `-_.~` va como `%XX`.
+fn encode(text: &str) -> String {
+    match askama::filters::urlencode_strict(text) {
+        Ok(encoded) => encoded.to_string(),
+        Err(never) => match never {},
+    }
 }
 
 struct Row {
@@ -110,6 +150,11 @@ pub async fn page(
         rows,
         notice,
         is_filtered: !search_query.is_empty() || categoria.is_some(),
+        can_edit: usuario.can(Permiso::EditarCatalogo),
+        search: ListSearch {
+            q: query.q.clone(),
+            categoria,
+        },
     };
     let html = if is_htmx(&headers) {
         ResultsSection { results }.render()
@@ -117,7 +162,7 @@ pub async fn page(
         ProductosPage {
             negocio: &state.negocio,
             usuario_nombre: Some(&usuario.nombre),
-            can_edit: usuario.can(Permiso::EditarCatalogo),
+            can_edit: results.can_edit,
             q: &query.q,
             categoria,
             categorias,
