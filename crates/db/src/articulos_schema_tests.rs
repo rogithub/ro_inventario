@@ -162,6 +162,30 @@ async fn solo_un_articulo_de_tipo_producto_tiene_renglon_en_productos(pool: PgPo
 }
 
 #[sqlx::test]
+async fn un_producto_con_renglon_en_productos_no_puede_cambiar_de_kind(pool: PgPool) {
+    let pluma = insert_articulo(&pool, "producto", "Pluma azul", None)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO productos (articulo_id) VALUES ($1)")
+        .bind(pluma)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    let result = sqlx::query("UPDATE articulos SET kind = 'servicio' WHERE id = $1")
+        .bind(pluma)
+        .execute(&pool)
+        .await;
+
+    let error = result.unwrap_err();
+    let constraint = error
+        .as_database_error()
+        .and_then(|e| e.constraint())
+        .unwrap();
+    assert_eq!(constraint, "productos_articulo_id_kind_fkey");
+}
+
+#[sqlx::test]
 async fn descontinuar_lleva_motivo_y_el_motivo_solo_va_si_se_descontinuo(pool: PgPool) {
     let pluma = insert_articulo(&pool, "producto", "Pluma azul", None)
         .await
