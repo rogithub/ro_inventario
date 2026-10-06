@@ -8,7 +8,7 @@ use std::process::ExitCode;
 
 use negocio_config::load_negocio_config;
 use privada::commands::{CREATE_USUARIO_USAGE, parse_create_usuario};
-use privada::{VERSION, router};
+use privada::{CookieFlags, VERSION, router};
 use tracing_subscriber::EnvFilter;
 
 /// Variables de entorno (capa 1: infraestructura y secretos).
@@ -21,6 +21,8 @@ struct Env {
     port: u16,
     /// `LOG_FORMAT`: `json` en producción; cualquier otro valor, legible para humanos.
     logs_json: bool,
+    /// `COOKIE_SECURE`: `false` solo en desarrollo, para entrar por http desde otra máquina.
+    cookie_flags: CookieFlags,
 }
 
 impl Env {
@@ -40,6 +42,7 @@ impl Env {
                 .into(),
             port,
             logs_json: std::env::var("LOG_FORMAT").is_ok_and(|v| v == "json"),
+            cookie_flags: CookieFlags::from_env(std::env::var("COOKIE_SECURE").ok().as_deref())?,
         })
     }
 }
@@ -163,8 +166,12 @@ async fn serve() -> ExitCode {
         negocio = %config.negocio.nombre,
         time_zone = %config.negocio.time_zone,
         port = env.port,
+        cookie_secure = env.cookie_flags.is_secure(),
         "arrancando"
     );
+    if !env.cookie_flags.is_secure() {
+        tracing::warn!("COOKIE_SECURE=false: la sesión viaja sin cifrar; solo para desarrollo");
+    }
 
     // El error de sqlx no incluye la URL ni la contraseña.
     let pool = match db::connect(&env.database_url).await {
@@ -192,7 +199,11 @@ async fn serve() -> ExitCode {
 
     if let Err(error) = axum::serve(
         listener,
-        router(privada::AppState::new(pool, &config.negocio.nombre)),
+        router(privada::AppState::new(
+            pool,
+            &config.negocio.nombre,
+            env.cookie_flags,
+        )),
     )
     .with_graceful_shutdown(shutdown_signal())
     .await

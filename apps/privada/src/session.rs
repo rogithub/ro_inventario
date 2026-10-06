@@ -26,10 +26,37 @@ pub fn read_cookie<'a>(headers: &'a HeaderMap, name: &str) -> Option<&'a str> {
         .map(|(_, value)| value.trim())
 }
 
-/// `HttpOnly`: JavaScript no la lee. `Secure`: solo viaja por https (o localhost).
+/// Las banderas de la cookie de sesión. Se eligen al arrancar (`COOKIE_SECURE`).
+/// `HttpOnly`: JavaScript no la lee. `Secure`: solo viaja por https (o localhost; Safari, ni ahí).
 /// `SameSite=Lax`: otro sitio no puede mandar formularios con ella.
-fn session_cookie(token: &str, max_age_secs: u64) -> String {
-    format!("{COOKIE}={token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age={max_age_secs}")
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CookieFlags(&'static str);
+
+impl CookieFlags {
+    /// Por omisión, y siempre en producción.
+    pub const SECURE: Self = Self("HttpOnly; Secure; SameSite=Lax");
+    /// Solo para desarrollo: probar por http desde otra máquina (la laptop, el iPad).
+    const INSECURE_DEV: Self = Self("HttpOnly; SameSite=Lax");
+
+    /// `COOKIE_SECURE`: sin valor o `true`, segura; `false`, sin `Secure`. Otro valor no arranca.
+    pub fn from_env(value: Option<&str>) -> Result<Self, String> {
+        match value {
+            None | Some("true") => Ok(Self::SECURE),
+            Some("false") => Ok(Self::INSECURE_DEV),
+            Some(text) => Err(format!("COOKIE_SECURE debe ser true o false, no «{text}»")),
+        }
+    }
+
+    pub fn is_secure(&self) -> bool {
+        *self == Self::SECURE
+    }
+}
+
+fn session_cookie(flags: CookieFlags, token: &str, max_age_secs: u64) -> String {
+    format!(
+        "{COOKIE}={token}; {}; Path=/; Max-Age={max_age_secs}",
+        flags.0
+    )
 }
 
 /// A dónde ir después de entrar: solo rutas de este sitio. `//otro.com`, `https://…` o una ruta
@@ -77,9 +104,11 @@ pub async fn require_session(
             request.extensions_mut().insert(usuario);
             let mut response = next.run(request).await;
             // `current_user` ya validó el formato del token: es seguro devolverlo.
-            if let Ok(value) =
-                HeaderValue::from_str(&session_cookie(cookie, SESSION_DURATION.as_secs()))
-            {
+            if let Ok(value) = HeaderValue::from_str(&session_cookie(
+                state.cookie_flags,
+                cookie,
+                SESSION_DURATION.as_secs(),
+            )) {
                 response.headers_mut().append(header::SET_COOKIE, value);
             }
             response
@@ -170,7 +199,11 @@ pub async fn login_submit(
     {
         Ok((usuario, token)) => {
             tracing::info!(usuario = usuario.email.as_str(), "entró");
-            let cookie = session_cookie(token.as_str(), SESSION_DURATION.as_secs());
+            let cookie = session_cookie(
+                state.cookie_flags,
+                token.as_str(),
+                SESSION_DURATION.as_secs(),
+            );
             ([(header::SET_COOKIE, cookie)], Redirect::to(next)).into_response()
         }
         Err(LoginError::Repo(error)) => internal_error(&headers, &error),
@@ -195,7 +228,10 @@ pub async fn logout_submit(State(state): State<AppState>, headers: HeaderMap) ->
         tracing::error!(%error, "no se pudo borrar la sesión al salir");
     }
     (
-        [(header::SET_COOKIE, session_cookie("", 0))],
+        [(
+            header::SET_COOKIE,
+            session_cookie(state.cookie_flags, "", 0),
+        )],
         Redirect::to("/login"),
     )
         .into_response()
@@ -227,9 +263,32 @@ mod tests {
     #[test]
     fn la_cookie_lleva_sus_banderas() {
         assert_eq!(
-            session_cookie("abc", 604800),
+            session_cookie(CookieFlags::SECURE, "abc", 604800),
             "session=abc; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800"
         );
+    }
+
+    #[test]
+    fn sin_cookie_secure_o_con_true_la_cookie_es_secure() {
+        assert_eq!(CookieFlags::from_env(None), Ok(CookieFlags::SECURE));
+        assert_eq!(CookieFlags::from_env(Some("true")), Ok(CookieFlags::SECURE));
+    }
+
+    #[test]
+    fn con_cookie_secure_false_la_cookie_no_lleva_secure() {
+        let flags = CookieFlags::from_env(Some("false")).unwrap();
+
+        assert_eq!(
+            session_cookie(flags, "abc", 604800),
+            "session=abc; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800"
+        );
+    }
+
+    #[test]
+    fn cookie_secure_con_otro_valor_no_arranca() {
+        for text in ["", "no", "False", "0"] {
+            assert!(CookieFlags::from_env(Some(text)).is_err(), "{text:?}");
+        }
     }
 
     #[test]
@@ -335,6 +394,39 @@ mod tests {
         let cookie = response.headers()[header::SET_COOKIE].to_str().unwrap();
         assert!(cookie.starts_with("session="));
         assert!(cookie.ends_with("; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800"));
+    }
+
+    #[sqlx::test(migrator = "db::MIGRATOR")]
+    async fn con_cookie_secure_false_entrar_y_renovar_dan_la_cookie_sin_secure(pool: PgPool) {
+        use tower::ServiceExt;
+        let flags = CookieFlags::from_env(Some("false")).unwrap();
+        let app = crate::router(AppState::new(pool.clone(), "Papelería de prueba", flags));
+        cookie(&pool, "ana@x.mx", "Cajero").await;
+
+        let login = app
+            .clone()
+            .oneshot(post_login("email=ana%40x.mx&password=caja-de-lapices"))
+            .await
+            .unwrap();
+        let entered = login.headers()[header::SET_COOKIE].to_str().unwrap();
+        let session = entered.split(';').next().unwrap();
+        let page = app
+            .oneshot(
+                Request::get("/productos")
+                    .header("cookie", session)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let renewed = page.headers()[header::SET_COOKIE].to_str().unwrap();
+
+        for cookie in [entered, renewed] {
+            assert!(
+                cookie.ends_with("; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800"),
+                "{cookie}"
+            );
+        }
     }
 
     #[sqlx::test(migrator = "db::MIGRATOR")]

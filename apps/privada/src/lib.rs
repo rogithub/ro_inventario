@@ -6,6 +6,8 @@ pub mod commands;
 mod health;
 mod productos;
 mod session;
+
+pub use session::CookieFlags;
 mod unidades_medida;
 
 use std::sync::Arc;
@@ -34,10 +36,12 @@ pub struct AppState {
     sessions: PgSessions,
     /// Nombre del negocio (negocio.toml), para el título y la barra de las pantallas.
     negocio: Arc<str>,
+    /// Las de la cookie de sesión, elegidas al arrancar.
+    cookie_flags: CookieFlags,
 }
 
 impl AppState {
-    pub fn new(pool: PgPool, negocio: &str) -> Self {
+    pub fn new(pool: PgPool, negocio: &str, cookie_flags: CookieFlags) -> Self {
         Self {
             categorias: PgCategorias::new(pool.clone()),
             productos: PgProductos::new(pool.clone()),
@@ -46,6 +50,7 @@ impl AppState {
             sessions: PgSessions::new(pool.clone()),
             pool,
             negocio: negocio.into(),
+            cookie_flags,
         }
     }
 }
@@ -143,7 +148,7 @@ mod test_support {
     use tower::ServiceExt;
 
     pub fn state(pool: PgPool) -> AppState {
-        AppState::new(pool, "Papelería de prueba")
+        AppState::new(pool, "Papelería de prueba", CookieFlags::SECURE)
     }
 
     /// Un pool que apunta a un puerto donde no hay nadie: la base "caída".
