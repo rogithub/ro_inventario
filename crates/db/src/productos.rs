@@ -153,6 +153,10 @@ impl ProductosRepo for PgProductos {
         Ok(SearchResults { productos, total })
     }
 
+    async fn get_by_nid(&self, nid: Nid) -> Result<Option<Producto>, RepoError> {
+        update::get_by_nid(&self.pool, nid).await
+    }
+
     /// Todo en una transacción: el artículo, su renglón de producto y su primer precio.
     async fn add(&self, new: NewProducto, by: &Email) -> Result<Producto, ProductoError> {
         let mut tx = self.pool.begin().await.map_err(repo_error)?;
@@ -213,7 +217,18 @@ impl ProductosRepo for PgProductos {
             color: new.color().map(str::to_string),
         })
     }
+
+    async fn update(
+        &self,
+        id: ArticuloId,
+        new: NewProducto,
+        by: &Email,
+    ) -> Result<Producto, ProductoError> {
+        update::update(&self.pool, id, new, by).await
+    }
 }
+
+mod update;
 
 #[cfg(test)]
 mod tests;

@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE articulos\n         SET nombre = $2, categoria_id = $3, unidad_medida_id = $4, precio_venta = $5,\n             descripcion = $6, updated_at = now(), updated_by = $7\n         WHERE id = $1\n         RETURNING nid",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "nid",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "nid"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "1f60e2b1af129372543338aab44d3c35e36d96dadb15e2b6ff2197f8c8b86885"
+}

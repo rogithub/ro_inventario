@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT a.precio_venta\n         FROM articulos a\n         JOIN productos p ON p.articulo_id = a.id\n         WHERE a.id = $1\n         FOR UPDATE OF a",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "precio_venta",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "precio_venta"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "a78024b1ae44ca6ec58b016ac58cd02b6244a1a1e7c426c8cbd5f2127ae8c4e7"
+}

@@ -86,7 +86,7 @@ impl FieldErrors {
                 unidad: message,
                 ..Self::default()
             },
-            ProductoError::Precio(_) => Self {
+            ProductoError::Precio(_) | ProductoError::CannotRemovePrecio => Self {
                 precio: message,
                 ..Self::default()
             },
@@ -106,10 +106,12 @@ impl FieldErrors {
                 color: message,
                 ..Self::default()
             },
-            ProductoError::UsuarioNotFound | ProductoError::Repo(_) => Self {
-                general: message,
-                ..Self::default()
-            },
+            ProductoError::NotFound | ProductoError::UsuarioNotFound | ProductoError::Repo(_) => {
+                Self {
+                    general: message,
+                    ..Self::default()
+                }
+            }
         }
     }
 }

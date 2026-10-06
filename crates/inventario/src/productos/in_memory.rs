@@ -70,16 +70,12 @@ impl ProductosRepo for InMemoryProductos {
         Ok(SearchResults { productos, total })
     }
 
+    async fn get_by_nid(&self, nid: Nid) -> Result<Option<Producto>, RepoError> {
+        Ok(self.lock().iter().find(|p| p.nid == nid).cloned())
+    }
+
     async fn add(&self, new: NewProducto, by: &Email) -> Result<Producto, ProductoError> {
-        if !self.usuarios.contains(by) {
-            return Err(ProductoError::UsuarioNotFound);
-        }
-        if !self.categorias.contains(&new.categoria_id) {
-            return Err(ProductoError::CategoriaNotFound);
-        }
-        if !self.unidades.contains(&new.unidad_medida_id) {
-            return Err(ProductoError::UnidadMedidaNotFound);
-        }
+        self.check(&new, by)?;
         let mut productos = self.lock();
         // NID next e ids predecibles en memoria; Postgres los genera.
         let next = productos.len() as i32 + 1;
@@ -97,5 +93,55 @@ impl ProductosRepo for InMemoryProductos {
         };
         productos.push(producto.clone());
         Ok(producto)
+    }
+
+    async fn update(
+        &self,
+        id: ArticuloId,
+        new: NewProducto,
+        by: &Email,
+    ) -> Result<Producto, ProductoError> {
+        // En el orden de Postgres: el usuario, el producto y su precio, y al escribir, las llaves.
+        if !self.usuarios.contains(by) {
+            return Err(ProductoError::UsuarioNotFound);
+        }
+        let mut productos = self.lock();
+        let producto = productos
+            .iter_mut()
+            .find(|p| p.id == id)
+            .ok_or(ProductoError::NotFound)?;
+        if producto.precio_venta.is_some() && new.precio_venta.is_none() {
+            return Err(ProductoError::CannotRemovePrecio);
+        }
+        self.check(&new, by)?;
+        *producto = Producto {
+            id: producto.id,
+            nid: producto.nid,
+            nombre: new.nombre,
+            categoria_id: new.categoria_id,
+            unidad_medida_id: new.unidad_medida_id,
+            precio_venta: new.precio_venta,
+            descripcion: new.descripcion,
+            marca: new.marca,
+            modelo: new.modelo,
+            color: new.color,
+        };
+        Ok(producto.clone())
+    }
+}
+
+impl InMemoryProductos {
+    /// Lo que Postgres revisa con sus llaves foráneas y con la búsqueda del usuario.
+    fn check(&self, new: &NewProducto, by: &Email) -> Result<(), ProductoError> {
+        if !self.usuarios.contains(by) {
+            return Err(ProductoError::UsuarioNotFound);
+        }
+        if !self.categorias.contains(&new.categoria_id) {
+            return Err(ProductoError::CategoriaNotFound);
+        }
+        if !self.unidades.contains(&new.unidad_medida_id) {
+            return Err(ProductoError::UnidadMedidaNotFound);
+        }
+        Ok(())
     }
 }

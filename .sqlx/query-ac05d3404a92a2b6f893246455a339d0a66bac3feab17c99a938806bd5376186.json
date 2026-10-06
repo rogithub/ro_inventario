@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE productos SET marca = $2, modelo = $3, color = $4 WHERE articulo_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ac05d3404a92a2b6f893246455a339d0a66bac3feab17c99a938806bd5376186"
+}

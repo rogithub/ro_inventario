@@ -30,6 +30,8 @@ Qué se haría. Si hay que decidir algo, la pregunta para el dueño.
 | Pendiente | Cuándo |
 |---|---|
 | [Paso 7: artículos y productos, en cinco partes](paso-7-productos.md) | durante el paso 7 |
+| [Cambiar la unidad base de un producto con movimientos en el kárdex](unidad-base-con-kardex.md) | con compras |
+| [Dos personas editando el mismo producto a la vez](ediciones-simultaneas.md) | si llega a pasar |
 | [Mostrar los productos parecidos antes de dar de alta uno nuevo](productos-parecidos.md) | con compras |
 | [Migrar las categorías desde la v1](migracion-v1-categorias.md) | con artículos |
 | [Los nombres de la v1 vienen en mayúsculas y algunos con dobles espacios](nombres-de-la-v1.md) | con artículos |

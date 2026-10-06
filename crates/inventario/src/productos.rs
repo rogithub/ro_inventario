@@ -53,7 +53,8 @@ pub struct ProductoFields<'a> {
     pub color: &'a str,
 }
 
-/// Un producto por agregar, ya validado: solo se construye con `new`.
+/// Los datos de un producto para darlo de alta o cambiarlo, ya validados: solo se construye con
+/// `new`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewProducto {
     nombre: String,
@@ -161,6 +162,11 @@ pub enum ProductoError {
     CategoriaNotFound,
     /// La unidad ya no existe.
     UnidadMedidaNotFound,
+    /// No hay producto con ese id.
+    NotFound,
+    /// Ya tiene precio y se mandó sin precio: el historial no tiene cómo anotar «sin precio», y
+    /// lo que ya no se vende se descontinúa.
+    CannotRemovePrecio,
     /// Quien lo da de alta ya no existe (su sesión es de un usuario que no está en la base).
     UsuarioNotFound,
     Repo(RepoError),
@@ -185,6 +191,11 @@ impl fmt::Display for ProductoError {
             Self::MissingCategoria => write!(f, "Elige la categoría."),
             Self::CategoriaNotFound => write!(f, "Esa categoría ya no existe. Recarga la página."),
             Self::UnidadMedidaNotFound => write!(f, "Esa unidad ya no existe. Recarga la página."),
+            Self::NotFound => write!(f, "Ese producto ya no existe."),
+            Self::CannotRemovePrecio => write!(
+                f,
+                "Un producto con precio no puede quedar sin precio; si ya no se vende, descontinúalo."
+            ),
             Self::UsuarioNotFound => write!(f, "Tu sesión ya no es válida. Vuelve a entrar."),
             Self::Repo(_) => write!(f, "No se pudo guardar el producto."),
         }
@@ -212,12 +223,27 @@ pub trait ProductosRepo {
         limit: u32,
     ) -> impl Future<Output = Result<SearchResults, RepoError>> + Send;
 
+    /// El producto con ese NID; `None` si no hay (o si el NID es de un servicio o un kit).
+    fn get_by_nid(
+        &self,
+        nid: Nid,
+    ) -> impl Future<Output = Result<Option<Producto>, RepoError>> + Send;
+
     /// Lo da de alta con un NID mayor que los anteriores (puede saltarse números: un alta que
     /// falla en Postgres gasta el suyo) y anota quién. Si trae precio, ese precio también
     /// queda en su historial.
     fn add(
         &self,
         new_producto: NewProducto,
+        by: &Email,
+    ) -> impl Future<Output = Result<Producto, ProductoError>> + Send;
+
+    /// Le cambia todos los datos (el NID no cambia) y anota quién. Si el precio cambió, el nuevo
+    /// queda en su historial; uno que ya tiene precio no puede quedar sin precio.
+    fn update(
+        &self,
+        id: ArticuloId,
+        producto: NewProducto,
         by: &Email,
     ) -> impl Future<Output = Result<Producto, ProductoError>> + Send;
 }

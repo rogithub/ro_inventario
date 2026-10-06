@@ -7,6 +7,8 @@ use usuarios::usuarios::{NewUsuario, UsuariosRepo};
 use super::*;
 use crate::{PgCategorias, PgUnidadesMedida, PgUsuarios};
 
+mod update;
+
 /// Las categorías Plumas y Cuadernos, la unidad Pieza de la migración y la usuaria Ana.
 async fn setup(pool: &PgPool) -> Setup {
     let categorias = PgCategorias::new(pool.clone());

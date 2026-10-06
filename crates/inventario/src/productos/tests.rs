@@ -280,3 +280,63 @@ async fn en_memoria_cumple_el_contrato_busqueda_signos() {
     let (repo, setup) = in_memory_repo();
     contract::los_signos_se_buscan_tal_cual(&repo, &setup).await;
 }
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_se_encuentra_por_su_nid() {
+    let (repo, setup) = in_memory_repo();
+    contract::update::se_encuentra_por_su_nid(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_editar_cambia_todos_sus_datos_y_conserva_id_y_nid() {
+    let (repo, setup) = in_memory_repo();
+    contract::update::editar_cambia_todos_sus_datos_y_conserva_id_y_nid(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_a_uno_sin_precio_se_le_puede_poner_precio() {
+    let (repo, setup) = in_memory_repo();
+    contract::update::a_uno_sin_precio_se_le_puede_poner_precio(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_uno_con_precio_no_puede_quedar_sin_precio() {
+    let (repo, setup) = in_memory_repo();
+    contract::update::uno_con_precio_no_puede_quedar_sin_precio(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_editar_uno_que_no_existe_se_rechaza() {
+    let (repo, setup) = in_memory_repo();
+    contract::update::editar_uno_que_no_existe_se_rechaza(&repo, &setup).await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_editar_con_una_categoria_que_no_existe_se_rechaza_sin_cambiar_nada()
+ {
+    let (repo, setup) = in_memory_repo();
+    contract::update::editar_con_una_categoria_que_no_existe_se_rechaza_sin_cambiar_nada(
+        &repo, &setup,
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_editar_con_un_usuario_que_no_existe_se_rechaza_sin_cambiar_nada()
+ {
+    let (repo, setup) = in_memory_repo();
+    contract::update::editar_con_un_usuario_que_no_existe_se_rechaza_sin_cambiar_nada(
+        &repo, &setup,
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_editar_con_una_unidad_que_no_existe_se_rechaza_sin_cambiar_nada()
+ {
+    let (repo, setup) = in_memory_repo();
+    contract::update::editar_con_una_unidad_que_no_existe_se_rechaza_sin_cambiar_nada(
+        &repo, &setup,
+    )
+    .await;
+}
