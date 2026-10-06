@@ -40,3 +40,4 @@ Qué implica hacia adelante: costos, reglas nuevas, cómo revertir.
 | 2026-09-30 | [Las pantallas las arma el servidor: askama + htmx, y el dinero se calcula solo ahí](2026-09-30-pantallas-del-servidor.md) |
 | 2026-10-01 | [Los ids nuevos son UUID v7, generados por Postgres](2026-10-01-uuid-v7.md) |
 | 2026-10-01 | [La búsqueda de productos la hace Postgres, con `unaccent` y `pg_trgm`](2026-10-01-busqueda-de-productos.md) |
+| 2026-10-01 | [`kind` va en `articulos` y también en `productos`: la base impide que un servicio tenga renglón de producto](2026-10-01-kind-en-articulos-y-productos.md) |
