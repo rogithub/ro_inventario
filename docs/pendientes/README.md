@@ -39,3 +39,4 @@ Qué se haría. Si hay que decidir algo, la pregunta para el dueño.
 | [Los E2E dejan datos en la base de desarrollo, y crecen sin tope](datos-e2e-en-desarrollo.md) | cuando estorben, o antes de compras |
 | [La base de producción debe ser del usuario de la aplicación](base-de-produccion.md) | antes del primer deploy |
 | [Herramienta para consultar los logs de producción](logs-de-produccion.md) | con la v2 en producción |
+| [Las áreas pueden leer la hora del servidor](hora-del-servidor-en-las-areas.md) | con ventas |

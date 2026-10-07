@@ -400,7 +400,12 @@ mod tests {
     async fn con_cookie_secure_false_entrar_y_renovar_dan_la_cookie_sin_secure(pool: PgPool) {
         use tower::ServiceExt;
         let flags = CookieFlags::from_env(Some("false")).unwrap();
-        let app = crate::router(AppState::new(pool.clone(), "Papelería de prueba", flags));
+        let app = crate::router(AppState::new(
+            pool.clone(),
+            "Papelería de prueba",
+            chrono_tz::America::Cancun,
+            flags,
+        ));
         cookie(&pool, "ana@x.mx", "Cajero").await;
 
         let login = app

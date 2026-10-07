@@ -1,6 +1,7 @@
-//! Tipos que comparten todas las áreas del negocio: dinero, cantidades, identificadores, errores.
+//! Tipos que comparten todas las áreas del negocio: dinero, cantidades, fechas, identificadores,
+//! errores.
 //!
-//! Solo depende de `uuid` y `rust_decimal`: una consulta SQL o una respuesta HTTP aquí no compila.
+//! Solo depende de `uuid`, `rust_decimal` y `chrono`: una consulta SQL o una respuesta HTTP aquí no compila.
 
 // El dinero y las cantidades son `Decimal`, nunca flotantes (docs/decisiones/2026-09-29-formato-y-linters.md).
 #![deny(clippy::float_arithmetic)]
@@ -14,6 +15,9 @@ pub use uuid::Uuid;
 /// Dinero y cantidades. La precisión la fija cada columna de la base (precios con 2 decimales);
 /// lo que se cobra se redondea una sola vez, en el servidor.
 pub use rust_decimal::Decimal;
+
+/// Fechas: un instante se guarda y viaja en UTC. Se pasa a la zona del negocio solo al mostrarlo.
+pub use chrono::{DateTime, Utc};
 
 /// Falla de la infraestructura detrás de un repositorio (la base no responde, se cortó la conexión).
 /// No es culpa del usuario: el detalle va al log y la pantalla muestra el id de la petición.

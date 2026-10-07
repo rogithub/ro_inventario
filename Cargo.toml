@@ -53,6 +53,10 @@ uuid = { version = "1.26.1", default-features = false, features = ["std"] }
 # Dinero y cantidades: decimal exacto, nunca flotantes (docs/decisiones/2026-09-29-formato-y-linters.md).
 # Cada columna fija su precisión (precios con 2 decimales); kernel lo reexporta.
 rust_decimal = { version = "1.43.0", default-features = false, features = ["std"] }
+# Fechas: instantes en UTC; para mostrarlos, la zona del negocio (docs/decisiones/2026-10-07-fechas-con-chrono.md).
+# `clock` da la hora actual a las implementaciones en memoria; en Postgres la pone `now()`.
+chrono = { version = "0.4.45", default-features = false, features = ["std", "clock"] }
+chrono-tz = "0.10.4"
 
 # Reglas para todos los crates (docs/decisiones/2026-09-29-formato-y-linters.md).
 # Cada crate las hereda con `[lints] workspace = true`.

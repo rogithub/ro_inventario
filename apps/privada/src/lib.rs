@@ -3,6 +3,7 @@
 mod assets;
 mod categorias;
 pub mod commands;
+mod dates;
 mod health;
 mod productos;
 mod session;
@@ -17,6 +18,7 @@ use axum::http::{HeaderMap, Request, StatusCode};
 use axum::middleware;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{get, post};
+use chrono_tz::Tz;
 use db::{PgCategorias, PgPool, PgProductos, PgSessions, PgUnidadesMedida, PgUsuarios};
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
@@ -36,12 +38,15 @@ pub struct AppState {
     sessions: PgSessions,
     /// Nombre del negocio (negocio.toml), para el título y la barra de las pantallas.
     negocio: Arc<str>,
+    /// Zona del negocio (negocio.toml): las fechas se muestran en ella.
+    #[expect(dead_code, reason = "la usa la franja del descontinuado (paso 7c2d)")]
+    time_zone: Tz,
     /// Las de la cookie de sesión, elegidas al arrancar.
     cookie_flags: CookieFlags,
 }
 
 impl AppState {
-    pub fn new(pool: PgPool, negocio: &str, cookie_flags: CookieFlags) -> Self {
+    pub fn new(pool: PgPool, negocio: &str, time_zone: Tz, cookie_flags: CookieFlags) -> Self {
         Self {
             categorias: PgCategorias::new(pool.clone()),
             productos: PgProductos::new(pool.clone()),
@@ -50,6 +55,7 @@ impl AppState {
             sessions: PgSessions::new(pool.clone()),
             pool,
             negocio: negocio.into(),
+            time_zone,
             cookie_flags,
         }
     }
@@ -152,7 +158,12 @@ mod test_support {
     use tower::ServiceExt;
 
     pub fn state(pool: PgPool) -> AppState {
-        AppState::new(pool, "Papelería de prueba", CookieFlags::SECURE)
+        AppState::new(
+            pool,
+            "Papelería de prueba",
+            chrono_tz::America::Cancun,
+            CookieFlags::SECURE,
+        )
     }
 
     /// Un pool que apunta a un puerto donde no hay nadie: la base "caída".

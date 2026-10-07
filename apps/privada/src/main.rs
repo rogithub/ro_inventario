@@ -202,6 +202,7 @@ async fn serve() -> ExitCode {
         router(privada::AppState::new(
             pool,
             &config.negocio.nombre,
+            config.negocio.time_zone,
             env.cookie_flags,
         )),
     )

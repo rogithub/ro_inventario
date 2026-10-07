@@ -42,3 +42,4 @@ Qué implica hacia adelante: costos, reglas nuevas, cómo revertir.
 | 2026-10-01 | [La búsqueda de productos la hace Postgres, con `unaccent` y `pg_trgm`](2026-10-01-busqueda-de-productos.md) |
 | 2026-10-01 | [`kind` va en `articulos` y también en `productos`: la base impide que un servicio tenga renglón de producto](2026-10-01-kind-en-articulos-y-productos.md) |
 | 2026-10-06 | [Dos ramas: la IA trabaja en `develop`, el dueño prueba en su laptop y lleva a `main`](2026-10-06-ramas-develop-y-main.md) |
+| 2026-10-07 | [Las fechas, con `chrono` y `chrono-tz`: se guardan en UTC y se muestran en la zona del negocio](2026-10-07-fechas-con-chrono.md) |

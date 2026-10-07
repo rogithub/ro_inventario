@@ -5,21 +5,35 @@
 use std::fmt;
 use std::path::{Path, PathBuf};
 
+use chrono_tz::Tz;
 use serde::Deserialize;
 
 /// Configuración de un negocio, ya validada. Solo trae lo que hoy se usa;
 /// cada sección nueva llega con el módulo que la necesita.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NegocioConfig {
     pub negocio: Negocio,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Negocio {
     pub nombre: String,
-    pub time_zone: String,
+    /// Para mostrar las fechas como las vive el negocio (en la papelería, `America/Cancun`).
+    pub time_zone: Tz,
+}
+
+/// El archivo tal como viene, antes de validarlo.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawConfig {
+    negocio: RawNegocio,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawNegocio {
+    nombre: String,
+    time_zone: String,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -57,22 +71,31 @@ pub fn load_negocio_config(path: &Path) -> Result<NegocioConfig, ConfigError> {
 
 /// Valida el texto de un `negocio.toml`. Función pura: no toca el disco.
 pub fn parse_negocio_config(text: &str) -> Result<NegocioConfig, ConfigError> {
-    let config: NegocioConfig =
-        toml::from_str(text).map_err(|e| ConfigError::Parse(e.to_string()))?;
-    validate(&config)?;
-    Ok(config)
+    let raw: RawConfig = toml::from_str(text).map_err(|e| ConfigError::Parse(e.to_string()))?;
+    validate(raw)
 }
 
-fn validate(config: &NegocioConfig) -> Result<(), ConfigError> {
-    if config.negocio.nombre.trim().is_empty() {
+fn validate(raw: RawConfig) -> Result<NegocioConfig, ConfigError> {
+    if raw.negocio.nombre.trim().is_empty() {
         return Err(ConfigError::Invalid("[negocio] nombre está vacío".into()));
     }
-    if config.negocio.time_zone.trim().is_empty() {
+    if raw.negocio.time_zone.trim().is_empty() {
         return Err(ConfigError::Invalid(
             "[negocio] time_zone está vacío".into(),
         ));
     }
-    Ok(())
+    let time_zone = raw.negocio.time_zone.parse::<Tz>().map_err(|_| {
+        ConfigError::Invalid(format!(
+            "[negocio] time_zone «{}» no es una zona horaria conocida (p. ej. America/Cancun)",
+            raw.negocio.time_zone
+        ))
+    })?;
+    Ok(NegocioConfig {
+        negocio: Negocio {
+            nombre: raw.negocio.nombre,
+            time_zone,
+        },
+    })
 }
 
 #[cfg(test)]
@@ -84,7 +107,7 @@ mod tests {
     #[test]
     fn el_ejemplo_del_repo_es_valido() {
         let config = parse_negocio_config(REPO_EXAMPLE).unwrap();
-        assert_eq!(config.negocio.time_zone, "America/Cancun");
+        assert_eq!(config.negocio.time_zone, Tz::America__Cancun);
     }
 
     #[test]
@@ -122,6 +145,16 @@ mod tests {
         let error = parse_negocio_config(text).unwrap_err();
         assert!(
             matches!(error, ConfigError::Invalid(ref m) if m.contains("time_zone")),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn una_zona_horaria_desconocida_no_se_acepta() {
+        let text = "[negocio]\nnombre = \"Papelería\"\ntime_zone = \"America/Cancún\"\n";
+        let error = parse_negocio_config(text).unwrap_err();
+        assert!(
+            matches!(error, ConfigError::Invalid(ref m) if m.contains("America/Cancún")),
             "{error}"
         );
     }
