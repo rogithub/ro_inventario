@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT a.id, a.nid, a.nombre, a.categoria_id, a.unidad_medida_id, a.precio_venta,\n                      a.descripcion, p.marca, p.modelo, p.color, a.descontinuado_at,\n                      a.motivo_descontinuado, count(*) OVER () AS \"total!\"\n               FROM articulos a\n               JOIN productos p ON p.articulo_id = a.id\n               WHERE ($2::uuid IS NULL OR a.categoria_id = $2)\n                 AND (a.nid = $3\n                      OR NOT EXISTS (\n                          SELECT 1 FROM unnest($1::text[]) AS w(patron)\n                          WHERE unaccent(lower(a.nombre))\n                                NOT LIKE '%' || unaccent(lower(w.patron)) || '%'))\n               ORDER BY a.nid IS NOT DISTINCT FROM $3 DESC, lower(a.nombre), a.nid\n               LIMIT $4",
+  "query": "SELECT a.id, a.nid, a.nombre, a.categoria_id, a.unidad_medida_id, a.precio_venta,\n                      a.descripcion, p.marca, p.modelo, p.color, a.descontinuado_at,\n                      a.motivo_descontinuado, count(*) OVER () AS \"total!\"\n               FROM articulos a\n               JOIN productos p ON p.articulo_id = a.id\n               WHERE ($2::uuid IS NULL OR a.categoria_id = $2)\n                 AND ($5 OR a.descontinuado_at IS NULL OR a.nid = $3)\n                 AND (a.nid = $3\n                      OR NOT EXISTS (\n                          SELECT 1 FROM unnest($1::text[]) AS w(patron)\n                          WHERE unaccent(lower(a.nombre))\n                                NOT LIKE '%' || unaccent(lower(w.patron)) || '%'))\n               ORDER BY a.nid IS NOT DISTINCT FROM $3 DESC, lower(a.nombre), a.nid\n               LIMIT $4",
   "describe": {
     "columns": [
       {
@@ -147,7 +147,8 @@
         "TextArray",
         "Uuid",
         "Int4",
-        "Int8"
+        "Int8",
+        "Bool"
       ]
     },
     "nullable": [
@@ -166,5 +167,5 @@
       null
     ]
   },
-  "hash": "a72317682c10badcbc31a134dc351639bd5c33ef8a2f693a4dfadae52a46ccdd"
+  "hash": "92e7dcb1b80c661e8405d1670acf4bfdcb4f05e41b8fe403c6c19b73fa93d71a"
 }

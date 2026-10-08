@@ -81,6 +81,34 @@ async fn cumple_el_contrato_editar_un_descontinuado_lo_deja_descontinuado(pool: 
     .await;
 }
 
+#[sqlx::test]
+async fn cumple_el_contrato_sin_ver_descontinuados_no_salen_ni_cuentan_en_el_total(pool: PgPool) {
+    let setup = setup(&pool).await;
+    contract::discontinue::sin_ver_descontinuados_no_salen_ni_cuentan_en_el_total(
+        &PgProductos::new(pool),
+        &setup,
+    )
+    .await;
+}
+
+#[sqlx::test]
+async fn cumple_el_contrato_con_ver_descontinuados_salen_tambien_los_descontinuados(pool: PgPool) {
+    let setup = setup(&pool).await;
+    contract::discontinue::con_ver_descontinuados_salen_tambien_los_descontinuados(
+        &PgProductos::new(pool),
+        &setup,
+    )
+    .await;
+}
+
+#[sqlx::test]
+async fn cumple_el_contrato_el_nid_exacto_encuentra_un_descontinuado_pero_no_los_descontinuados_con_ese_numero(
+    pool: PgPool,
+) {
+    let setup = setup(&pool).await;
+    contract::discontinue::el_nid_exacto_encuentra_un_descontinuado_pero_no_los_descontinuados_con_ese_numero(&PgProductos::new(pool), &setup).await;
+}
+
 /// Quién lo cambió por última vez, y cuándo.
 async fn updated(pool: &PgPool, id: ArticuloId) -> (String, DateTime<Utc>) {
     sqlx::query_as(

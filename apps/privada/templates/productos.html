@@ -29,6 +29,12 @@
       {% endfor %}
     </select>
   </div>
+  <div class="col-auto d-flex align-items-center">
+    <div class="form-check m-0">
+      <input id="descontinuados" name="descontinuados" type="checkbox" value="1" class="form-check-input"{% if with_descontinuados %} checked{% endif %}>
+      <label for="descontinuados" class="form-check-label">Ver descontinuados</label>
+    </div>
+  </div>
   <noscript><div class="col-auto"><button type="submit" class="btn btn-primary">Buscar</button></div></noscript>
 </form>
 {# El contenedor no se reemplaza, solo su contenido: si una búsqueda falla, el error queda adentro
@@ -48,9 +54,9 @@
     <tbody>
       {% for r in results.rows %}
       <tr>
-        <td class="text-end font-monospace">{{ r.producto.nid }}</td>
-        <td>{% if results.can_edit %}<a href="{{ results.search.url(format!("/productos/{}", r.producto.nid)) }}">{{ r.producto.nombre }}</a>{% else %}{{ r.producto.nombre }}{% endif %}<div class="small text-body-secondary">{{ r.categoria }}</div></td>
-        <td class="text-end text-nowrap">{% if let Some(precio) = r.producto.precio_venta %}${{ precio.value() }}{% else %}<span class="badge text-bg-warning">Sin precio</span>{% endif %}</td>
+        <td class="text-end font-monospace{{ r.text_class() }}">{{ r.producto.nid }}</td>
+        <td class="{{ r.text_class() }}">{% if results.can_edit %}<a href="{{ results.search.url(format!("/productos/{}", r.producto.nid)) }}"{% if r.producto.descontinuado.is_some() %} class="link-secondary"{% endif %}>{{ r.producto.nombre }}</a>{% else %}{{ r.producto.nombre }}{% endif %}{% if r.producto.descontinuado.is_some() %} <span class="badge text-bg-secondary">Descontinuado</span>{% endif %}<div class="small text-body-secondary">{{ r.categoria }}</div></td>
+        <td class="text-end text-nowrap{{ r.text_class() }}">{% if let Some(precio) = r.producto.precio_venta %}${{ precio.value() }}{% else %}<span class="badge text-bg-warning">Sin precio</span>{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>

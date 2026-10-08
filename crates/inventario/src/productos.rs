@@ -230,8 +230,9 @@ pub trait ProductosRepo {
     fn list(&self) -> impl Future<Output = Result<Vec<Producto>, RepoError>> + Send;
 
     /// Los que coinciden con la búsqueda (sin importar mayúsculas ni acentos; la ñ cuenta como n)
-    /// y, si se da, son de esa categoría. Primero el del NID buscado; luego, en el orden de
-    /// `list`. Regresa hasta `limit` y cuántos coinciden en total.
+    /// y, si se da, son de esa categoría. Los descontinuados, solo si la búsqueda los incluye o
+    /// si son el del NID buscado. Primero el del NID buscado; luego, en el orden de `list`.
+    /// Regresa hasta `limit` y cuántos coinciden en total.
     fn search(
         &self,
         search_query: &SearchQuery,

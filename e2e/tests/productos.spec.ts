@@ -100,3 +100,25 @@ test('el filtro por categoría solo trae los suyos', async ({ page }, testInfo) 
   await expect(rows(page)).toHaveCount(1);
   await expect(rows(page)).toContainText(`PLUMA ${sello}`);
 });
+
+// Descontinuar llega con la pantalla de edición (7c2d): ahí se prueba que el producto se esconde
+// y vuelve a salir con la casilla. Aquí, que la casilla se queda en la dirección.
+test('marcar ver descontinuados queda en la dirección y al recargar', async ({ page }, testInfo) => {
+  const sello = stamp(testInfo.project.name);
+  const categoria = `E2E ${sello}`;
+  await addCategoria(page, categoria);
+  await addProducto(page, `CARPETA ${sello}`, categoria);
+  await search(page, sello);
+
+  const casilla = page.getByLabel('Ver descontinuados');
+  await casilla.check();
+
+  await expect(page).toHaveURL(/[?&]descontinuados=1/);
+  await expect(rows(page)).toHaveCount(1);
+  await page.reload();
+  await expect(page.getByLabel('Ver descontinuados')).toBeChecked();
+  await expect(page.getByLabel('Buscar por nombre o NID')).toHaveValue(sello);
+
+  await page.getByLabel('Ver descontinuados').uncheck();
+  await expect(page).not.toHaveURL(/descontinuados=/);
+});

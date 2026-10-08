@@ -47,6 +47,7 @@ pub struct PageQuery {
     q: String,
     /// El id de la categoría; algo que no es un id = sin filtro.
     categoria: Option<String>,
+    descontinuados: Option<String>,
 }
 
 impl PageQuery {
@@ -54,6 +55,7 @@ impl PageQuery {
         ListSearch {
             q: self.q.clone(),
             categoria: self.categoria.as_deref().and_then(CategoriaId::parse),
+            with_descontinuados: self.descontinuados.is_some(),
         }
     }
 }

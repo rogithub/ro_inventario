@@ -40,3 +40,13 @@ fn de_mas_de_25_palabras_solo_cuentan_las_primeras_25() {
     let search_query = SearchQuery::new(&text.join(" "));
     assert_eq!(search_query.words(), &text[..25]);
 }
+
+#[test]
+fn sin_pedirlo_no_incluye_los_descontinuados() {
+    assert!(!SearchQuery::new("pluma").includes_descontinuados());
+    assert!(
+        SearchQuery::new("pluma")
+            .with_descontinuados(true)
+            .includes_descontinuados()
+    );
+}

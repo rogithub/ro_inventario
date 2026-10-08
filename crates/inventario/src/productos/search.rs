@@ -16,6 +16,7 @@ pub const MAX_WORDS: usize = 25;
 pub struct SearchQuery {
     words: Vec<String>,
     nid: Option<Nid>,
+    with_descontinuados: bool,
 }
 
 impl SearchQuery {
@@ -29,6 +30,15 @@ impl SearchQuery {
                 .map(str::to_string)
                 .collect(),
             nid: Nid::parse(text),
+            with_descontinuados: false,
+        }
+    }
+
+    /// Con `true`, también salen los descontinuados (la casilla «Ver descontinuados»).
+    pub fn with_descontinuados(self, with_descontinuados: bool) -> Self {
+        Self {
+            with_descontinuados,
+            ..self
         }
     }
 
@@ -41,6 +51,11 @@ impl SearchQuery {
     /// Un producto con este NID coincide aunque su nombre no, y va primero.
     pub fn nid(&self) -> Option<Nid> {
         self.nid
+    }
+
+    /// Sin esto, un descontinuado solo sale si su NID es el buscado: se tecleó a propósito.
+    pub fn includes_descontinuados(&self) -> bool {
+        self.with_descontinuados
     }
 
     pub fn is_empty(&self) -> bool {

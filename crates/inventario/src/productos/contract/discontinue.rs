@@ -161,3 +161,73 @@ pub async fn editar_un_descontinuado_lo_deja_descontinuado(
     assert_eq!(updated.descontinuado, discontinued.descontinuado);
     assert_eq!(repo.list().await.unwrap(), [updated]);
 }
+
+/// Da de alta cada nombre y descontinúa los que se piden.
+async fn add_descontinuados(
+    repo: &impl ProductosRepo,
+    setup: &Setup,
+    vigentes: &[&str],
+    descontinuados: &[&str],
+) -> Vec<Producto> {
+    add_all(repo, setup, vigentes).await;
+    let mut discontinued = Vec::new();
+    for producto in add_all(repo, setup, descontinuados).await {
+        let producto = repo
+            .discontinue(producto.id, motivo("ya no se vende"), &setup.by)
+            .await
+            .unwrap();
+        discontinued.push(producto);
+    }
+    discontinued
+}
+
+/// Los nombres encontrados, en orden, y el total.
+async fn found_with(repo: &impl ProductosRepo, search_query: SearchQuery) -> (Vec<String>, u64) {
+    let results = repo.search(&search_query, None, 100).await.unwrap();
+    let nombres = results.productos.into_iter().map(|p| p.nombre).collect();
+    (nombres, results.total)
+}
+
+pub async fn sin_ver_descontinuados_no_salen_ni_cuentan_en_el_total(
+    repo: &impl ProductosRepo,
+    setup: &Setup,
+) {
+    add_descontinuados(repo, setup, &["PLUMA AZUL"], &["PLUMA ROJA"]).await;
+
+    assert_eq!(
+        found_with(repo, SearchQuery::new("pluma")).await,
+        (vec!["PLUMA AZUL".into()], 1)
+    );
+    assert_eq!(
+        found_with(repo, SearchQuery::new("")).await,
+        (vec!["PLUMA AZUL".into()], 1)
+    );
+}
+
+pub async fn con_ver_descontinuados_salen_tambien_los_descontinuados(
+    repo: &impl ProductosRepo,
+    setup: &Setup,
+) {
+    add_descontinuados(repo, setup, &["PLUMA AZUL"], &["PLUMA ROJA"]).await;
+
+    assert_eq!(
+        found_with(repo, SearchQuery::new("pluma").with_descontinuados(true)).await,
+        (vec!["PLUMA AZUL".into(), "PLUMA ROJA".into()], 2)
+    );
+}
+
+pub async fn el_nid_exacto_encuentra_un_descontinuado_pero_no_los_descontinuados_con_ese_numero(
+    repo: &impl ProductosRepo,
+    setup: &Setup,
+) {
+    let zapato = add_descontinuados(repo, setup, &[], &["ZAPATO"]).await[0].clone();
+    let nid = zapato.nid.to_string();
+    let vigente = format!("CUADERNO {nid} HOJAS");
+    let descontinuado = format!("LIBRETA {nid} HOJAS");
+    add_descontinuados(repo, setup, &[&vigente], &[&descontinuado]).await;
+
+    assert_eq!(
+        found_with(repo, SearchQuery::new(&nid)).await,
+        (vec!["ZAPATO".to_string(), vigente], 2)
+    );
+}

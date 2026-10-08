@@ -1,5 +1,5 @@
-//! Pantalla de productos: la lista, con búsqueda por nombre o NID y filtro por categoría. El alta
-//! está en `nuevo`; la edición, en `editar`.
+//! Pantalla de productos: la lista, con búsqueda por nombre o NID, filtro por categoría y la
+//! casilla «Ver descontinuados». El alta está en `nuevo`; la edición, en `editar`.
 
 pub mod editar;
 mod form;
@@ -30,6 +30,7 @@ struct ProductosPage<'a> {
     q: &'a str,
     categoria: Option<CategoriaId>,
     categorias: Vec<Categoria>,
+    with_descontinuados: bool,
     results: SearchResults,
 }
 
@@ -64,11 +65,13 @@ struct SearchResults {
 pub struct ListSearch {
     pub q: String,
     pub categoria: Option<CategoriaId>,
+    /// La casilla «Ver descontinuados».
+    pub with_descontinuados: bool,
 }
 
 impl ListSearch {
-    /// La dirección con la búsqueda agregada (`/productos?q=pluma%20az&categoria=…`); sin búsqueda,
-    /// tal cual. `path` puede traer ya su `?`.
+    /// La dirección con la búsqueda agregada (`/productos?q=pluma%20az&categoria=…&descontinuados=1`);
+    /// sin búsqueda, tal cual. `path` puede traer ya su `?`.
     pub fn url(&self, path: impl AsRef<str>) -> String {
         let path = path.as_ref();
         let mut params = Vec::new();
@@ -77,6 +80,9 @@ impl ListSearch {
         }
         if let Some(categoria) = self.categoria {
             params.push(format!("categoria={categoria}"));
+        }
+        if self.with_descontinuados {
+            params.push("descontinuados=1".to_string());
         }
         if params.is_empty() {
             return path.to_string();
@@ -99,12 +105,25 @@ struct Row {
     categoria: String,
 }
 
+impl Row {
+    /// Un descontinuado se ve en gris.
+    fn text_class(&self) -> &'static str {
+        if self.producto.descontinuado.is_some() {
+            " text-body-secondary"
+        } else {
+            ""
+        }
+    }
+}
+
 #[derive(Deserialize)]
 pub struct PageQuery {
     #[serde(default)]
     q: String,
     /// El id de la categoría; vacío o algo que no es un id = todas.
     categoria: Option<String>,
+    /// La casilla «Ver descontinuados»: sin marcar, no llega.
+    descontinuados: Option<String>,
 }
 
 pub async fn page(
@@ -113,7 +132,8 @@ pub async fn page(
     headers: HeaderMap,
     Query(query): Query<PageQuery>,
 ) -> Response {
-    let search_query = SearchQuery::new(&query.q);
+    let with_descontinuados = query.descontinuados.is_some();
+    let search_query = SearchQuery::new(&query.q).with_descontinuados(with_descontinuados);
     let categoria = query.categoria.as_deref().and_then(CategoriaId::parse);
     let categorias = match state.categorias.list().await {
         Ok(categorias) => categorias,
@@ -149,11 +169,12 @@ pub async fn page(
     let results = SearchResults {
         rows,
         notice,
-        is_filtered: !search_query.is_empty() || categoria.is_some(),
+        is_filtered: !search_query.is_empty() || categoria.is_some() || with_descontinuados,
         can_edit: usuario.can(Permiso::EditarCatalogo),
         search: ListSearch {
             q: query.q.clone(),
             categoria,
+            with_descontinuados,
         },
     };
     let html = if is_htmx(&headers) {
@@ -166,6 +187,7 @@ pub async fn page(
             q: &query.q,
             categoria,
             categorias,
+            with_descontinuados,
             results,
         }
         .render()

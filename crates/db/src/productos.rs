@@ -119,7 +119,8 @@ impl ProductosRepo for PgProductos {
     }
 
     /// Una sola consulta: cada palabra debe aparecer en `unaccent(lower(nombre))`; el NID buscado
-    /// coincide aunque el nombre no, y va primero. El total sale de la misma consulta (`OVER ()`).
+    /// coincide aunque el nombre no (aunque esté descontinuado), y va primero. El total sale de la
+    /// misma consulta (`OVER ()`).
     async fn search(
         &self,
         search_query: &SearchQuery,
@@ -138,6 +139,7 @@ impl ProductosRepo for PgProductos {
                FROM articulos a
                JOIN productos p ON p.articulo_id = a.id
                WHERE ($2::uuid IS NULL OR a.categoria_id = $2)
+                 AND ($5 OR a.descontinuado_at IS NULL OR a.nid = $3)
                  AND (a.nid = $3
                       OR NOT EXISTS (
                           SELECT 1 FROM unnest($1::text[]) AS w(patron)
@@ -148,7 +150,8 @@ impl ProductosRepo for PgProductos {
             &patterns,
             categoria.map(|c| c.0),
             search_query.nid().map(|n| n.0),
-            i64::from(limit)
+            i64::from(limit),
+            search_query.includes_descontinuados()
         )
         .fetch_all(&self.pool)
         .await

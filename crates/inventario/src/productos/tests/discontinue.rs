@@ -56,3 +56,24 @@ async fn en_memoria_cumple_el_contrato_editar_un_descontinuado_lo_deja_descontin
     let (repo, setup) = in_memory_repo();
     contract::discontinue::editar_un_descontinuado_lo_deja_descontinuado(&repo, &setup).await;
 }
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_sin_ver_descontinuados_no_salen_ni_cuentan_en_el_total() {
+    let (repo, setup) = in_memory_repo();
+    contract::discontinue::sin_ver_descontinuados_no_salen_ni_cuentan_en_el_total(&repo, &setup)
+        .await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_con_ver_descontinuados_salen_tambien_los_descontinuados() {
+    let (repo, setup) = in_memory_repo();
+    contract::discontinue::con_ver_descontinuados_salen_tambien_los_descontinuados(&repo, &setup)
+        .await;
+}
+
+#[tokio::test]
+async fn en_memoria_cumple_el_contrato_el_nid_exacto_encuentra_un_descontinuado_pero_no_los_descontinuados_con_ese_numero()
+ {
+    let (repo, setup) = in_memory_repo();
+    contract::discontinue::el_nid_exacto_encuentra_un_descontinuado_pero_no_los_descontinuados_con_ese_numero(&repo, &setup).await;
+}

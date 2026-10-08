@@ -59,6 +59,11 @@ impl ProductosRepo for InMemoryProductos {
             .into_iter()
             .filter(|p| categoria.is_none_or(|c| p.categoria_id == c))
             .filter(|p| {
+                search_query.includes_descontinuados()
+                    || p.descontinuado.is_none()
+                    || Some(p.nid) == search_query.nid()
+            })
+            .filter(|p| {
                 let nombre = fold_for_search(&p.nombre);
                 Some(p.nid) == search_query.nid() || words.iter().all(|w| nombre.contains(w))
             })

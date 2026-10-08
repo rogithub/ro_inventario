@@ -55,6 +55,8 @@ async fn producto(pool: &PgPool, nombre: &str, categoria_nombre: &str, precio: &
         .0
 }
 
+mod descontinuados;
+
 fn get_htmx(uri: &str, cookie: &str) -> Request<Body> {
     Request::get(uri)
         .header("cookie", cookie)
