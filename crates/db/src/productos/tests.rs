@@ -7,6 +7,7 @@ use usuarios::usuarios::{NewUsuario, UsuariosRepo};
 use super::*;
 use crate::{PgCategorias, PgUnidadesMedida, PgUsuarios};
 
+mod discontinue;
 mod update;
 
 /// Las categorías Plumas y Cuadernos, la unidad Pieza de la migración y la usuaria Ana.

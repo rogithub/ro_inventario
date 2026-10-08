@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE articulos\n         SET nombre = $2, categoria_id = $3, unidad_medida_id = $4, precio_venta = $5,\n             descripcion = $6, updated_at = now(), updated_by = $7\n         WHERE id = $1\n         RETURNING nid, descontinuado_at, motivo_descontinuado",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "nid",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "nid"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "descontinuado_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "descontinuado_at"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "motivo_descontinuado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "motivo_descontinuado"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "791c691d1c1ebcba962447c225b5a4e161abf2202ce6b9b35f5d5da21c5cc10f"
+}

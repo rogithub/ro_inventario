@@ -255,7 +255,7 @@ async fn dos_articulos_pueden_llamarse_igual(pool: PgPool) {
 }
 
 #[sqlx::test]
-async fn la_base_rechaza_descripcion_marca_modelo_y_color_de_mas(pool: PgPool) {
+async fn la_base_rechaza_descripcion_motivo_marca_modelo_y_color_de_mas(pool: PgPool) {
     let pluma = insert_articulo(&pool, "producto", "Pluma azul", None)
         .await
         .unwrap();
@@ -266,6 +266,10 @@ async fn la_base_rechaza_descripcion_marca_modelo_y_color_de_mas(pool: PgPool) {
         .unwrap();
     let casos = [
         ("UPDATE articulos SET descripcion = $2 WHERE id = $1", 1000),
+        (
+            "UPDATE articulos SET descontinuado_at = now(), motivo_descontinuado = $2 WHERE id = $1",
+            300,
+        ),
         (
             "UPDATE productos SET marca = $2 WHERE articulo_id = $1",
             150,

@@ -87,7 +87,7 @@ async fn historial(pool: &PgPool, id: ArticuloId) -> Vec<(Decimal, String)> {
 }
 
 /// Beto, otro usuario, para ver que se anota quién editó.
-async fn beto(pool: &PgPool) -> Email {
+pub(super) async fn beto(pool: &PgPool) -> Email {
     PgUsuarios::new(pool.clone())
         .add(NewUsuario::new("beto@x.mx", "Beto", "Encargado", "caja-de-lapices").unwrap())
         .await

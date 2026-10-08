@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT a.nid, a.descontinuado_at IS NOT NULL AS \"is_descontinuado!\"\n           FROM articulos a\n           JOIN productos p ON p.articulo_id = a.id\n           WHERE a.id = $1\n           FOR UPDATE OF a",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "nid",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "nid"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "is_descontinuado!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "e9b4d2415ee5d5340f98dc1956e60b3dcfb04449ab051a8179dd2435aa60cdbe"
+}

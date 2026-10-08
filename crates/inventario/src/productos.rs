@@ -1,6 +1,7 @@
 //! Productos: los artículos físicos, que se compran, llevan stock y se revenden o se consumen en
 //! un servicio (diseño 01). Lo común con servicios y kits está en `articulos`.
 
+pub mod discontinue;
 pub mod search;
 
 use std::fmt;
@@ -13,6 +14,7 @@ use usuarios::usuarios::Email;
 use crate::articulos::{ArticuloId, Nid, PrecioError, PrecioVenta};
 use crate::categorias::CategoriaId;
 use crate::unidades_medida::UnidadMedidaId;
+use discontinue::{Descontinuado, MAX_MOTIVO_DESCONTINUADO, MotivoDescontinuado};
 use search::{SearchQuery, SearchResults};
 
 /// Largos máximos, en caracteres, de los textos opcionales (decididos por el dueño el 2026-10-01;
@@ -36,6 +38,8 @@ pub struct Producto {
     pub marca: Option<String>,
     pub modelo: Option<String>,
     pub color: Option<String>,
+    /// `None` = se sigue manejando.
+    pub descontinuado: Option<Descontinuado>,
 }
 
 /// Lo que se captura de un producto, tal como viene del formulario.
@@ -167,6 +171,12 @@ pub enum ProductoError {
     /// Ya tiene precio y se mandó sin precio: el historial no tiene cómo anotar «sin precio», y
     /// lo que ya no se vende se descontinúa.
     CannotRemovePrecio,
+    /// Se descontinúa sin motivo.
+    EmptyMotivo,
+    /// Motivo de más de `MAX_MOTIVO_DESCONTINUADO` caracteres.
+    LongMotivo,
+    /// Ya estaba descontinuado: se rechaza para no perder desde cuándo.
+    AlreadyDescontinuado,
     /// Quien lo da de alta ya no existe (su sesión es de un usuario que no está en la base).
     UsuarioNotFound,
     Repo(RepoError),
@@ -196,6 +206,12 @@ impl fmt::Display for ProductoError {
                 f,
                 "Un producto con precio no puede quedar sin precio; si ya no se vende, descontinúalo."
             ),
+            Self::EmptyMotivo => write!(f, "Escribe por qué se descontinúa."),
+            Self::LongMotivo => write!(
+                f,
+                "El motivo no puede pasar de {MAX_MOTIVO_DESCONTINUADO} caracteres."
+            ),
+            Self::AlreadyDescontinuado => write!(f, "Ese producto ya estaba descontinuado."),
             Self::UsuarioNotFound => write!(f, "Tu sesión ya no es válida. Vuelve a entrar."),
             Self::Repo(_) => write!(f, "No se pudo guardar el producto."),
         }
@@ -244,6 +260,23 @@ pub trait ProductosRepo {
         &self,
         id: ArticuloId,
         producto: NewProducto,
+        by: &Email,
+    ) -> impl Future<Output = Result<Producto, ProductoError>> + Send;
+
+    /// Lo marca como descontinuado desde ahora, con su motivo, y anota quién. Uno ya
+    /// descontinuado se rechaza: conserva su fecha.
+    fn discontinue(
+        &self,
+        id: ArticuloId,
+        motivo: MotivoDescontinuado,
+        by: &Email,
+    ) -> impl Future<Output = Result<Producto, ProductoError>> + Send;
+
+    /// Lo vuelve a manejar: se borran la fecha y el motivo (sin historial, por ahora) y anota
+    /// quién. En uno que se sigue manejando no cambia nada.
+    fn resume(
+        &self,
+        id: ArticuloId,
         by: &Email,
     ) -> impl Future<Output = Result<Producto, ProductoError>> + Send;
 }

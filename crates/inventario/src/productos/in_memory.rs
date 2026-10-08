@@ -90,6 +90,7 @@ impl ProductosRepo for InMemoryProductos {
             marca: new.marca,
             modelo: new.modelo,
             color: new.color,
+            descontinuado: None,
         };
         productos.push(producto.clone());
         Ok(producto)
@@ -125,12 +126,54 @@ impl ProductosRepo for InMemoryProductos {
             marca: new.marca,
             modelo: new.modelo,
             color: new.color,
+            descontinuado: producto.descontinuado.clone(),
         };
+        Ok(producto.clone())
+    }
+
+    async fn discontinue(
+        &self,
+        id: ArticuloId,
+        motivo: MotivoDescontinuado,
+        by: &Email,
+    ) -> Result<Producto, ProductoError> {
+        let mut productos = self.lock();
+        let producto = self.find_mut(&mut productos, id, by)?;
+        if producto.descontinuado.is_some() {
+            return Err(ProductoError::AlreadyDescontinuado);
+        }
+        producto.descontinuado = Some(Descontinuado {
+            at: kernel::Utc::now(),
+            motivo: motivo.as_str().to_string(),
+        });
+        Ok(producto.clone())
+    }
+
+    async fn resume(&self, id: ArticuloId, by: &Email) -> Result<Producto, ProductoError> {
+        let mut productos = self.lock();
+        let producto = self.find_mut(&mut productos, id, by)?;
+        producto.descontinuado = None;
         Ok(producto.clone())
     }
 }
 
 impl InMemoryProductos {
+    /// En el orden de Postgres: primero quién lo hace, luego el producto.
+    fn find_mut<'a>(
+        &self,
+        productos: &'a mut [Producto],
+        id: ArticuloId,
+        by: &Email,
+    ) -> Result<&'a mut Producto, ProductoError> {
+        if !self.usuarios.contains(by) {
+            return Err(ProductoError::UsuarioNotFound);
+        }
+        productos
+            .iter_mut()
+            .find(|p| p.id == id)
+            .ok_or(ProductoError::NotFound)
+    }
+
     /// Lo que Postgres revisa con sus llaves foráneas y con la búsqueda del usuario.
     fn check(&self, new: &NewProducto, by: &Email) -> Result<(), ProductoError> {
         if !self.usuarios.contains(by) {

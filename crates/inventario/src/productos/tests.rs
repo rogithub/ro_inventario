@@ -2,6 +2,8 @@ use kernel::{Decimal, Uuid};
 
 use super::*;
 
+mod discontinue;
+
 fn fields(nombre: &str) -> ProductoFields<'_> {
     ProductoFields {
         nombre,

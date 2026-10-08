@@ -1,9 +1,10 @@
 use inventario::articulos::{ArticuloId, Nid, PrecioVenta};
 use inventario::categorias::CategoriaId;
+use inventario::productos::discontinue::{Descontinuado, MotivoDescontinuado};
 use inventario::productos::search::{SearchQuery, SearchResults};
 use inventario::productos::{NewProducto, Producto, ProductoError, ProductosRepo};
 use inventario::unidades_medida::UnidadMedidaId;
-use kernel::{Decimal, RepoError, Uuid};
+use kernel::{DateTime, Decimal, RepoError, Utc, Uuid};
 use sqlx::PgPool;
 use usuarios::usuarios::Email;
 
@@ -28,6 +29,21 @@ fn precio_from_db(precio: Option<Decimal>) -> Result<Option<PrecioVenta>, RepoEr
     precio
         .map(|p| PrecioVenta::new(p).map_err(|e| RepoError(format!("precio {p} en la base: {e}"))))
         .transpose()
+}
+
+/// La base solo deja la fecha y el motivo juntos (`articulos_descontinuado_con_motivo`); si
+/// llega uno sin el otro, algo escribió sin pasar por ella.
+fn descontinuado_from_db(
+    at: Option<DateTime<Utc>>,
+    motivo: Option<String>,
+) -> Result<Option<Descontinuado>, RepoError> {
+    match (at, motivo) {
+        (None, None) => Ok(None),
+        (Some(at), Some(motivo)) => Ok(Some(Descontinuado { at, motivo })),
+        (at, motivo) => Err(RepoError(format!(
+            "descontinuado {at:?} con motivo {motivo:?} en la base"
+        ))),
+    }
 }
 
 /// Lo escrito se busca tal cual: `%`, `_` y `\` no son comodines de `LIKE` (su escape es `\`).
@@ -71,7 +87,8 @@ impl ProductosRepo for PgProductos {
     async fn list(&self) -> Result<Vec<Producto>, RepoError> {
         let rows = sqlx::query!(
             "SELECT a.id, a.nid, a.nombre, a.categoria_id, a.unidad_medida_id, a.precio_venta,
-                    a.descripcion, p.marca, p.modelo, p.color
+                    a.descripcion, p.marca, p.modelo, p.color, a.descontinuado_at,
+                    a.motivo_descontinuado
              FROM articulos a
              JOIN productos p ON p.articulo_id = a.id
              ORDER BY lower(a.nombre), a.nid"
@@ -92,6 +109,10 @@ impl ProductosRepo for PgProductos {
                     marca: r.marca,
                     modelo: r.modelo,
                     color: r.color,
+                    descontinuado: descontinuado_from_db(
+                        r.descontinuado_at,
+                        r.motivo_descontinuado,
+                    )?,
                 })
             })
             .collect()
@@ -112,7 +133,8 @@ impl ProductosRepo for PgProductos {
             .collect();
         let rows = sqlx::query!(
             r#"SELECT a.id, a.nid, a.nombre, a.categoria_id, a.unidad_medida_id, a.precio_venta,
-                      a.descripcion, p.marca, p.modelo, p.color, count(*) OVER () AS "total!"
+                      a.descripcion, p.marca, p.modelo, p.color, a.descontinuado_at,
+                      a.motivo_descontinuado, count(*) OVER () AS "total!"
                FROM articulos a
                JOIN productos p ON p.articulo_id = a.id
                WHERE ($2::uuid IS NULL OR a.categoria_id = $2)
@@ -147,6 +169,10 @@ impl ProductosRepo for PgProductos {
                     marca: r.marca,
                     modelo: r.modelo,
                     color: r.color,
+                    descontinuado: descontinuado_from_db(
+                        r.descontinuado_at,
+                        r.motivo_descontinuado,
+                    )?,
                 })
             })
             .collect::<Result<_, RepoError>>()?;
@@ -215,6 +241,7 @@ impl ProductosRepo for PgProductos {
             marca: new.marca().map(str::to_string),
             modelo: new.modelo().map(str::to_string),
             color: new.color().map(str::to_string),
+            descontinuado: None,
         })
     }
 
@@ -226,8 +253,22 @@ impl ProductosRepo for PgProductos {
     ) -> Result<Producto, ProductoError> {
         update::update(&self.pool, id, new, by).await
     }
+
+    async fn discontinue(
+        &self,
+        id: ArticuloId,
+        motivo: MotivoDescontinuado,
+        by: &Email,
+    ) -> Result<Producto, ProductoError> {
+        discontinue::discontinue(&self.pool, id, motivo, by).await
+    }
+
+    async fn resume(&self, id: ArticuloId, by: &Email) -> Result<Producto, ProductoError> {
+        discontinue::resume(&self.pool, id, by).await
+    }
 }
 
+mod discontinue;
 mod update;
 
 #[cfg(test)]

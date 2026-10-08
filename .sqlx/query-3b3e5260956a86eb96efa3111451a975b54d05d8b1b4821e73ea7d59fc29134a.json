@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE articulos\n             SET descontinuado_at = NULL, motivo_descontinuado = NULL,\n                 updated_at = now(), updated_by = $2\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3b3e5260956a86eb96efa3111451a975b54d05d8b1b4821e73ea7d59fc29134a"
+}

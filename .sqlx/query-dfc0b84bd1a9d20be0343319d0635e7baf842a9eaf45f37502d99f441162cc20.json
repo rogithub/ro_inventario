@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT a.id, a.nid, a.nombre, a.categoria_id, a.unidad_medida_id, a.precio_venta,\n                a.descripcion, p.marca, p.modelo, p.color\n         FROM articulos a\n         JOIN productos p ON p.articulo_id = a.id\n         WHERE a.nid = $1",
+  "query": "SELECT a.id, a.nid, a.nombre, a.categoria_id, a.unidad_medida_id, a.precio_venta,\n                    a.descripcion, p.marca, p.modelo, p.color, a.descontinuado_at,\n                    a.motivo_descontinuado\n             FROM articulos a\n             JOIN productos p ON p.articulo_id = a.id\n             ORDER BY lower(a.nombre), a.nid",
   "describe": {
     "columns": [
       {
@@ -112,12 +112,32 @@
             "name": "color"
           }
         }
+      },
+      {
+        "ordinal": 10,
+        "name": "descontinuado_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "descontinuado_at"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "motivo_descontinuado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "articulos",
+            "name": "motivo_descontinuado"
+          }
+        }
       }
     ],
     "parameters": {
-      "Left": [
-        "Int4"
-      ]
+      "Left": []
     },
     "nullable": [
       false,
@@ -129,8 +149,10 @@
       true,
       true,
       true,
+      true,
+      true,
       true
     ]
   },
-  "hash": "392d8934019ded9d289f5550ae4fbc35b5be27d266023ce92473c5dcac2edad8"
+  "hash": "dfc0b84bd1a9d20be0343319d0635e7baf842a9eaf45f37502d99f441162cc20"
 }

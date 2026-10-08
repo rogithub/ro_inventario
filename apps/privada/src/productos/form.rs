@@ -153,12 +153,16 @@ impl FieldErrors {
                 color: message,
                 ..Self::default()
             },
-            ProductoError::NotFound | ProductoError::UsuarioNotFound | ProductoError::Repo(_) => {
-                Self {
-                    general: message,
-                    ..Self::default()
-                }
-            }
+            // Los del motivo no salen de este formulario: descontinuar tiene el suyo (7c2d).
+            ProductoError::NotFound
+            | ProductoError::UsuarioNotFound
+            | ProductoError::EmptyMotivo
+            | ProductoError::LongMotivo
+            | ProductoError::AlreadyDescontinuado
+            | ProductoError::Repo(_) => Self {
+                general: message,
+                ..Self::default()
+            },
         }
     }
 }

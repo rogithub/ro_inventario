@@ -2,6 +2,7 @@ use kernel::Uuid;
 
 use super::*;
 
+pub mod discontinue;
 pub mod update;
 
 /// Lo que cada prueba necesita que ya exista: dos categorías, una unidad y quien da de alta.

@@ -2,16 +2,21 @@
 
 use super::*;
 
-pub(super) async fn get_by_nid(pool: &PgPool, nid: Nid) -> Result<Option<Producto>, RepoError> {
+/// Con el pool o dentro de una transacción (descontinuar lee lo que acaba de escribir).
+pub(super) async fn get_by_nid(
+    executor: impl sqlx::PgExecutor<'_>,
+    nid: Nid,
+) -> Result<Option<Producto>, RepoError> {
     let row = sqlx::query!(
         "SELECT a.id, a.nid, a.nombre, a.categoria_id, a.unidad_medida_id, a.precio_venta,
-                a.descripcion, p.marca, p.modelo, p.color
+                a.descripcion, p.marca, p.modelo, p.color, a.descontinuado_at,
+                a.motivo_descontinuado
          FROM articulos a
          JOIN productos p ON p.articulo_id = a.id
          WHERE a.nid = $1",
         nid.0
     )
-    .fetch_optional(pool)
+    .fetch_optional(executor)
     .await
     .map_err(repo_error)?;
     row.map(|r| {
@@ -26,6 +31,7 @@ pub(super) async fn get_by_nid(pool: &PgPool, nid: Nid) -> Result<Option<Product
             marca: r.marca,
             modelo: r.modelo,
             color: r.color,
+            descontinuado: descontinuado_from_db(r.descontinuado_at, r.motivo_descontinuado)?,
         })
     })
     .transpose()
@@ -59,12 +65,12 @@ pub(super) async fn update(
         return Err(ProductoError::CannotRemovePrecio);
     }
 
-    let nid = sqlx::query_scalar!(
+    let row = sqlx::query!(
         "UPDATE articulos
          SET nombre = $2, categoria_id = $3, unidad_medida_id = $4, precio_venta = $5,
              descripcion = $6, updated_at = now(), updated_by = $7
          WHERE id = $1
-         RETURNING nid",
+         RETURNING nid, descontinuado_at, motivo_descontinuado",
         id.0,
         new.nombre(),
         new.categoria_id().0,
@@ -106,7 +112,7 @@ pub(super) async fn update(
     tx.commit().await.map_err(repo_error)?;
     Ok(Producto {
         id,
-        nid: Nid(nid),
+        nid: Nid(row.nid),
         nombre: new.nombre().to_string(),
         categoria_id: new.categoria_id(),
         unidad_medida_id: new.unidad_medida_id(),
@@ -115,5 +121,6 @@ pub(super) async fn update(
         marca: new.marca().map(str::to_string),
         modelo: new.modelo().map(str::to_string),
         color: new.color().map(str::to_string),
+        descontinuado: descontinuado_from_db(row.descontinuado_at, row.motivo_descontinuado)?,
     })
 }
