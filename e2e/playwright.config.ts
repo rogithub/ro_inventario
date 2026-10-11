@@ -1,4 +1,5 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
+import { dispositivos, evidencia } from '@ro/e2e';
 
 // Arranca la aplicación privada compilada del código actual, contra la base que diga
 // DATABASE_URL (en desarrollo, dev_ro_inventario; en CI, un Postgres desechable).
@@ -8,39 +9,34 @@ const baseURL = `http://localhost:${PORT}`;
 // La sesión del usuario de pruebas (E2E_USER / E2E_PASS), guardada por auth.setup.ts.
 export const SESSION_FILE = '.auth/usuario.json';
 
+// Las pruebas viven en tests/ y, las de un caso, en historias/<área>/<historia>/<caso>/
+// (kit @ro/e2e, docs/decisiones/2026-10-08-pruebas-e2e-por-historia.md). Con E2E_EVIDENCIA=1 se
+// graba video de cada prueba; el reporte por paso queda en corridas/.
 export default defineConfig({
-  testDir: './tests',
+  testDir: '.',
+  testIgnore: ['node_modules/**'],
   forbidOnly: !!process.env.CI,
-  reporter: [['list'], ['html', { open: 'never' }]],
+  reporter: [['list'], ['html', { open: 'never' }], ['@ro/e2e/reporter', { proyecto: 'ro_inventario' }]],
   use: {
     baseURL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    ...evidencia(),
   },
-  // Los dos puntos de venta reales (CLAUDE.md, "Entorno de uso"). El iPad se emula con
-  // Chromium: WebKit en Linux ARM pide paquetes del sistema y aun así no es el Safari real;
-  // lo que más importa del iPad es el ancho (744 px, entre los breakpoints sm y md).
+  // Los dos puntos de venta reales (CLAUDE.md, "Entorno de uso"), definidos en @ro/e2e. El iPad
+  // se emula con Chromium: WebKit en Linux ARM pide paquetes del sistema y aun así no es el
+  // Safari real; lo que más importa del iPad es el ancho (744 px, entre los breakpoints sm y md).
   projects: [
     // Entra una vez con el usuario de pruebas y guarda la sesión para los demás proyectos.
     { name: 'setup', testMatch: /auth\.setup\.ts/ },
     {
       name: 'escritorio-firefox',
-      use: {
-        ...devices['Desktop Firefox'],
-        viewport: { width: 1920, height: 1080 },
-        storageState: SESSION_FILE,
-      },
+      use: { ...dispositivos['escritorio-firefox'], storageState: SESSION_FILE },
       dependencies: ['setup'],
     },
     {
       name: 'ipad-mini',
-      use: {
-        ...devices['Desktop Chrome'],
-        viewport: { width: 744, height: 1133 },
-        deviceScaleFactor: 2,
-        hasTouch: true,
-        storageState: SESSION_FILE,
-      },
+      use: { ...dispositivos['ipad-mini'], storageState: SESSION_FILE },
       dependencies: ['setup'],
     },
   ],

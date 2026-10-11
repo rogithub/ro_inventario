@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
+    "@ro/e2e": "github:rogithub/e2e_testing#v0.1.0",
     "@types/node": "26.6.3",
     "typescript": "7.0.2"
   }
