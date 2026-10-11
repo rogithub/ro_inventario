@@ -9,6 +9,8 @@ test('desde la lista se cambia el precio y al volver la lista muestra el nuevo',
   await page.goto('/productos');
   await page.getByLabel('Buscar por nombre o NID').fill(nombre);
   await expect(page).toHaveURL(/[?&]q=/);
+  // Que htmx ya haya puesto los resultados: un clic en la tabla que se está reemplazando se pierde.
+  await expect(page.locator('#results tbody tr')).toHaveCount(1);
 
   await page.getByRole('link', { name: nombre }).click();
   await expect(page).toHaveURL(new RegExp(`/productos/${nid}\\?q=`));
