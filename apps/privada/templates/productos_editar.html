@@ -11,5 +11,37 @@
   </a>
   <h1 class="h4 m-0">Editar NID {{ nid }}</h1>
 </div>
+{% if let Some(notice) = descontinuado.notice %}
+<div class="alert alert-warning" role="alert">{{ notice }}</div>
+{% endif %}
+{% if let Some(banner) = descontinuado.banner %}
+<form method="post" action="{{ descontinuado.action }}"
+      class="alert alert-secondary d-flex flex-wrap align-items-center gap-2">
+  <span class="me-auto">{{ banner }}</span>
+  <button class="btn btn-outline-primary" title="Volver a manejar este producto">
+    <i class="bi bi-arrow-counterclockwise"></i> Volver a manejar
+  </button>
+</form>
+{% endif %}
 {% block form %}{% include "productos/form.html" %}{% endblock %}
+{% if descontinuado.banner.is_none() %}
+{# Aparte del formulario: descontinuar no se guarda junto con los datos. #}
+<div class="border-top mt-4 pt-3">
+<form method="post" action="{{ descontinuado.action }}" class="row g-2">
+  <div class="col-12">
+    <label for="motivo" class="form-label">Motivo para descontinuarlo</label>
+    <textarea id="motivo" name="motivo" rows="2" maxlength="300" required
+              placeholder="Ej.: el proveedor ya no lo vende"
+              class="form-control{% if descontinuado.error.is_some() %} is-invalid{% endif %}"
+              {% if descontinuado.error.is_some() %}aria-describedby="motivo-error"{% endif %}>{{ descontinuado.motivo }}</textarea>
+    {% if let Some(error) = descontinuado.error %}<div id="motivo-error" class="invalid-feedback">{{ error }}</div>{% endif %}
+  </div>
+  <div class="col-12">
+    <button class="btn btn-outline-danger" title="Ya no se maneja: deja de salir en la lista">
+      <i class="bi bi-archive"></i> Descontinuar
+    </button>
+  </div>
+</form>
+</div>
+{% endif %}
 {% endblock %}

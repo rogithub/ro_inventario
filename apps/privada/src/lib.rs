@@ -39,7 +39,6 @@ pub struct AppState {
     /// Nombre del negocio (negocio.toml), para el título y la barra de las pantallas.
     negocio: Arc<str>,
     /// Zona del negocio (negocio.toml): las fechas se muestran en ella.
-    #[expect(dead_code, reason = "la usa la franja del descontinuado (paso 7c2d)")]
     time_zone: Tz,
     /// Las de la cookie de sesión, elegidas al arrancar.
     cookie_flags: CookieFlags,
@@ -77,6 +76,14 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/productos/{nid}",
             get(productos::editar::page).post(productos::editar::update),
+        )
+        .route(
+            "/productos/{nid}/descontinuar",
+            post(productos::descontinuar::discontinue),
+        )
+        .route(
+            "/productos/{nid}/volver-a-manejar",
+            post(productos::descontinuar::resume),
         )
         .route(
             "/unidades",

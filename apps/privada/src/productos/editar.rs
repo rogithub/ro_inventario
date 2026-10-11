@@ -16,6 +16,7 @@ use usuarios::permisos::Permiso;
 use usuarios::usuarios::Usuario;
 
 use super::ListSearch;
+use super::descontinuar::DescontinuadoSection;
 use super::form::{FieldErrors, ProductoForm, ProductoFormView};
 use crate::{AppState, internal_error, is_htmx};
 
@@ -28,6 +29,7 @@ struct EditProductoPage<'a> {
     /// La búsqueda de la lista, para regresar a ella.
     search: ListSearch,
     form: ProductoFormView,
+    descontinuado: DescontinuadoSection,
 }
 
 /// Solo el formulario: lo que htmx reemplaza.
@@ -51,7 +53,7 @@ pub struct PageQuery {
 }
 
 impl PageQuery {
-    fn search(&self) -> ListSearch {
+    pub(super) fn search(&self) -> ListSearch {
         ListSearch {
             q: self.q.clone(),
             categoria: self.categoria.as_deref().and_then(CategoriaId::parse),
@@ -77,6 +79,7 @@ pub async fn page(
     };
     let notice = query.saved.is_some().then(|| notice(&producto));
     let search = query.search();
+    let descontinuado = DescontinuadoSection::new(&producto, state.time_zone, &search);
     let form = form_view(
         &state,
         producto.nid,
@@ -86,7 +89,16 @@ pub async fn page(
         notice,
     )
     .await;
-    show(&state, &usuario, &headers, search, producto.nid, form).await
+    show(
+        &state,
+        &usuario,
+        &headers,
+        search,
+        producto.nid,
+        form,
+        descontinuado,
+    )
+    .await
 }
 
 pub async fn update(
@@ -124,18 +136,38 @@ pub async fn update(
             let values = ProductoForm::from(&updated);
             let notice = Some(notice(&updated));
             let form = form_view(&state, updated.nid, &search, values, None, notice).await;
-            show(&state, &usuario, &headers, search, updated.nid, form).await
+            let descontinuado = DescontinuadoSection::new(&updated, state.time_zone, &search);
+            show(
+                &state,
+                &usuario,
+                &headers,
+                search,
+                updated.nid,
+                form,
+                descontinuado,
+            )
+            .await
         }
         Err(ProductoError::Repo(error)) => internal_error(&headers, &error),
         Err(error) => {
             let form = form_view(&state, producto.nid, &search, values, Some(&error), None).await;
-            show(&state, &usuario, &headers, search, producto.nid, form).await
+            let descontinuado = DescontinuadoSection::new(&producto, state.time_zone, &search);
+            show(
+                &state,
+                &usuario,
+                &headers,
+                search,
+                producto.nid,
+                form,
+                descontinuado,
+            )
+            .await
         }
     }
 }
 
 /// Lo que no es un NID no es de ningún producto.
-async fn find(state: &AppState, nid: &str) -> Result<Option<Producto>, RepoError> {
+pub(super) async fn find(state: &AppState, nid: &str) -> Result<Option<Producto>, RepoError> {
     match Nid::parse(nid) {
         Some(nid) => state.productos.get_by_nid(nid).await,
         None => Ok(None),
@@ -143,7 +175,7 @@ async fn find(state: &AppState, nid: &str) -> Result<Option<Producto>, RepoError
 }
 
 /// El formulario de ese producto, con sus listas para elegir.
-async fn form_view(
+pub(super) async fn form_view(
     state: &AppState,
     nid: Nid,
     search: &ListSearch,
@@ -163,19 +195,20 @@ async fn form_view(
 }
 
 /// La página completa, o solo el formulario si lo pidió htmx. Con error, 422.
-async fn show(
+pub(super) async fn show(
     state: &AppState,
     usuario: &Usuario,
     headers: &HeaderMap,
     search: ListSearch,
     nid: Nid,
     form: Result<ProductoFormView, RepoError>,
+    descontinuado: DescontinuadoSection,
 ) -> Response {
     let form = match form {
         Ok(form) => form,
         Err(error) => return internal_error(headers, &error),
     };
-    let status = if form.errors.is_empty() {
+    let status = if form.errors.is_empty() && !descontinuado.has_error() {
         StatusCode::OK
     } else {
         StatusCode::UNPROCESSABLE_ENTITY
@@ -189,6 +222,7 @@ async fn show(
             nid,
             search,
             form,
+            descontinuado,
         }
         .render()
     };
@@ -202,7 +236,7 @@ fn notice(producto: &Producto) -> String {
     format!("Se guardaron los cambios del NID {}.", producto.nid)
 }
 
-fn forbidden() -> Response {
+pub(super) fn forbidden() -> Response {
     (
         StatusCode::FORBIDDEN,
         Html(r#"<div class="alert alert-danger">No tienes permiso para editar productos.</div>"#),
@@ -210,7 +244,7 @@ fn forbidden() -> Response {
         .into_response()
 }
 
-fn not_found() -> Response {
+pub(super) fn not_found() -> Response {
     (
         StatusCode::NOT_FOUND,
         Html(r#"<div class="alert alert-warning">No hay ningún producto con ese NID.</div>"#),
@@ -219,4 +253,4 @@ fn not_found() -> Response {
 }
 
 #[cfg(test)]
-mod tests;
+pub(super) mod tests;

@@ -101,8 +101,8 @@ test('el filtro por categoría solo trae los suyos', async ({ page }, testInfo) 
   await expect(rows(page)).toContainText(`PLUMA ${sello}`);
 });
 
-// Descontinuar llega con la pantalla de edición (7c2d): ahí se prueba que el producto se esconde
-// y vuelve a salir con la casilla. Aquí, que la casilla se queda en la dirección.
+// Que el producto descontinuado se esconde y vuelve a salir con la casilla se prueba en
+// productos-descontinuar.spec.ts. Aquí, que la casilla se queda en la dirección.
 test('marcar ver descontinuados queda en la dirección y al recargar', async ({ page }, testInfo) => {
   const sello = stamp(testInfo.project.name);
   const categoria = `E2E ${sello}`;

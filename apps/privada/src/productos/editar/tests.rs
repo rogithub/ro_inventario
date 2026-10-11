@@ -7,7 +7,7 @@ use inventario::productos::{NewProducto, Producto, ProductoFields, ProductosRepo
 use inventario::unidades_medida::UnidadesMedidaRepo;
 use usuarios::usuarios::Email;
 
-fn post(uri: &str, cookie: &str, form: &str, htmx: bool) -> Request<Body> {
+pub(in crate::productos) fn post(uri: &str, cookie: &str, form: &str, htmx: bool) -> Request<Body> {
     let mut request = Request::post(uri)
         .header("cookie", cookie)
         .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded");
@@ -19,7 +19,7 @@ fn post(uri: &str, cookie: &str, form: &str, htmx: bool) -> Request<Body> {
 
 /// «PLUMA AZUL» a $12.50, marca Bic, en Plumas y por pieza, dada de alta por ana@x.mx (la que
 /// crea `cookie`, que va antes).
-async fn pluma(pool: &PgPool) -> Producto {
+pub(in crate::productos) async fn pluma(pool: &PgPool) -> Producto {
     let plumas = PgCategorias::new(pool.clone())
         .add(NewCategoria::new("Plumas").unwrap())
         .await
@@ -56,7 +56,7 @@ fn form(pluma: &Producto, nombre: &str, precio: &str) -> String {
     )
 }
 
-async fn stored(pool: &PgPool, pluma: &Producto) -> Producto {
+pub(in crate::productos) async fn stored(pool: &PgPool, pluma: &Producto) -> Producto {
     PgProductos::new(pool.clone())
         .get_by_nid(pluma.nid)
         .await

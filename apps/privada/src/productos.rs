@@ -1,6 +1,8 @@
 //! Pantalla de productos: la lista, con búsqueda por nombre o NID, filtro por categoría y la
-//! casilla «Ver descontinuados». El alta está en `nuevo`; la edición, en `editar`.
+//! casilla «Ver descontinuados». El alta está en `nuevo`; la edición, en `editar`, y descontinuar
+//! desde ella, en `descontinuar`.
 
+pub mod descontinuar;
 pub mod editar;
 mod form;
 pub mod nuevo;

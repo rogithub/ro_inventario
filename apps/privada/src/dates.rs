@@ -11,10 +11,6 @@ const MONTHS: [&str; 12] = [
 ];
 
 /// El día en la zona del negocio: "3 oct 2026".
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "la usa la franja del descontinuado (paso 7c2d)")
-)]
 pub fn short_date(at: DateTime<Utc>, time_zone: Tz) -> String {
     let local = at.with_timezone(&time_zone);
     let month = MONTHS[local.month0() as usize];
