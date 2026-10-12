@@ -31,7 +31,7 @@ pub struct V1 {
 }
 
 /// Lee todo en una transacción de solo lectura y con una sola foto de la base: si la v1 cambiara
-/// a media lectura, los v1_data y los conteos seguirían siendo del mismo momento.
+/// a media lectura, los datos y los conteos seguirían siendo del mismo momento.
 pub async fn read(v1: &PgPool) -> Result<V1, sqlx::Error> {
     let mut tx = v1.begin().await?;
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")

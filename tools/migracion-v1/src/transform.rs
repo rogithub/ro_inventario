@@ -1,4 +1,4 @@
-//! De los v1_data de la v1 a los de la v2, sin base de v1_data: aquí viven las reglas de la migración.
+//! De los datos de la v1 a los de la v2, sin base de datos: aquí viven las reglas de la migración.
 //! Se valida con los tipos del área, como lo que se captura en pantalla, y se juntan todos los
 //! problemas antes de detenerse, para corregirlos de una vez.
 
@@ -9,7 +9,7 @@ use kernel::Uuid;
 
 use crate::read::CategoriaV1;
 
-/// Un nombre de la v1 como kept en la v2: sin espacios en las orillas y con los espacios
+/// Un nombre de la v1 como se guarda en la v2: sin espacios en las orillas y con los espacios
 /// repetidos juntados en uno. Las mayúsculas se quedan (decisión del dueño, 2026-10-01).
 pub fn normalize_nombre(nombre: &str) -> String {
     nombre.split_whitespace().collect::<Vec<_>>().join(" ")
@@ -25,8 +25,8 @@ pub struct Categorias {
 }
 
 /// En la v1 hay categorías que solo difieren en un espacio al final ("CINTA " y "CINTA"); en la
-/// v2 el nombre no se repite sin importar mayúsculas, así que se fusionan en una. Se kept el
-/// uuid de la que ya venía clean. Si no hay exactamente una clean, no se adivina: es un error.
+/// v2 el nombre no se repite sin importar mayúsculas, así que se fusionan en una. Se conserva el
+/// uuid de la que ya venía limpia. Si no hay exactamente una limpia, no se adivina: es un error.
 pub fn categorias(v1: &[CategoriaV1]) -> Result<Categorias, Vec<String>> {
     let mut groups: BTreeMap<String, Vec<&CategoriaV1>> = BTreeMap::new();
     for categoria in v1 {
@@ -70,7 +70,7 @@ pub fn categorias(v1: &[CategoriaV1]) -> Result<Categorias, Vec<String>> {
     }
 }
 
-/// La que se kept de un group de categorías que en la v2 son la misma.
+/// La que se conserva de un grupo de categorías que en la v2 son la misma.
 fn survivor<'a>(group: &[&'a CategoriaV1]) -> Option<&'a CategoriaV1> {
     if let [only] = group {
         return Some(only);

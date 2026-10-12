@@ -1,6 +1,6 @@
-//! Escritura en la v2, en una sola transacción: o kept todo y cuadrado, o no kept nada.
+//! Escritura en la v2, en una sola transacción: o guarda todo y cuadrado, o no guarda nada.
 //!
-//! Solo agrega: no lleva DELETE, TRUNCATE ni DROP. Si la base destino ya tiene v1_data, se niega
+//! Solo agrega: no lleva DELETE, TRUNCATE ni DROP. Si la base destino ya tiene datos, se niega
 //! sin tocarla; para correrla otra vez en desarrollo se recrea la base con herramientas/dev-db.sh.
 
 use std::fmt;
@@ -33,12 +33,12 @@ impl fmt::Display for WriteError {
                 articulos,
             } => write!(
                 f,
-                "La base destino ya tiene v1_data ({categorias} categorías, {articulos} artículos): \
+                "La base destino ya tiene datos ({categorias} categorías, {articulos} artículos): \
                  la migración solo escribe en una base vacía. No se tocó nada."
             ),
             Self::CountMismatch { expected, written } => write!(
                 f,
-                "Los conteos no cuadran (expected en la v1: {expected:?}; written: {written:?}). \
+                "Los conteos no cuadran (esperados en la v1: {expected:?}; escritos: {written:?}). \
                  No quedó nada."
             ),
             Self::Db(e) => write!(f, "Falla de la base: {e}"),

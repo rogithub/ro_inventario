@@ -1,4 +1,4 @@
-//! Copia los v1_data de la versión uno a una base vacía de la v2 (paso 7d: categorías; productos e
+//! Copia los datos de la versión uno a una base vacía de la v2 (paso 7d: categorías; productos e
 //! historial de precios en 7d2). Lee la v1 de `V1_DATABASE_URL` y escribe en `DATABASE_URL`;
 //! las dos llevan contraseña: nunca se imprimen. En desarrollo: herramientas/migrar-v1.sh.
 //!
