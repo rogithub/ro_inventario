@@ -11,6 +11,8 @@ COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
 COPY .sqlx ./.sqlx
 COPY crates ./crates
 COPY apps ./apps
+# El workspace incluye las herramientas: sin ellas Cargo no carga el workspace.
+COPY tools ./tools
 ENV SQLX_OFFLINE=true
 RUN cargo build --release --locked -p privada
 

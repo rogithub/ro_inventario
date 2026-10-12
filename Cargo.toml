@@ -8,6 +8,7 @@ members = [
     "crates/negocio-config",
     "crates/db",
     "apps/privada",
+    "tools/migracion-v1",
 ]
 
 [workspace.package]
