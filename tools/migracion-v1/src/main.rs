@@ -49,8 +49,11 @@ async fn run() -> Result<(), Vec<String>> {
         .map_err(|e| vec![e.to_string()])?;
 
     println!(
-        "Listo, cuadra con la v1: {} categorías.",
-        written.categorias
+        "Listo, cuadra con la v1: {} categorías. Se leyeron {} productos y {} precios de su \
+         historial (todavía no se migran: paso 7d2).",
+        written.categorias,
+        v1_data.productos.len(),
+        v1_data.precios.len()
     );
     Ok(())
 }

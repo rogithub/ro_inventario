@@ -13,6 +13,7 @@ inventario.workspace = true
 db.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
+chrono.workspace = true
 
 [lints]
 workspace = true
