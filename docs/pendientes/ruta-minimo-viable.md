@@ -16,6 +16,6 @@ Cada punto se parte como el paso 7, con su plan aprobado:
 3. **Pedidos:** cliente por teléfono, estados, edición, cotización con el total del servidor, documentos adjuntos. Revisar la lista de requisitos de [la visión](../ia-como-interfaz.md#lo-que-pide-el-mcp-de-la-v2).
 4. **Ventas y cobro** (diseños 03 y 04), en escritorio y táctil. Antes, la decisión de la interactividad, con prototipo (`VISION.md`). El pedido se convierte en venta con un botón.
 5. **Monedero y corte de caja** (diseños 05 y 06), con la migración de clientes y saldos desde la v1.
-6. **MCP externo:** contrato interno, OAuth y herramientas de las áreas ya hechas. Antes, la prueba de 5 minutos del modo de voz.
+6. **MCP externo:** contrato interno, OAuth y herramientas de las áreas ya hechas. La prueba del modo de voz ya pasó (2026-10-14, [visión](../ia-como-interfaz.md#dudas-abiertas)).
 
 Por decidir con el dueño, cuando llegue: si el MCP externo se adelanta en cuanto haya pedidos (para que la dueña lo use ya) o espera a ventas.

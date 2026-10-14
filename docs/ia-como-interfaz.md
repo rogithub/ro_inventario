@@ -74,7 +74,7 @@ La lista del asistente sirve como requisitos:
 
 ## Dudas abiertas
 
-- **¿El modo de voz del teléfono usa los conectores MCP?** Está confirmado que la app del teléfono usa los conectores remotos agregados desde claude.ai, y que Claude se conecta a ellos desde la nube de Anthropic. No hay nada oficial sobre el modo de voz. **Prueba de 5 minutos, antes de diseñar:** agregar en claude.ai un conector público cualquiera, abrir el modo de voz en el teléfono y pedirle algo que lo use.
+- ~~¿El modo de voz del teléfono usa los conectores MCP?~~ **Sí (2026-10-14).** Prueba de vida con un MCP público sin datos (repo `rogithub/MCP_papeleria_poc`, en el cluster, por el túnel de Cloudflare como `https://mcp-poc.xplaya.com/mcp`): en el modo de voz de la app del teléfono, Claude llamó a la herramienta y dijo en voz alta la hora de la papelería y que respondía desde el cluster purépecha. El conector se agregó en claude.ai, con la misma cuenta que la app.
 - **Cómo se empujan los eventos a la pantalla**, dónde se guardan los documentos y qué librería de MCP y de OAuth se usan: cada una, con su decisión, cuando llegue.
 
 ## Para después
