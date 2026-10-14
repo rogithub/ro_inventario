@@ -15,7 +15,7 @@ use super::normalize_nombre;
 use crate::read::{PrecioV1, ProductoV1};
 
 /// Las fechas de la v1 no llevan zona: son hora de la papelería, el único negocio de la v1.
-const ZONA_V1: Tz = chrono_tz::America::Cancun;
+const TIME_ZONE_V1: Tz = chrono_tz::America::Cancun;
 
 /// Cada unidad de la v1 y la de la v2 a la que pasa. Otra detiene la migración.
 const UNIDADES: [(&str, &str); 3] = [("PIEZA", "Pieza"), ("METRO", "Metro"), ("GRAMOS", "Gramo")];
@@ -26,7 +26,7 @@ const UNIDADES: [(&str, &str); 3] = [("PIEZA", "Pieza"), ("METRO", "Metro"), ("G
     not(test),
     expect(dead_code, reason = "se escriben en la v2 en el paso 7d2b")
 )]
-pub struct ProductoMigrado {
+pub struct MigratedProducto {
     pub id: ArticuloId,
     pub nid: Nid,
     /// Con el precio actual: el último del historial.
@@ -37,11 +37,11 @@ pub struct ProductoMigrado {
     /// siempre movía `datestamp` (dueño, 2026-10-12).
     pub updated_at: DateTime<Utc>,
     /// Del más viejo al más nuevo, tal cual, aun los que repiten el precio anterior.
-    pub historial: Vec<PrecioMigrado>,
+    pub historial: Vec<MigratedPrecio>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct PrecioMigrado {
+pub struct MigratedPrecio {
     pub precio_venta: PrecioVenta,
     pub desde: DateTime<Utc>,
 }
@@ -52,7 +52,7 @@ pub fn productos(
     precios: &[PrecioV1],
     categorias: &HashMap<Uuid, CategoriaId>,
     unidades: &[UnidadMedida],
-) -> Result<Vec<ProductoMigrado>, Vec<String>> {
+) -> Result<Vec<MigratedProducto>, Vec<String>> {
     let mut precios_by_producto: HashMap<Uuid, Vec<&PrecioV1>> = HashMap::new();
     for precio in precios {
         precios_by_producto
@@ -62,14 +62,14 @@ pub fn productos(
     }
 
     let mut errors = Vec::new();
-    let mut migrados = Vec::new();
+    let mut all_migrated = Vec::new();
     for producto in v1 {
         let precios = precios_by_producto
             .get(&producto.id)
             .map(Vec::as_slice)
             .unwrap_or_default();
         match migrate(producto, precios, categorias, unidades) {
-            Ok(migrado) => migrados.push(migrado),
+            Ok(migrated) => all_migrated.push(migrated),
             Err(e) => errors.push(format!(
                 "Producto NID {} «{}» de la v1: {e}",
                 producto.nid, producto.nombre
@@ -78,7 +78,7 @@ pub fn productos(
     }
 
     if errors.is_empty() {
-        Ok(migrados)
+        Ok(all_migrated)
     } else {
         Err(errors)
     }
@@ -89,7 +89,7 @@ fn migrate(
     precios: &[&PrecioV1],
     categorias: &HashMap<Uuid, CategoriaId>,
     unidades: &[UnidadMedida],
-) -> Result<ProductoMigrado, String> {
+) -> Result<MigratedProducto, String> {
     let nid = (producto.nid > 0)
         .then_some(Nid(producto.nid))
         .ok_or("el NID debe ser mayor que cero.")?;
@@ -102,6 +102,9 @@ fn migrate(
         _ => return Err("tiene dos categorías distintas; en la v2 solo puede tener una.".into()),
     };
     let unidad_medida_id = unidad(producto.unidad.as_deref(), unidades)?;
+    let datestamp = producto
+        .datestamp
+        .ok_or("no tiene fecha de última edición (datestamp).")?;
     let historial = historial(precios)?;
     let (Some(first), Some(last)) = (historial.first(), historial.last()) else {
         return Err("no tiene precio en su historial.".into());
@@ -119,12 +122,12 @@ fn migrate(
     })
     .map_err(|e| e.to_string())?;
 
-    Ok(ProductoMigrado {
+    Ok(MigratedProducto {
         id: ArticuloId(producto.id),
         nid,
         producto: new_producto,
         created_at: first.desde,
-        updated_at: to_utc(producto.datestamp)?.max(last.desde),
+        updated_at: to_utc(datestamp)?.max(last.desde),
         historial,
     })
 }
@@ -143,14 +146,17 @@ fn unidad(v1: Option<&str>, unidades: &[UnidadMedida]) -> Result<UnidadMedidaId,
 }
 
 /// En orden por fecha. Si dos precios tienen la misma hora, no se sabe cuál es el actual.
-fn historial(precios: &[&PrecioV1]) -> Result<Vec<PrecioMigrado>, String> {
+fn historial(precios: &[&PrecioV1]) -> Result<Vec<MigratedPrecio>, String> {
     let mut historial = precios
         .iter()
         .map(|p| {
-            Ok(PrecioMigrado {
-                precio_venta: PrecioVenta::new(p.precio_venta)
-                    .map_err(|e| format!("el precio {} de su historial: {e}", p.precio_venta))?,
-                desde: to_utc(p.fecha)?,
+            let precio_venta = p
+                .precio_venta
+                .ok_or("un precio de su historial está vacío.")?;
+            Ok(MigratedPrecio {
+                precio_venta: PrecioVenta::new(precio_venta)
+                    .map_err(|e| format!("el precio {precio_venta} de su historial: {e}"))?,
+                desde: to_utc(p.created_at)?,
             })
         })
         .collect::<Result<Vec<_>, String>>()?;
@@ -162,12 +168,12 @@ fn historial(precios: &[&PrecioV1]) -> Result<Vec<PrecioMigrado>, String> {
 }
 
 /// Una hora de la v1 (de Cancún, sin zona) como instante en UTC.
-fn to_utc(fecha: NaiveDateTime) -> Result<DateTime<Utc>, String> {
-    ZONA_V1
-        .from_local_datetime(&fecha)
+fn to_utc(datetime: NaiveDateTime) -> Result<DateTime<Utc>, String> {
+    TIME_ZONE_V1
+        .from_local_datetime(&datetime)
         .single()
         .map(|f| f.with_timezone(&Utc))
-        .ok_or_else(|| format!("la hora {fecha} no existe o es ambigua en Cancún."))
+        .ok_or_else(|| format!("la hora {datetime} no existe o es ambigua en Cancún."))
 }
 
 #[cfg(test)]

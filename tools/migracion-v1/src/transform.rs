@@ -9,6 +9,8 @@ use kernel::Uuid;
 
 use crate::read::CategoriaV1;
 
+pub mod productos;
+
 /// Un nombre de la v1 como se guarda en la v2: sin espacios en las orillas y con los espacios
 /// repetidos juntados en uno. Las mayúsculas se quedan (decisión del dueño, 2026-10-01).
 pub fn normalize_nombre(nombre: &str) -> String {
