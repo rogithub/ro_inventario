@@ -44,3 +44,4 @@ Qué implica hacia adelante: costos, reglas nuevas, cómo revertir.
 | 2026-10-06 | [Dos ramas: la IA trabaja en `develop`, el dueño prueba en su laptop y lleva a `main`](2026-10-06-ramas-develop-y-main.md) |
 | 2026-10-07 | [Las fechas, con `chrono` y `chrono-tz`: se guardan en UTC y se muestran en la zona del negocio](2026-10-07-fechas-con-chrono.md) |
 | 2026-10-08 | [Pruebas E2E por historia: la IA las escribe y el dueño las aprueba viendo el video](2026-10-08-pruebas-e2e-por-historia.md) |
+| 2026-10-14 | [El mínimo viable: catálogo, compras, pedidos, ventas, monedero y corte; con MCP donde tenga sentido](2026-10-14-minimo-viable.md) |

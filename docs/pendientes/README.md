@@ -30,6 +30,7 @@ Qué se haría. Si hay que decidir algo, la pregunta para el dueño.
 | Pendiente | Cuándo |
 |---|---|
 | [Paso 7: artículos y productos, en cinco partes](paso-7-productos.md) | durante el paso 7 |
+| [La ruta al mínimo viable, después del paso 7](ruta-minimo-viable.md) | al terminar cada paso |
 | [Cambiar la unidad base de un producto con movimientos en el kárdex](unidad-base-con-kardex.md) | con compras |
 | [Dos personas editando el mismo producto a la vez](ediciones-simultaneas.md) | si llega a pasar |
 | [Un 403 o un 404 al navegar sale como un pedazo de HTML, sin la página](errores-de-pagina-completa.md) | antes de que lo usen otros |

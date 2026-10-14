@@ -104,6 +104,8 @@ Base: lo que ya funciona en `xplaya`. Cada pieza se confirma en su decisión.
 
 La visión larga, la **Red Comercial**, está en [`docs/red-comercial.md`](docs/red-comercial.md): negocios como nodos que publican lo que ofrecen y se conectan en cadenas de suministro y redes, con lazos fuertes entre sistemas amigos y lazos débiles hacia el resto del ecosistema. La versión dos se diseña para que ese futuro sea posible, sin construirlo antes de tiempo.
 
+Más cerca, **la IA como interfaz** ([`docs/ia-como-interfaz.md`](docs/ia-como-interfaz.md)): la persona le pide al asistente y el sistema hace, por voz si hace falta, con las reglas y el dinero siempre en el servidor. El mínimo viable y su orden están en [la decisión del 2026-10-14](docs/decisiones/2026-10-14-minimo-viable.md).
+
 ## Lecciones que se traen
 
 - De la versión uno: el costo se calculó mal durante años (promedio simple); reglas escondidas en vistas SQL; una clase de ventas que lo hacía todo; configuración leída "del primer formulario de la página" que se rompió al agregar otro; fines de línea mezclados. Cada una tiene hoy una regla que la evita.
