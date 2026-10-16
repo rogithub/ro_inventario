@@ -1,5 +1,5 @@
-//! Copia los datos de la versión uno a una base vacía de la v2 (paso 7d: categorías; productos e
-//! historial de precios en 7d2). Lee la v1 de `V1_DATABASE_URL` y escribe en `DATABASE_URL`;
+//! Copia los datos de la versión uno a una base vacía de la v2 (paso 7d): categorías, productos e
+//! historial de precios. Al final adelanta la secuencia del NID al más alto de la v1. Lee la v1 de `V1_DATABASE_URL` y escribe en `DATABASE_URL`;
 //! las dos llevan contraseña: nunca se imprimen. En desarrollo: herramientas/migrar-v1.sh.
 //!
 //! Primero aplica las migraciones de la v2, como la aplicación al arrancar. Si un dato de la v1 no
@@ -58,16 +58,24 @@ async fn run() -> Result<(), Vec<String>> {
         &categorias.by_v1_id,
         &unidades,
     )?;
-    let written = write::write(&v2, &categorias, v1_data.expected)
-        .await
-        .map_err(|e| vec![e.to_string()])?;
+    let written = write::write(
+        &v2,
+        &categorias,
+        &productos,
+        v1_data.expected,
+        v1_data.max_nid,
+    )
+    .await
+    .map_err(|e| vec![e.to_string()])?;
 
     println!(
-        "Listo, cuadra con la v1: {} categorías. {} productos y {} precios de su historial pasan \
-         las reglas (todavía no se escriben: paso 7d2b).",
+        "Listo, cuadra con la v1: {} categorías, {} productos y {} precios en su historial, que \
+         suman {}. La siguiente alta recibe el NID {}.",
         written.categorias,
-        productos.len(),
-        productos.iter().map(|p| p.historial.len()).sum::<usize>()
+        written.productos,
+        written.precios,
+        written.precios_sum,
+        i64::from(v1_data.max_nid) + 1
     );
     Ok(())
 }

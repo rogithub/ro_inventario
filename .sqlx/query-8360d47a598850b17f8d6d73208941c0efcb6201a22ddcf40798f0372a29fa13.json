@@ -1,12 +1,12 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT count(*) AS \"n!\" FROM categorias",
+  "query": "SELECT coalesce(max(nid), 0) AS \"n!\" FROM articulos",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
         "name": "n!",
-        "type_info": "Int8",
+        "type_info": "Int4",
         "origin": "Expression"
       }
     ],
@@ -17,5 +17,5 @@
       null
     ]
   },
-  "hash": "c34879ee0294c1178d13bb8b51319359969faa0275b770608521e31e71648bc5"
+  "hash": "8360d47a598850b17f8d6d73208941c0efcb6201a22ddcf40798f0372a29fa13"
 }

@@ -56,7 +56,7 @@ async fn espera_una_categoria_por_nombre_sin_contar_los_espacios_de_mas(pool: Pg
 
     let v1 = read(&pool).await.unwrap();
 
-    assert_eq!(v1.expected, RecordCounts { categorias: 1 });
+    assert_eq!(v1.expected.categorias, 1);
 }
 
 #[sqlx::test(migrations = false)]
@@ -79,7 +79,7 @@ async fn espera_una_categoria_aunque_cambien_las_mayusculas_o_los_espacios_de_ad
 
     let v1 = read(&pool).await.unwrap();
 
-    assert_eq!(v1.expected, RecordCounts { categorias: 2 });
+    assert_eq!(v1.expected.categorias, 2);
 }
 
 #[sqlx::test(migrations = false)]
@@ -90,6 +90,44 @@ async fn solo_lee_los_productos_ni_servicios_ni_kits(pool: PgPool) {
 
     let nids: Vec<i32> = v1.productos.iter().map(|p| p.nid).collect();
     assert_eq!(nids, [1, 2]);
+}
+
+#[sqlx::test(migrations = false)]
+async fn espera_los_productos_y_su_historial_con_la_suma_de_sus_precios(pool: PgPool) {
+    create_toy_v1(&pool).await;
+    sqlx::query(
+        "INSERT INTO preciosproductos (productoid, precioventa, fechacreado) VALUES
+            ('00000000-0000-0000-0000-00000000000a', 10, '2022-06-30 10:38'),
+            ('00000000-0000-0000-0000-00000000000a', 12.50, '2024-03-01 09:00'),
+            ('00000000-0000-0000-0000-00000000000b', 3.25, '2024-03-01 09:00'),
+            ('00000000-0000-0000-0000-00000000000c', 5, '2023-01-01 12:00'),
+            ('00000000-0000-0000-0000-00000000000d', 7, '2023-01-01 12:00')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let v1 = read(&pool).await.unwrap();
+
+    assert_eq!(
+        v1.expected,
+        RecordCounts {
+            categorias: 1,
+            productos: 2,
+            precios: 3,
+            precios_sum: Decimal::new(2575, 2),
+        }
+    );
+}
+
+#[sqlx::test(migrations = false)]
+async fn el_nid_mas_alto_es_de_toda_la_v1_tambien_de_servicios_y_kits(pool: PgPool) {
+    create_toy_v1(&pool).await;
+
+    let v1 = read(&pool).await.unwrap();
+
+    // Los productos son el 1 y el 2; el 3 es un servicio y el 4 un kit.
+    assert_eq!(v1.max_nid, 4);
 }
 
 #[sqlx::test(migrations = false)]

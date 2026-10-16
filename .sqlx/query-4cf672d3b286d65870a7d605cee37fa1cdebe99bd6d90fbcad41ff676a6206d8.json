@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT setval(pg_get_serial_sequence('articulos', 'nid'), GREATEST($1, 1), $1 > 0)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "setval",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "4cf672d3b286d65870a7d605cee37fa1cdebe99bd6d90fbcad41ff676a6206d8"
+}

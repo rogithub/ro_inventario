@@ -1,0 +1,42 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT (SELECT count(*) FROM categorias) AS \"categorias!\",\n                  (SELECT count(*) FROM articulos a JOIN productos p ON p.articulo_id = a.id\n                   WHERE a.kind = 'producto') AS \"productos!\",\n                  (SELECT count(*) FROM precios_historial) AS \"precios!\",\n                  (SELECT coalesce(sum(precio_venta), 0) FROM precios_historial)\n                      AS \"precios_sum!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "categorias!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "productos!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "precios!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "precios_sum!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "69d567639c284f42f7e16d389b47d8a731864606f8f27bef8703f876e82564f9"
+}

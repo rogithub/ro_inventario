@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO articulos (id, nid, kind, nombre, categoria_id, unidad_medida_id,\n                                    precio_venta, descripcion, created_at, updated_at)\n             VALUES ($1, $2, 'producto', $3, $4, $5, $6, $7, $8, $9)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8a1c135b17e636bf90adfaf787d91b9e580a7266c38fc6b5b98f4a728be9b21f"
+}

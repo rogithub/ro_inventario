@@ -22,10 +22,6 @@ const UNIDADES: [(&str, &str); 3] = [("PIEZA", "Pieza"), ("METRO", "Metro"), ("G
 
 /// Un producto por escribir en la v2, con el uuid y el NID que tenía en la v1.
 #[derive(Debug)]
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "se escriben en la v2 en el paso 7d2b")
-)]
 pub struct MigratedProducto {
     pub id: ArticuloId,
     pub nid: Nid,

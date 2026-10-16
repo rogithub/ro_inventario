@@ -54,6 +54,11 @@ pub struct PrecioV1 {
 pub struct RecordCounts {
     /// Categorías distintas sin contar mayúsculas ni espacios de más ("CINTA " es "CINTA").
     pub categorias: i64,
+    pub productos: i64,
+    /// Renglones del historial de precios de los productos.
+    pub precios: i64,
+    /// La suma de los precios del historial: cuadra también los montos, no solo los renglones.
+    pub precios_sum: Decimal,
 }
 
 /// Lo que se lee de la v1.
@@ -63,6 +68,9 @@ pub struct V1 {
     pub productos: Vec<ProductoV1>,
     pub precios: Vec<PrecioV1>,
     pub expected: RecordCounts,
+    /// El NID más alto de toda la v1, también de servicios y kits: las altas nuevas siguen de
+    /// ahí, para no tomar los NID que los servicios necesitarán al migrarse (dueño, 2026-10-11).
+    pub max_nid: i32,
 }
 
 #[derive(Debug)]
@@ -183,6 +191,22 @@ pub async fn read(v1: &PgPool) -> Result<V1, ReadError> {
     )
     .fetch_one(&mut *tx)
     .await?;
+    let expected_productos: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM productos WHERE NOT esservicio AND NOT escompuesto",
+    )
+    .fetch_one(&mut *tx)
+    .await?;
+    let (expected_precios, expected_precios_sum): (i64, Decimal) = sqlx::query_as(
+        "SELECT count(*), coalesce(sum(pp.precioventa), 0)
+         FROM preciosproductos pp JOIN productos p ON p.id = pp.productoid
+         WHERE NOT p.esservicio AND NOT p.escompuesto",
+    )
+    .fetch_one(&mut *tx)
+    .await?;
+    // Sin el filtro de productos, a propósito: es el más alto de toda la v1.
+    let max_nid: i32 = sqlx::query_scalar("SELECT coalesce(max(nid), 0) FROM productos")
+        .fetch_one(&mut *tx)
+        .await?;
 
     tx.commit().await?;
     Ok(V1 {
@@ -191,7 +215,11 @@ pub async fn read(v1: &PgPool) -> Result<V1, ReadError> {
         precios,
         expected: RecordCounts {
             categorias: expected_categorias,
+            productos: expected_productos,
+            precios: expected_precios,
+            precios_sum: expected_precios_sum,
         },
+        max_nid,
     })
 }
 

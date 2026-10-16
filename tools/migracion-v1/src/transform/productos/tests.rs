@@ -337,6 +337,42 @@ fn un_producto_sin_unidad_detiene_la_migracion() {
 }
 
 #[test]
+fn un_nid_de_cero_o_negativo_detiene_la_migracion() {
+    for nid in [0, -3] {
+        let mut lapiz = producto_v1(1);
+        lapiz.nid = nid;
+        let precios = [precio(&lapiz, "8", "2024-03-01 09:00")];
+
+        let error = migrate_one(lapiz, &precios).unwrap_err();
+
+        assert_eq!(
+            error,
+            format!("Producto NID {nid} «LAPIZ» de la v1: el NID debe ser mayor que cero.")
+        );
+    }
+}
+
+#[test]
+fn una_unidad_que_no_existe_en_la_v2_detiene_la_migracion() {
+    let mut cinta = producto_v1(1);
+    cinta.unidad = Some("GRAMOS".to_string());
+    let precios = [precio(&cinta, "8", "2024-03-01 09:00")];
+    let categorias = HashMap::from([(CATEGORIA_V1, CATEGORIA_V2)]);
+    let solo_pieza = [UnidadMedida {
+        id: PIEZA,
+        nombre: "Pieza".to_string(),
+        allows_fraction: false,
+    }];
+
+    let errors = productos(&[cinta], &precios, &categorias, &solo_pieza).unwrap_err();
+
+    assert_eq!(
+        errors,
+        ["Producto NID 1 «LAPIZ» de la v1: la unidad «Gramo» no existe en la v2."]
+    );
+}
+
+#[test]
 fn dos_precios_a_la_misma_hora_detienen_la_migracion() {
     let lapiz = producto_v1(1);
     let precios = [
