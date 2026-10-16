@@ -20,3 +20,4 @@ Descontinuar un producto (paso 7c2) es la primera pantalla que muestra una fecha
 ## Consecuencias
 - `chrono-tz` incluye en el binario la base de zonas de IANA completa, aunque se use una sola.
 - Cuando cambien las reglas de una zona (como pasó con el horario de verano en México en 2022), hay que actualizar `chrono-tz`.
+- Las fechas de la v1 no llevan zona (`timestamp`). `tools/migracion-v1` las lee como hora de Cancún y las guarda en UTC; si una hora no existe o es ambigua en Cancún, la migración se detiene. La zona va fija en la herramienta (`TIME_ZONE_V1`), no sale de `negocio.toml`: la v1 solo tuvo un negocio (paso 7d2, 2026-10-16).
