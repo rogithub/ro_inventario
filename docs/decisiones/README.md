@@ -45,3 +45,4 @@ Qué implica hacia adelante: costos, reglas nuevas, cómo revertir.
 | 2026-10-07 | [Las fechas, con `chrono` y `chrono-tz`: se guardan en UTC y se muestran en la zona del negocio](2026-10-07-fechas-con-chrono.md) |
 | 2026-10-08 | [Pruebas E2E por historia: la IA las escribe y el dueño las aprueba viendo el video](2026-10-08-pruebas-e2e-por-historia.md) |
 | 2026-10-14 | [El mínimo viable: catálogo, compras, pedidos, ventas, monedero y corte; con MCP donde tenga sentido](2026-10-14-minimo-viable.md) |
+| 2026-10-16 | [API primero: la API con permisos es el contrato, los MCP son capas delgadas encima y las pantallas solo donde hacen falta](2026-10-16-api-primero.md) |

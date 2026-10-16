@@ -1,6 +1,6 @@
 # El mínimo viable: catálogo, compras, pedidos, ventas, monedero y corte; con MCP donde tenga sentido
 
-**Fecha:** 2026-10-14 · **Estado:** vigente
+**Fecha:** 2026-10-14 · **Estado:** reemplazada en parte por [API primero](2026-10-16-api-primero.md): el contrato interno es la API, el teléfono entra por la computadora del mostrador (no por un MCP externo de la v2), el orden cambia y solo algunas áreas llevan pantalla. Lo que entra al mínimo viable sigue igual.
 
 ## Contexto
 La papelería ya trabaja con un asistente (Claude Code en la computadora del mostrador) y dos MCP armados sin planear, uno encima de la v1 y otro para imprimir y acomodar fotos. Funciona, y mostró que la persona prefiere pedir a llenar formularios ([visión](../ia-como-interfaz.md)). El dueño quiere enfocar la v2 en un producto mínimo viable: seguir atendiendo a proveedores (dar de alta lo que llega) y seguir vendiendo, y delinear lo demás después. `VISION.md` ya dice que la papelería pasa a la v2 cuando pueda capturar ventas y compras; faltaba el orden y el lugar del asistente.

@@ -1,6 +1,6 @@
 # Las pantallas las arma el servidor: askama + htmx, y el dinero se calcula solo ahí
 
-**Fecha:** 2026-09-30 · **Estado:** vigente
+**Fecha:** 2026-09-30 · **Estado:** vigente para las pantallas que se hagan. Cuáles se hacen lo dice [API primero](2026-10-16-api-primero.md).
 
 ## Contexto
 Antes de la primera pantalla hay que decidir cómo se hacen. En la versión uno las pantallas son TypeScript con Knockout: el navegador calcula totales, comisión de tarjeta y cambio con punto flotante, y el servidor guarda con decimales; a veces difieren uno o dos centavos (diseño 04). La preocupación con que todo lo calcule el servidor es la latencia, sobre todo para negocios lejanos del cluster. Revisando la v1: **cada escaneo ya va al servidor** (`busquedas/GetByQr`), igual que la búsqueda por nombre; lo único instantáneo es editar el carrito y teclear los pagos.
