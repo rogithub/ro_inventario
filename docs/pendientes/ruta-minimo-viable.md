@@ -55,3 +55,4 @@ Cada punto se parte como el paso 7, con su plan aprobado:
 
 **Por decidir con el dueño, cuando llegue:**
 1. **El corte de caja:** ¿lleva también herramientas MCP («¿cómo va la caja?»), o es solo pantalla?
+2. **Código de barras contra NID (paso 3, búsqueda):** un código guardado puede ser un número corto como «33», que también es un NID. Hay que decidir cuál gana al escanear o teclear (en la copia de la v1 no choca ninguno, 2026-10-17; revisor de 7e1).

@@ -1,6 +1,6 @@
 # Diseño 01 — Productos e inventario
 
-**Estado:** aprobado. El esquema de artículos, productos e historial de precios está en la migración 0007; lo demás se escribe en su parte del paso 7 (`docs/pendientes/paso-7-productos.md`). Los servicios tienen su propio diseño: [03 — Servicios](03-servicios.md).
+**Estado:** aprobado. El esquema de artículos, productos e historial de precios está en la migración 0007; el de presentaciones y códigos de barras, en la 0011; lo demás se escribe en su parte del paso 7 (`docs/pendientes/paso-7-productos.md`). Los servicios tienen su propio diseño: [03 — Servicios](03-servicios.md).
 
 ## Lo que ya se decidió (2026-09-29)
 - **Kárdex único:** todo lo que mueve inventario escribe renglones en una sola tabla de movimientos. El stock y el costo salen de ahí.
@@ -62,18 +62,20 @@ Lo demás de un producto vive en sus propias tablas: presentaciones, códigos de
 Formas de vender (y, si hace falta, de comprar) un producto en grupo. **Su uso principal es el mayoreo:** un paquete con precio de descuento frente a la suma de piezas sueltas.
 | Columna | Qué es |
 |---|---|
-| `id`, `producto_id`, `nombre` | "Paquete de 100 hojas", "Caja con 12". |
-| `factor` | Cuántas unidades base trae (100, 12, 5000). |
+| `id`, `producto_id`, `nombre` | "Paquete de 100 hojas", "Caja con 12". El nombre no se repite en un mismo producto, sin importar mayúsculas, como en categorías. *(2026-10-17.)* |
+| `factor` | Cuántas unidades base trae (100, 12, 5000). Más de 1: una presentación de 1 sería la pieza suelta. *(Decidido el 2026-10-17.)* |
 | `precio_venta` | Precio de la presentación completa, normalmente menor que `factor × precio de la pieza`. Vacío = solo se usa para comprar (hoy no hay ninguna así, pero el caso existe). |
+| `created_at`, `updated_at`, `updated_by` | Auditoría. `updated_by` vacío = migrada de la v1. |
 
 ### `codigos_barras`
 | Columna | Qué es |
 |---|---|
-| `codigo` | El código (único en todo el negocio). |
+| `codigo` | El código (único en todo el negocio). Exacto, con mayúsculas y minúsculas, como lo manda el escáner; sin espacios y hasta 50 caracteres (en la v1, hasta 24); no tiene que ser numérico. *(Decidido el 2026-10-17.)* |
 | `producto_id` | Producto al que pertenece. |
 | `presentacion_id` | Vacío = el producto suelto. Con valor = esa presentación (el tubo de Mirado). |
+| `created_at`, `created_by` | Auditoría. `created_by` vacío = migrado de la v1. |
 
-Un producto puede tener varios códigos (el proveedor cambió el empaque). El código generado del NID no se guarda: la etiqueta imprime el NID y al escanearlo se busca por NID.
+Un producto puede tener varios códigos (el proveedor cambió el empaque). Los códigos de caja de la v1 pasan como códigos del producto suelto: la v1 cobraba una pieza al escanearlos y no guarda cuántas trae la caja. *(2026-10-17.)* El código generado del NID no se guarda: la etiqueta imprime el NID y al escanearlo se busca por NID.
 
 ### `precios_historial`
 `articulo_id`, `presentacion_id` (opcional), `precio_venta`, `desde`, `updated_by`. Se escribe cada vez que cambia un precio. Sirve para reportes; la venta guarda de todas formas el precio con que se cobró.

@@ -5,5 +5,7 @@
 
 pub mod articulos;
 pub mod categorias;
+pub mod codigos_barras;
+pub mod presentaciones;
 pub mod productos;
 pub mod unidades_medida;

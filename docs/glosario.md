@@ -34,7 +34,7 @@ Las palabras del negocio que van **en español** en el código y en la base de d
 | `Insumo` | Producto físico que un servicio gasta al hacerse y que no se vende por separado en ese momento (la hoja de una copia, la mica de un enmicado). |
 | `Componente` | Cada elemento de una receta (un insumo o un servicio incluido). |
 | `Kit` | Artículo que se vende como varias partidas juntas ("Pago de servicio" = comisión + pago libre). No es una receta. En la v1 se llamaba kit a lo que hoy es un servicio con receta. |
-| `Presentacion` | Forma de venta con su factor: pieza, paquete, caja. |
+| `Presentacion` | Forma de venta en grupo, con su factor (cuántas unidades base trae): paquete, caja. Siempre trae más de una; la pieza suelta es el producto mismo. |
 | `Categoria` | Agrupación del catálogo. |
 | `UnidadMedida` | Pieza, metro, hoja… |
 | `Precio`, `PrecioVenta`, `PrecioCompra` | Precios del producto. |
